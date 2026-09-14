@@ -99,6 +99,32 @@ function validateMagicBytes(buffer: Buffer, extension: string): boolean {
 }
 
 // Danh sách các thư mục cần đồng bộ file ảnh
+
+async function uploadToSupabaseStorage(buffer: Buffer, filename: string, mimeType: string): Promise<string | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hcunfovtwbzfatudejfs.supabase.co';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjdW5mb3Z0d2J6ZmF0dWRlamZzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTM5NTM5OSwiZXhwIjoyMTA0OTcxMzk5fQ.7QwyRHqGXa6UwgbUNAhlWdmGZqpuS8Cxall2v8j7lMU';
+  if (!url || !key) return null;
+
+  try {
+    const res = await fetch(`${url}/storage/v1/object/images/${filename}`, {
+      method: "POST",
+      headers: {
+        "apikey": key,
+        "Authorization": `Bearer ${key}`,
+        "Content-Type": mimeType,
+        "x-upsert": "true"
+      },
+      body: new Uint8Array(buffer)
+    });
+    if (res.ok) {
+      return `${url}/storage/v1/object/public/images/${filename}`;
+    }
+  } catch (e) {
+    console.error("Lỗi upload Supabase Storage:", e);
+  }
+  return null;
+}
+
 function getAllUploadDirs(): string[] {
   const dirs = [
     path.join(process.cwd(), "public", "images", "uploads"),
@@ -176,7 +202,8 @@ export async function uploadImageAction(formData: FormData): Promise<{
       }
     }
 
-    const relativeUrl = `/images/uploads/${safeFilename}`;
+    const cloudUrl = await uploadToSupabaseStorage(buffer, safeFilename, file.type || "image/jpeg");
+    const relativeUrl = cloudUrl || `/images/uploads/${safeFilename}`;
     revalidatePath("/admin/media");
 
     return {
