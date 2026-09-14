@@ -815,7 +815,71 @@ const initialNotifications: NotificationRecord[] = [
 
 let inMemoryStore: StoreData | null = null;
 
+// =========================================================================
+// SUPABASE CLOUD SYNC ENGINE (LIÊN THÔNG 2 CHIỀU ADMIN ↔ CUSTOMER)
+// =========================================================================
+let lastCloudFetchTime = 0;
+const CLOUD_CACHE_TTL_MS = 3000; // 3 giây làm mới một lần
+
+export async function fetchStoreFromSupabaseCloud(): Promise<StoreData | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hcunfovtwbzfatudejfs.supabase.co';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjdW5mb3Z0d2J6ZmF0dWRlamZzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTM5NTM5OSwiZXhwIjoyMTA0OTcxMzk5fQ.7QwyRHqGXa6UwgbUNAhlWdmGZqpuS8Cxall2v8j7lMU';
+
+  if (!url || !key) return null;
+
+  try {
+    const res = await fetch(`${url}/rest/v1/system_store?id=eq.main&select=data,updated_at`, {
+      method: "GET",
+      headers: {
+        "apikey": key,
+        "Authorization": `Bearer ${key}`
+      },
+      cache: "no-store"
+    });
+
+    if (!res.ok) return null;
+    const rows = await res.json();
+    if (Array.isArray(rows) && rows.length > 0 && rows[0].data) {
+      inMemoryStore = rows[0].data as StoreData;
+      lastCloudFetchTime = Date.now();
+      return inMemoryStore;
+    }
+  } catch (err) {
+    // Fallback in-memory
+  }
+  return null;
+}
+
+function pushStoreToSupabaseCloud(data: StoreData) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hcunfovtwbzfatudejfs.supabase.co';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjdW5mb3Z0d2J6ZmF0dWRlamZzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTM5NTM5OSwiZXhwIjoyMTA0OTcxMzk5fQ.7QwyRHqGXa6UwgbUNAhlWdmGZqpuS8Cxall2v8j7lMU';
+
+  if (!url || !key) return;
+
+  try {
+    fetch(`${url}/rest/v1/system_store`, {
+      method: "POST",
+      headers: {
+        "apikey": key,
+        "Authorization": `Bearer ${key}`,
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates"
+      },
+      body: JSON.stringify({
+        id: "main",
+        data: data,
+        updated_at: new Date().toISOString()
+      })
+    }).catch(() => {});
+  } catch {}
+}
+
+
 function loadStore(): StoreData {
+  // Tự động kiểm tra cập nhật từ Supabase Cloud nếu hết hạn TTL
+  if (Date.now() - lastCloudFetchTime > CLOUD_CACHE_TTL_MS) {
+    fetchStoreFromSupabaseCloud().catch(() => {});
+  }
   try {
     const currentFile = getDataFilePath();
     if (fs.existsSync(currentFile)) {
@@ -844,6 +908,7 @@ function loadStore(): StoreData {
 
 function saveStore(data: StoreData) {
   inMemoryStore = data;
+  pushStoreToSupabaseCloud(data);
   try {
     const targetFile = getDataFilePath();
     const dir = path.dirname(targetFile);
