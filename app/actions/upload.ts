@@ -280,7 +280,8 @@ export async function uploadBrandAssetAction(
       }
     }
 
-    const relativeUrl = `/images/uploads/${safeFilename}`;
+    const cloudUrl = await uploadToSupabaseStorage(buffer, safeFilename, file.type || "image/png");
+    const relativeUrl = cloudUrl || `/images/uploads/${safeFilename}`;
     revalidatePath("/admin/media");
     revalidatePath("/", "layout");
 
@@ -570,8 +571,13 @@ export async function saveCroppedImageAction(
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
     const filePath = path.join(uploadsDir, fileName);
-    fs.writeFileSync(filePath, buffer);
-    return { success: true, url: `/uploads/${fileName}` };
+    try {
+      fs.writeFileSync(filePath, buffer);
+    } catch (e) {
+      console.error("Lỗi ghi file cropped local:", e);
+    }
+    const cloudUrl = await uploadToSupabaseStorage(buffer, fileName, "image/png");
+    return { success: true, url: cloudUrl || `/uploads/${fileName}` };
   } catch (err: any) {
     return { success: false, error: err.message || "Lỗi lưu ảnh cắt." };
   }
