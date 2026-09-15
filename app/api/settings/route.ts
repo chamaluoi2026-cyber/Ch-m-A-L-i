@@ -11,22 +11,6 @@ async function pushToSupabaseDirect(newSettings: SiteSettings): Promise<boolean>
   if (!url || !key) return false;
 
   try {
-    let currentData: any = {};
-    const getRes = await fetch(`${url}/rest/v1/system_store?id=eq.main&select=data`, {
-      headers: { "apikey": key, "Authorization": `Bearer ${key}` },
-      cache: "no-store"
-    });
-    if (getRes.ok) {
-      const rows = await getRes.json();
-      currentData = rows[0]?.data || {};
-    }
-
-    currentData.siteSettings = {
-      ...(currentData.siteSettings || {}),
-      ...newSettings,
-      updatedAt: new Date().toISOString()
-    };
-
     const res = await fetch(`${url}/rest/v1/system_store`, {
       method: "POST",
       headers: {
@@ -36,8 +20,8 @@ async function pushToSupabaseDirect(newSettings: SiteSettings): Promise<boolean>
         "Prefer": "resolution=merge-duplicates"
       },
       body: JSON.stringify({
-        id: "main",
-        data: currentData,
+        id: "site_settings",
+        data: newSettings,
         updated_at: new Date().toISOString()
       })
     });
@@ -55,13 +39,15 @@ async function fetchFromSupabaseDirect(): Promise<SiteSettings | null> {
   if (!url || !key) return null;
 
   try {
-    const res = await fetch(`${url}/rest/v1/system_store?id=eq.main&select=data`, {
+    const res = await fetch(`${url}/rest/v1/system_store?id=eq.site_settings&select=data`, {
       headers: { "apikey": key, "Authorization": `Bearer ${key}` },
       cache: "no-store"
     });
-    if (!res.ok) return null;
-    const rows = await res.json();
-    return rows[0]?.data?.siteSettings || null;
+    if (res.ok) {
+      const rows = await res.json();
+      if (rows[0]?.data) return rows[0].data;
+    }
+    return null;
   } catch {
     return null;
   }
