@@ -266,6 +266,15 @@ export default function AdminMediaPage() {
 
   async function loadSiteSettings() {
     try {
+      const res = await fetch("/api/settings", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.settings) {
+          setSiteSettings(data.settings);
+          setInitialSettings(data.settings);
+          return;
+        }
+      }
       const s = await getSiteSettingsAction();
       if (s) {
         setSiteSettings(s);
@@ -629,15 +638,40 @@ export default function AdminMediaPage() {
     }
   }
 
+  // --- Robust API Saver (Immune to Server Action hash mismatches) ---
+  async function saveSettingsViaApi(settings: Partial<SiteSettings>): Promise<{ success: boolean; settings?: SiteSettings; error?: string }> {
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings)
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: `Lỗi máy chủ (${res.status})` }));
+        return { success: false, error: err.error || "Không thể lưu cấu hình" };
+      }
+      return await res.json();
+    } catch (e: any) {
+      try {
+        return await updateSiteSettingsAction(settings);
+      } catch (err: any) {
+        return { success: false, error: e.message || "Lỗi kết nối khi lưu cấu hình" };
+      }
+    }
+  }
+
   // --- Quick Assign Handlers ---
   async function assignAs(target: "logo" | "hero" | "blog-cover" | "blog-content" | "place" | "product", item: MediaItemMetadata) {
     if (target === "logo") {
       setIsSavingSettings(true);
       try {
-        const res = await updateSiteSettingsAction({ ...siteSettings, logo: item.url });
+        const res = await saveSettingsViaApi({ ...siteSettings, logo: item.url });
         if (res.success && res.settings) {
           setSiteSettings(res.settings);
+          setInitialSettings(res.settings);
           showToast("success", `Đã đặt ảnh "${item.name}" làm Logo chính website thành công!`);
+        } else {
+          showToast("error", res.error || "Không thể lưu Logo.");
         }
       } finally {
         setIsSavingSettings(false);
@@ -645,10 +679,13 @@ export default function AdminMediaPage() {
     } else if (target === "hero") {
       setIsSavingSettings(true);
       try {
-        const res = await updateSiteSettingsAction({ ...siteSettings, heroImage: item.url });
+        const res = await saveSettingsViaApi({ ...siteSettings, heroImage: item.url });
         if (res.success && res.settings) {
           setSiteSettings(res.settings);
+          setInitialSettings(res.settings);
           showToast("success", `Đã đặt ảnh "${item.name}" làm Hero Banner trang chủ!`);
+        } else {
+          showToast("error", res.error || "Không thể lưu Hero Banner.");
         }
       } finally {
         setIsSavingSettings(false);
@@ -665,7 +702,6 @@ export default function AdminMediaPage() {
     }
   }
 
-  // --- Brand Asset Upload ---
   // --- Brand Asset Upload (With Automatic Immediate Persistence) ---
   async function handleFileUploadForBrand(
     e: React.ChangeEvent<HTMLInputElement>,
@@ -683,7 +719,7 @@ export default function AdminMediaPage() {
         setSiteSettings(nextSettings);
 
         // TỰ ĐỘNG LƯU VÀO HỆ THỐNG STORE NGAY LẬP TỨC
-        const saveRes = await updateSiteSettingsAction(nextSettings);
+        const saveRes = await saveSettingsViaApi(nextSettings);
         if (saveRes.success && saveRes.settings) {
           setSiteSettings(saveRes.settings);
           setInitialSettings(saveRes.settings);
@@ -707,7 +743,7 @@ export default function AdminMediaPage() {
   async function handleSaveSingleSetting(fieldKey: keyof SiteSettings, label: string) {
     setIsSavingSettings(true);
     try {
-      const res = await updateSiteSettingsAction(siteSettings);
+      const res = await saveSettingsViaApi(siteSettings);
       if (res.success && res.settings) {
         setSiteSettings(res.settings);
         setInitialSettings(res.settings);
@@ -725,7 +761,7 @@ export default function AdminMediaPage() {
   async function handleSaveAllBrandSettings() {
     setIsSavingSettings(true);
     try {
-      const res = await updateSiteSettingsAction(siteSettings);
+      const res = await saveSettingsViaApi(siteSettings);
       if (res.success && res.settings) {
         setSiteSettings(res.settings);
         setInitialSettings(res.settings);

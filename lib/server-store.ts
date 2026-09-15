@@ -875,7 +875,7 @@ function pushStoreToSupabaseCloud(data: StoreData) {
 }
 
 
-function loadStore(): StoreData {
+export function loadStore(): StoreData {
   // Tự động kiểm tra cập nhật từ Supabase Cloud nếu hết hạn TTL
   if (Date.now() - lastCloudFetchTime > CLOUD_CACHE_TTL_MS) {
     fetchStoreFromSupabaseCloud().catch(() => {});
