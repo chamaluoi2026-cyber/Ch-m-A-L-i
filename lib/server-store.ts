@@ -851,6 +851,9 @@ export async function fetchStoreFromSupabaseCloud(): Promise<StoreData | null> {
 }
 
 function pushStoreToSupabaseCloud(data: StoreData) {
+  if (process.env.NEXT_PHASE === 'phase-production-build') return;
+  if (!data || typeof data !== 'object') return;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hcunfovtwbzfatudejfs.supabase.co';
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjdW5mb3Z0d2J6ZmF0dWRlamZzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTM5NTM5OSwiZXhwIjoyMTA0OTcxMzk5fQ.7QwyRHqGXa6UwgbUNAhlWdmGZqpuS8Cxall2v8j7lMU';
 
@@ -876,10 +879,13 @@ function pushStoreToSupabaseCloud(data: StoreData) {
 
 
 export function loadStore(): StoreData {
-  // Tự động kiểm tra cập nhật từ Supabase Cloud nếu hết hạn TTL
-  if (Date.now() - lastCloudFetchTime > CLOUD_CACHE_TTL_MS) {
-    fetchStoreFromSupabaseCloud().catch(() => {});
+  if (inMemoryStore) {
+    if (Date.now() - lastCloudFetchTime > CLOUD_CACHE_TTL_MS) {
+      fetchStoreFromSupabaseCloud().catch(() => {});
+    }
+    return inMemoryStore;
   }
+
   try {
     const currentFile = getDataFilePath();
     if (fs.existsSync(currentFile)) {
@@ -887,11 +893,7 @@ export function loadStore(): StoreData {
       inMemoryStore = JSON.parse(raw) as StoreData;
       return inMemoryStore;
     }
-  } catch {
-    if (inMemoryStore) return inMemoryStore;
-  }
-
-  if (inMemoryStore) return inMemoryStore;
+  } catch {}
 
   inMemoryStore = {
     leads: initialLeads,
@@ -902,7 +904,6 @@ export function loadStore(): StoreData {
     users: initialUsers
   };
 
-  saveStore(inMemoryStore);
   return inMemoryStore;
 }
 
