@@ -8,6 +8,7 @@ import {
   type PaymentStatus
 } from "@/lib/server-store";
 import { revalidatePath } from "next/cache";
+import { sendTelegramNotification } from "@/lib/notification/telegram";
 
 export const dynamic = "force-dynamic";
 
@@ -160,6 +161,21 @@ export async function POST(req: NextRequest) {
     const currentList = await fetchBookingsFromCloud();
     const updatedList = [newBooking, ...currentList.filter(b => b.id !== newBooking.id)];
     await saveBookingsToCloud(updatedList);
+
+    // Bắn thông báo tức thì về Telegram của Ban quản lý/Admin
+    try {
+      const typeLabel = newBooking.type === "product" ? "ĐƠN ĐẶT ĐẶC SẢN MỚI" : "ĐƠN ĐẶT TOUR MỚI";
+      const tgMsg = `🔔 <b>${typeLabel} - CHẠM A LƯỚI</b>\n` +
+        `🆔 <b>Mã đơn:</b> <code>${newBooking.id}</code>\n` +
+        `👤 <b>Khách hàng:</b> ${newBooking.customerName}\n` +
+        `📞 <b>Điện thoại:</b> ${newBooking.phone}\n` +
+        `📦 <b>Sản phẩm/Tour:</b> ${newBooking.itemTitle}\n` +
+        `💰 <b>Tổng tiền:</b> ${newBooking.finalAmount.toLocaleString("vi-VN")} đ\n` +
+        `📅 <b>Ngày:</b> ${newBooking.experienceDate || newBooking.bookingDate}\n` +
+        `💬 <b>Ghi chú:</b> ${newBooking.customerNote || "Không có"}\n` +
+        `👉 <a href="https://chamaluoiadmin.netlify.app/admin/bookings">Xem trên Trang Quản Trị</a>`;
+      await sendTelegramNotification(tgMsg);
+    } catch {}
 
     // 2. Đồng bộ song song vào store cục bộ
     try {

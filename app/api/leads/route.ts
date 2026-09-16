@@ -9,6 +9,8 @@ import {
   createVoucherCode
 } from "@/lib/leads";
 
+import { sendTelegramNotification } from "@/lib/notification/telegram";
+
 export const dynamic = "force-dynamic";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hcunfovtwbzfatudejfs.supabase.co';
@@ -167,6 +169,20 @@ export async function POST(req: NextRequest) {
     const existing = await fetchLeadsFromCloud();
     const updated = [newLead, ...existing.filter(l => l.leadId !== leadId)];
     await saveLeadsToCloud(updated);
+
+    // Bắn thông báo Telegram về điện thoại ban điều hành
+    try {
+      const tgMsg = `🎁 <b>YÊU CẦU TƯ VẤN & NHẬN VOUCHER - CHẠM A LƯỚI</b>\n` +
+        `🆔 <b>Mã Lead:</b> <code>${newLead.leadId}</code>\n` +
+        `🎟️ <b>Mã Voucher:</b> <code>${voucher.voucherCode}</code>\n` +
+        `👤 <b>Khách:</b> ${newLead.customerName}\n` +
+        `📞 <b>Điện thoại:</b> ${newLead.phone}\n` +
+        `📍 <b>Điểm đến:</b> ${newLead.placeName}\n` +
+        `📅 <b>Ngày dự kiến:</b> ${newLead.expectedDate} (${newLead.guests} khách)\n` +
+        `💬 <b>Nhu cầu:</b> ${newLead.need}\n` +
+        `👉 <a href="https://chamaluoiadmin.netlify.app/admin/leads">Xem CRM Leads trên Admin</a>`;
+      await sendTelegramNotification(tgMsg);
+    } catch {}
 
     return NextResponse.json({
       success: true,

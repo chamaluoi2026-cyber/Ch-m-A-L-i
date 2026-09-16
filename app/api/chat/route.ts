@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { type ChatSession, type ChatMessage } from "@/lib/server-store";
 import { revalidatePath } from "next/cache";
+import { sendTelegramNotification } from "@/lib/notification/telegram";
 
 export const dynamic = "force-dynamic";
 
@@ -123,6 +124,18 @@ export async function POST(req: NextRequest) {
     // Di chuyển session lên đầu danh sách
     const updatedChats = [session, ...currentChats.filter(c => c.id !== session!.id)];
     await saveChatsToCloud(updatedChats);
+
+    // Gửi thông báo Telegram nếu là khách hàng gửi tin nhắn
+    if (!isStaff) {
+      try {
+        const tgMsg = `💬 <b>TIN NHẮN HỖ TRỢ MỚI - CHẠM A LƯỚI</b>\n` +
+          `👤 <b>Khách:</b> ${session.guestName || "Khách truy cập"}\n` +
+          (session.guestPhone ? `📞 <b>SĐT:</b> ${session.guestPhone}\n` : "") +
+          `💬 <b>Tin nhắn:</b> "${newMsg.text}"\n` +
+          `👉 <a href="https://chamaluoiadmin.netlify.app/admin/chat">Mở hộp chat phản hồi ngay</a>`;
+        await sendTelegramNotification(tgMsg);
+      } catch {}
+    }
 
     revalidatePath("/admin/chat");
 

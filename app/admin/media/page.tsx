@@ -28,6 +28,7 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
+  CreditCard,
   Crop,
   Scissors,
   ZoomIn,
@@ -108,7 +109,9 @@ interface ImageUsageDetail {
 
 export default function AdminMediaPage() {
   // Tabs: 'library' (Kho tài nguyên dùng chung), 'brand' (Cấu hình Logo & Banner), 'about' (Nội dung & Đội ngũ Giới thiệu), 'contact' (Thông tin liên hệ & Footer), 'picker-demo' (Thử nghiệm Media Picker)
-  const [activeTab, setActiveTab] = useState<"library" | "brand" | "about" | "contact" | "picker-demo">("library");
+  const [activeTab, setActiveTab] = useState<"library" | "brand" | "about" | "contact" | "vietqr" | "notifications" | "picker-demo">("library");
+  const [isTestingTelegram, setIsTestingTelegram] = useState(false);
+  const [telegramTestResult, setTelegramTestResult] = useState<{ success?: boolean; error?: string } | null>(null);
 
   // State for editing avatar member with media picker
   const [pickingMemberId, setPickingMemberId] = useState<string | null>(null);
@@ -758,6 +761,39 @@ export default function AdminMediaPage() {
     }
   }
 
+  
+  async function handleTestTelegram() {
+    if (!siteSettings.telegramBotToken?.trim() || !siteSettings.telegramChatId?.trim()) {
+      showToast("error", "Vui lòng nhập đầy đủ Bot Token và Chat ID trước khi gửi thử nghiệm.");
+      return;
+    }
+    setIsTestingTelegram(true);
+    setTelegramTestResult(null);
+    try {
+      const res = await fetch("/api/test-telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: siteSettings.telegramBotToken.trim(),
+          chatId: siteSettings.telegramChatId.trim()
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTelegramTestResult({ success: true });
+        showToast("success", "Đã gửi tin nhắn thử nghiệm thành công! Hãy kiểm tra điện thoại của bạn.");
+      } else {
+        setTelegramTestResult({ error: data.error || "Gửi thất bại" });
+        showToast("error", data.error || "Gửi thất bại. Vui lòng kiểm tra lại Token và Chat ID.");
+      }
+    } catch {
+      setTelegramTestResult({ error: "Lỗi kết nối tới máy chủ" });
+      showToast("error", "Lỗi kết nối tới máy chủ.");
+    } finally {
+      setIsTestingTelegram(false);
+    }
+  }
+
   async function handleSaveAllBrandSettings() {
     setIsSavingSettings(true);
     try {
@@ -885,6 +921,28 @@ export default function AdminMediaPage() {
         >
           <Phone className="size-4" />
           Thông tin Liên hệ & Footer
+        </button>
+        <button
+          onClick={() => setActiveTab("vietqr")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition ${
+            activeTab === "vietqr"
+              ? "bg-forest text-white shadow-sm"
+              : "text-ink/70 hover:bg-beige hover:text-ink"
+          }`}
+        >
+          <CreditCard className="size-4" />
+          VietQR & Ngân hàng nhận tiền
+        </button>
+        <button
+          onClick={() => setActiveTab("notifications")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition ${
+            activeTab === "notifications"
+              ? "bg-forest text-white shadow-sm"
+              : "text-ink/70 hover:bg-beige hover:text-ink"
+          }`}
+        >
+          <Send className="size-4" />
+          Thông báo Telegram tức thì
         </button>
         <button
           onClick={() => setActiveTab("picker-demo")}
@@ -2440,6 +2498,328 @@ export default function AdminMediaPage() {
               {isSavingSettings ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
               {isSavingSettings ? "Đang lưu thông tin..." : "Lưu Thay Đổi"}
             </button>
+          </div>
+        </div>
+      )}
+
+      
+      {/* ========================================================
+          TAB: VIETQR & TÀI KHOẢN NGÂN HÀNG NHẬN TIỀN
+         ======================================================== */}
+      {activeTab === "vietqr" && (
+        <div className="space-y-8">
+          <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-forest text-xs font-black uppercase tracking-wider mb-1">
+                <CreditCard className="size-4" />
+                Cấu hình thanh toán VietQR
+              </div>
+              <h2 className="text-xl font-black text-ink">Quản lý Tài khoản Ngân hàng & Mã VietQR</h2>
+              <p className="text-xs text-ink/70 mt-1 max-w-2xl leading-relaxed">
+                Tài khoản ngân hàng bạn cấu hình tại đây sẽ được tự động sinh mã VietQR động trên Web Khách khi du khách đặt Tour hoặc mua Đặc sản. Tiền sẽ chuyển thẳng 100% vào tài khoản của bạn.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleSaveAllBrandSettings}
+              disabled={isSavingSettings}
+              className="px-5 py-2.5 rounded-2xl bg-forest text-white text-xs font-bold hover:bg-forest/90 transition shadow flex items-center gap-2 disabled:opacity-50"
+            >
+              {isSavingSettings ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+              Lưu Cấu Hình Ngân Hàng
+            </button>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* Form cấu hình */}
+            <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 space-y-5">
+              <h3 className="text-sm font-black text-ink flex items-center gap-2">
+                <Sliders className="size-4 text-forest" />
+                Thông tin Tài khoản Ngân hàng thụ hưởng
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5">Chọn Ngân hàng thụ hưởng *</label>
+                  <select
+                    value={siteSettings.bankId || "VCB"}
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      const banks: Record<string, string> = {
+                        VCB: "Vietcombank (Ngân hàng Ngoại thương)",
+                        BIDV: "BIDV (Đầu tư và Phát triển VN)",
+                        ICB: "VietinBank (Công thương Việt Nam)",
+                        VBA: "Agribank (Nông nghiệp & PTNT)",
+                        MB: "MBBank (Quân đội)",
+                        TCB: "Techcombank (Kỹ thương Việt Nam)",
+                        ACB: "ACB (Á Châu)",
+                        VPB: "VPBank (Việt Nam Thịnh Vượng)",
+                        TPB: "TPBank (Tiên Phong)",
+                        STB: "Sacombank (Sài Gòn Thương Tín)",
+                        HDB: "HDBank (Phát triển TP.HCM)",
+                        VIB: "VIB (Quốc tế)",
+                        LPB: "LPBank (Bưu điện Liên Việt)",
+                        MSB: "MSB (Hàng Hải)",
+                        OCB: "OCB (Phương Đông)",
+                        SHB: "SHB (Sài Gòn - Hà Nội)"
+                      };
+                      setSiteSettings((prev) => ({
+                        ...prev,
+                        bankId: selectedId,
+                        bankName: banks[selectedId] || selectedId
+                      }));
+                    }}
+                    className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-semibold text-ink focus:border-forest focus:outline-none"
+                  >
+                    <option value="VCB">Vietcombank (VCB)</option>
+                    <option value="BIDV">BIDV</option>
+                    <option value="ICB">VietinBank (ICB)</option>
+                    <option value="VBA">Agribank (VBA)</option>
+                    <option value="MB">MBBank (MB)</option>
+                    <option value="TCB">Techcombank (TCB)</option>
+                    <option value="ACB">ACB</option>
+                    <option value="VPB">VPBank</option>
+                    <option value="TPB">TPBank</option>
+                    <option value="STB">Sacombank</option>
+                    <option value="HDB">HDBank</option>
+                    <option value="VIB">VIB</option>
+                    <option value="LPB">LPBank</option>
+                    <option value="MSB">MSB</option>
+                    <option value="OCB">OCB</option>
+                    <option value="SHB">SHB</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5">Số tài khoản ngân hàng *</label>
+                  <input
+                    type="text"
+                    value={siteSettings.bankAccountNumber || "1028899889"}
+                    onChange={(e) => setSiteSettings((prev) => ({ ...prev, bankAccountNumber: e.target.value.trim() }))}
+                    placeholder="Ví dụ: 1028899889 hoặc 0905123456"
+                    className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-mono font-bold text-ink focus:border-forest focus:outline-none"
+                  />
+                  <p className="text-[10px] text-ink/50 mt-1">Nhập chính xác số tài khoản ngân hàng không có khoảng trắng.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5">Tên chủ tài khoản (In hoa không dấu) *</label>
+                  <input
+                    type="text"
+                    value={siteSettings.bankAccountName || "HTX DU LICH CONG DONG A LUOI"}
+                    onChange={(e) => setSiteSettings((prev) => ({ ...prev, bankAccountName: e.target.value.toUpperCase() }))}
+                    placeholder="Ví dụ: NGUYEN VAN A hoặc HTX DU LICH CONG DONG A LUOI"
+                    className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-bold text-ink uppercase focus:border-forest focus:outline-none"
+                  />
+                  <p className="text-[10px] text-ink/50 mt-1">Tên chủ tài khoản khớp với thông tin đăng ký tại ngân hàng.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5">Kiểu giao diện mã QR</label>
+                  <select
+                    value={siteSettings.qrTemplate || "compact2"}
+                    onChange={(e) => setSiteSettings((prev) => ({ ...prev, qrTemplate: e.target.value }))}
+                    className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-semibold text-ink focus:border-forest focus:outline-none"
+                  >
+                    <option value="compact2">Chuẩn VietQR Đầy đủ (Logo Napas + Tên ngân hàng + Số TK)</option>
+                    <option value="compact">Chuẩn VietQR Tối giản (Chỉ mã QR và số tiền)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-3">
+                <button
+                  type="button"
+                  onClick={handleSaveAllBrandSettings}
+                  disabled={isSavingSettings}
+                  className="w-full py-3 rounded-2xl bg-forest text-white text-xs font-bold hover:bg-forest/90 transition shadow flex items-center justify-center gap-2"
+                >
+                  {isSavingSettings ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                  {isSavingSettings ? "Đang lưu..." : "Lưu Thông Tin Ngân Hàng"}
+                </button>
+              </div>
+            </div>
+
+            {/* Live QR Preview */}
+            <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 flex flex-col items-center justify-center text-center space-y-4">
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                <Eye className="size-3.5" />
+                Quét Thử Nghiệm Thực Tế
+              </div>
+              <h4 className="text-sm font-black text-ink">Xem trước mã VietQR của bạn</h4>
+              <p className="text-xs text-ink/70 max-w-xs">
+                Bạn có thể mở ứng dụng Mobile Banking trên điện thoại và quét thử mã dưới đây để kiểm tra đúng tên chủ tài khoản chưa:
+              </p>
+
+              <div className="p-3 bg-white border-2 border-forest/20 rounded-2xl shadow-lg">
+                <img
+                  src={`https://img.vietqr.io/image/${siteSettings.bankId || "VCB"}-${siteSettings.bankAccountNumber || "1028899889"}-${siteSettings.qrTemplate || "compact2"}.png?amount=50000&addInfo=TEST%20CHAM%20A%20LUOI&accountName=${encodeURIComponent(siteSettings.bankAccountName || "HTX DU LICH CONG DONG A LUOI")}`}
+                  alt="Mã QR Demo"
+                  className="w-56 h-auto rounded-xl object-contain mx-auto"
+                />
+              </div>
+
+              <div className="text-xs text-ink/80 space-y-1">
+                <p className="font-bold text-forest">{siteSettings.bankName || "Vietcombank"}</p>
+                <p className="font-mono text-sm font-black tracking-wider text-ink">{siteSettings.bankAccountNumber || "1028899889"}</p>
+                <p className="font-bold text-xs text-clay uppercase">{siteSettings.bankAccountName || "HTX DU LICH CONG DONG A LUOI"}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          TAB: THÔNG BÁO TỨC THÌ (TELEGRAM BOT)
+         ======================================================== */}
+      {activeTab === "notifications" && (
+        <div className="space-y-8">
+          <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-forest text-xs font-black uppercase tracking-wider mb-1">
+                <Send className="size-4" />
+                Cấu hình thông báo tức thì
+              </div>
+              <h2 className="text-xl font-black text-ink">Thông Báo Tức Thì Về Điện Thoại (Telegram)</h2>
+              <p className="text-xs text-ink/70 mt-1 max-w-2xl leading-relaxed">
+                Khi có khách đặt Tour, đặt Mua Sản Phẩm, nhắn tin Live Chat hoặc để lại thông tin tư vấn, hệ thống sẽ tự động gửi tin nhắn ting ting về Telegram của bạn ngay lập tức!
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleSaveAllBrandSettings}
+              disabled={isSavingSettings}
+              className="px-5 py-2.5 rounded-2xl bg-forest text-white text-xs font-bold hover:bg-forest/90 transition shadow flex items-center gap-2 disabled:opacity-50"
+            >
+              {isSavingSettings ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+              Lưu Cấu Hình Thông Báo
+            </button>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* Form cấu hình Telegram */}
+            <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 space-y-5">
+              <div className="flex items-center justify-between border-b border-black/5 pb-3">
+                <h3 className="text-sm font-black text-ink flex items-center gap-2">
+                  <Send className="size-4 text-sky-500" />
+                  Cấu hình Telegram Bot
+                </h3>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={siteSettings.telegramEnabled !== false}
+                    onChange={(e) => setSiteSettings((prev) => ({ ...prev, telegramEnabled: e.target.checked }))}
+                    className="size-4 rounded accent-forest"
+                  />
+                  <span className="text-xs font-bold text-ink">Bật thông báo</span>
+                </label>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5">Telegram Bot Token *</label>
+                  <input
+                    type="password"
+                    value={siteSettings.telegramBotToken || ""}
+                    onChange={(e) => setSiteSettings((prev) => ({ ...prev, telegramBotToken: e.target.value.trim() }))}
+                    placeholder="Ví dụ: 1234567890:ABCdefGhIJKlmNoPQRstuvWXyz..."
+                    className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-mono text-ink focus:border-forest focus:outline-none"
+                  />
+                  <p className="text-[10px] text-ink/50 mt-1">
+                    Lấy Token miễn phí bằng cách chat với bot <b>@BotFather</b> trên Telegram và gõ <code>/newbot</code>.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5">Telegram Chat ID (Cá nhân hoặc Nhóm) *</label>
+                  <input
+                    type="text"
+                    value={siteSettings.telegramChatId || ""}
+                    onChange={(e) => setSiteSettings((prev) => ({ ...prev, telegramChatId: e.target.value.trim() }))}
+                    placeholder="Ví dụ: 987654321 hoặc -1001234567890 (nhóm)"
+                    className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-mono text-ink focus:border-forest focus:outline-none"
+                  />
+                  <p className="text-[10px] text-ink/50 mt-1">
+                    Lấy Chat ID của bạn bằng cách chat với bot <b>@userinfobot</b> trên Telegram. Nếu gửi vào nhóm, thêm bot vào nhóm và lấy ID nhóm.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5">Email nhận thông báo phụ trợ (Tùy chọn)</label>
+                  <input
+                    type="email"
+                    value={siteSettings.notificationEmail || ""}
+                    onChange={(e) => setSiteSettings((prev) => ({ ...prev, notificationEmail: e.target.value.trim() }))}
+                    placeholder="admin@chamaluoi.vn"
+                    className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs text-ink focus:border-forest focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Nút bấm kiểm tra thử nghiệm */}
+              <div className="pt-2 flex flex-col gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleTestTelegram}
+                  disabled={isTestingTelegram}
+                  className="w-full py-2.5 rounded-2xl border-2 border-sky-500/30 text-sky-700 bg-sky-50 text-xs font-bold hover:bg-sky-100 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isTestingTelegram ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                  {isTestingTelegram ? "Đang gửi thử nghiệm..." : "Bấm vào đây để Gửi Tin Nhắn Thử Nghiệm về Điện Thoại"}
+                </button>
+
+                {telegramTestResult?.success && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-semibold text-emerald-800 flex items-center gap-2">
+                    <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                    Đã gửi thành công! Hãy mở app Telegram trên điện thoại kiểm tra tin nhắn.
+                  </div>
+                )}
+                {telegramTestResult?.error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-2xl text-xs font-semibold text-red-800 flex items-center gap-2">
+                    <AlertCircle className="size-4 shrink-0 text-red-600" />
+                    Lỗi: {telegramTestResult.error}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleSaveAllBrandSettings}
+                  disabled={isSavingSettings}
+                  className="w-full py-3 rounded-2xl bg-forest text-white text-xs font-bold hover:bg-forest/90 transition shadow flex items-center justify-center gap-2"
+                >
+                  {isSavingSettings ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                  {isSavingSettings ? "Đang lưu..." : "Lưu Cấu Hình Thông Báo"}
+                </button>
+              </div>
+            </div>
+
+            {/* Hướng dẫn tạo Bot 1 phút */}
+            <div className="rounded-3xl bg-[#0F382E] text-white p-6 shadow-card space-y-4">
+              <h4 className="text-sm font-black text-emerald-300 flex items-center gap-2">
+                <HelpCircle className="size-4" />
+                Hướng dẫn tạo Telegram Bot trong 1 phút
+              </h4>
+              <ol className="text-xs text-white/85 space-y-3 list-decimal list-inside leading-relaxed">
+                <li>
+                  Mở ứng dụng Telegram trên điện thoại, tìm kiếm <b>@BotFather</b> (có tích xanh chính thức).
+                </li>
+                <li>
+                  Gõ lệnh <code>/newbot</code>, đặt tên cho bot (ví dụ: <i>Chạm A Lưới Bot</i>), sau đó đặt username kết thúc bằng <i>_bot</i> (ví dụ: <i>chamaluoi_notify_bot</i>).
+                </li>
+                <li>
+                  BotFather sẽ gửi lại <b>HTTP API token</b> (dạng <code>123456789:ABC...</code>). Hãy copy chuỗi này dán vào ô <b>Telegram Bot Token</b> ở bên cạnh.
+                </li>
+                <li>
+                  Tìm bot <b>@userinfobot</b> và bấm <code>/start</code> để lấy số <b>Id</b> của bạn (ví dụ: <code>123456789</code>) rồi dán vào ô <b>Chat ID</b>.
+                </li>
+                <li>
+                  <b>Quan trọng:</b> Nhớ mở bot bạn vừa tạo và bấm <b>/start</b> một lần để cho phép bot gửi tin nhắn cho bạn!
+                </li>
+                <li>
+                  Quay lại đây bấm nút <b>&quot;Gửi Tin Nhắn Thử Nghiệm&quot;</b> để kiểm tra!
+                </li>
+              </ol>
+            </div>
           </div>
         </div>
       )}

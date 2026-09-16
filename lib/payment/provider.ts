@@ -1,4 +1,5 @@
 import type { PaymentRecord, BookingRecord } from "@/lib/server-store";
+import { getSiteSettingsAsync } from "@/lib/server-store";
 
 export interface PaymentInitiateResult {
   paymentCode: string;
@@ -41,13 +42,31 @@ export class VietQRProvider implements IPaymentProvider {
 
   async initiatePayment(payment: PaymentRecord, booking: BookingRecord): Promise<PaymentInitiateResult> {
     const memo = payment.paymentCode;
+    let bank = this.defaultBank;
+    let template = "compact2";
+
+    try {
+      const settings = await getSiteSettingsAsync();
+      if (settings?.bankAccountNumber && settings?.bankId) {
+        bank = {
+          bankId: settings.bankId,
+          bankName: settings.bankName || this.defaultBank.bankName,
+          accountNumber: settings.bankAccountNumber,
+          accountName: settings.bankAccountName || this.defaultBank.accountName
+        };
+      }
+      if (settings?.qrTemplate) {
+        template = settings.qrTemplate;
+      }
+    } catch {}
+
     // URL chuẩn sinh mã VietQR động
-    const qrUrl = `https://img.vietqr.io/image/${this.defaultBank.bankId}-${this.defaultBank.accountNumber}-compact2.png?amount=${payment.amount}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(this.defaultBank.accountName)}`;
+    const qrUrl = `https://img.vietqr.io/image/${bank.bankId}-${bank.accountNumber}-${template}.png?amount=${payment.amount}&addInfo=${encodeURIComponent(memo)}&accountName=${encodeURIComponent(bank.accountName)}`;
 
     return {
       paymentCode: payment.paymentCode,
       qrUrl,
-      bankAccount: this.defaultBank,
+      bankAccount: bank,
       instructions: `Vui lòng quét mã QR bằng ứng dụng ngân hàng hoặc chuyển khoản chính xác số tiền ${payment.amount.toLocaleString("vi-VN")} đ với nội dung: ${memo}`
     };
   }

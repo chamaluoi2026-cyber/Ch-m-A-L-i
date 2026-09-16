@@ -113,6 +113,20 @@ export type SiteSettings = {
   aboutPartnersTitle?: string;
   aboutPartnersText?: string;
 
+  // Cấu hình Tài khoản Ngân hàng nhận tiền VietQR
+  bankId?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankAccountName?: string;
+  qrTemplate?: string;
+
+  // Cấu hình Thông báo tức thì (Telegram)
+  telegramEnabled?: boolean;
+  telegramBotToken?: string;
+  telegramChatId?: string;
+  notificationEmail?: string;
+  emailNotificationEnabled?: boolean;
+
   updatedAt?: string;
 };
 
@@ -1736,6 +1750,33 @@ export function getSiteSettings(): SiteSettings {
     ...defaults,
     ...(store.siteSettings || {})
   };
+}
+
+
+export async function getSiteSettingsAsync(): Promise<SiteSettings> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hcunfovtwbzfatudejfs.supabase.co';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjdW5mb3Z0d2J6ZmF0dWRlamZzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTM5NTM5OSwiZXhwIjoyMTA0OTcxMzk5fQ.7QwyRHqGXa6UwgbUNAhlWdmGZqpuS8Cxall2v8j7lMU';
+
+  if (url && key) {
+    try {
+      const res = await fetch(`${url}/rest/v1/system_store?id=eq.site_settings&select=data`, {
+        headers: { apikey: key, Authorization: `Bearer ${key}` },
+        cache: "no-store"
+      });
+      if (res.ok) {
+        const rows = await res.json();
+        const cloudData = rows[0]?.data;
+        if (cloudData && typeof cloudData === "object") {
+          const defaults = getSiteSettings();
+          return {
+            ...defaults,
+            ...cloudData
+          };
+        }
+      }
+    } catch {}
+  }
+  return getSiteSettings();
 }
 
 export function updateSiteSettings(settings: Partial<SiteSettings>): SiteSettings {
