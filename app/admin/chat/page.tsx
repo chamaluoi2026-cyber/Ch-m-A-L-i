@@ -30,6 +30,19 @@ export default function AdminChatPage() {
 
   const loadSessions = async (keepSelection = true) => {
     try {
+      const res = await fetch("/api/chat", { cache: "no-store" });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.sessions)) {
+          setSessions(json.sessions);
+          if (!keepSelection || !selectedId) {
+            if (json.sessions.length > 0 && !selectedId) {
+              setSelectedId(json.sessions[0].id);
+            }
+          }
+          return;
+        }
+      }
       const data = await getChatSessionsAction();
       setSessions(data);
       if (!keepSelection || !selectedId) {
@@ -67,9 +80,22 @@ export default function AdminChatPage() {
     setIsSending(true);
 
     try {
-      const res = await sendStaffMessageAction(selectedSession.id, textToSend);
-      if (res.success) {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: selectedSession.id,
+          text: textToSend,
+          role: "staff"
+        })
+      });
+      if (res.ok) {
         await loadSessions(true);
+      } else {
+        const fallbackRes = await sendStaffMessageAction(selectedSession.id, textToSend);
+        if (fallbackRes.success) {
+          await loadSessions(true);
+        }
       }
     } catch (err) {
       console.error("Lỗi gửi tin nhắn:", err);

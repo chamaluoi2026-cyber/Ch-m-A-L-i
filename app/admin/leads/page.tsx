@@ -40,16 +40,42 @@ export default function AdminLeadsPage() {
   const pageSize = 10;
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  async function loadLeads() {
+    try {
+      const res = await fetch("/api/leads");
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          setLeads(json.data);
+        }
+      }
+    } catch (e) {
+      console.error("Lỗi tải leads:", e);
+    }
+  }
+
   useEffect(() => {
-    fetchAllLeadsAction().then(setLeads);
+    loadLeads();
+    const interval = setInterval(loadLeads, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   async function handleQuickStatusChange(leadId: string, newStatus: LeadStatus) {
     setUpdatingId(leadId);
-    const res = await updateLeadStatusAction(leadId, newStatus);
-    setUpdatingId(null);
-    if (res.success && res.lead) {
-      setLeads((prev) => prev.map((l) => (l.leadId === leadId ? res.lead! : l)));
+    try {
+      const res = await fetch("/api/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadId, status: newStatus })
+      });
+      const data = await res.json();
+      if (data.success && data.lead) {
+        setLeads((prev) => prev.map((l) => (l.leadId === leadId ? data.lead : l)));
+      }
+    } catch (e) {
+      console.error("Lỗi cập nhật trạng thái:", e);
+    } finally {
+      setUpdatingId(null);
     }
   }
 

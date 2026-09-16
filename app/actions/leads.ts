@@ -16,6 +16,41 @@ import {
 import type { LeadPayload, LeadStatus, LeadRecord, LeadLossReason, LeadSource } from "@/lib/leads";
 import { revalidatePath } from "next/cache";
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hcunfovtwbzfatudejfs.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjdW5mb3Z0d2J6ZmF0dWRlamZzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTM5NTM5OSwiZXhwIjoyMTA0OTcxMzk5fQ.7QwyRHqGXa6UwgbUNAhlWdmGZqpuS8Cxall2v8j7lMU';
+
+async function syncLeadToCloud(lead: LeadRecord) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/system_store?id=eq.leads_store&select=data`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+      cache: "no-store"
+    });
+    let all: LeadRecord[] = [];
+    if (res.ok) {
+      const rows = await res.json();
+      if (Array.isArray(rows[0]?.data)) all = rows[0].data;
+    }
+    const updated = [lead, ...all.filter(l => l.leadId !== lead.leadId)];
+    await fetch(`${SUPABASE_URL}/rest/v1/system_store`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates"
+      },
+      body: JSON.stringify({
+        id: "leads_store",
+        data: updated,
+        updated_at: new Date().toISOString()
+      })
+    });
+  } catch (e) {
+    console.error("[SYNC_LEAD_CLOUD_ERR]", e);
+  }
+}
+
+
 export async function submitLeadAction(payload: LeadPayload) {
   try {
     if (!payload.customerName || !payload.phone || !payload.expectedDate) {
@@ -27,6 +62,7 @@ export async function submitLeadAction(payload: LeadPayload) {
       source: payload.source || "WEBSITE"
     });
 
+    await syncLeadToCloud(lead);
     revalidatePath("/places");
     revalidatePath("/places/" + payload.placeSlug);
     revalidatePath("/account");

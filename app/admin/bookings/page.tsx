@@ -38,7 +38,16 @@ export default function AdminBookingsPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   function loadBookings() {
-    fetchAllBookingsAction().then(setBookings);
+    fetch("/api/bookings", { cache: "no-store" })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.bookings)) {
+          setBookings(data.bookings);
+        } else {
+          fetchAllBookingsAction().then(setBookings);
+        }
+      })
+      .catch(() => fetchAllBookingsAction().then(setBookings));
   }
 
   useEffect(() => {
@@ -47,6 +56,19 @@ export default function AdminBookingsPage() {
 
   async function handleQuickStatusChange(id: string, status: BookingStatus) {
     setUpdatingId(id);
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, bookingStatus: status })
+      });
+      const data = await res.json();
+      if (data.success && data.booking) {
+        setBookings((prev) => prev.map((b) => (b.id === id ? data.booking! : b)));
+        setUpdatingId(null);
+        return;
+      }
+    } catch {}
     const res = await updateBookingStatusAction(id, status, {
       id: "usr-admin-1",
       name: "Ban Quản Trị",
@@ -60,6 +82,19 @@ export default function AdminBookingsPage() {
 
   async function handleQuickPaymentChange(id: string, status: PaymentStatus) {
     setUpdatingId(id);
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, paymentStatus: status })
+      });
+      const data = await res.json();
+      if (data.success && data.booking) {
+        setBookings((prev) => prev.map((b) => (b.id === id ? data.booking! : b)));
+        setUpdatingId(null);
+        return;
+      }
+    } catch {}
     const res = await updateBookingPaymentAction(id, status, {
       actor: { id: "usr-admin-1", name: "Ban Quản Trị", role: "admin" }
     });
