@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   BarChart3,
+  Bell,
   Building2,
   CheckSquare,
   CreditCard,
@@ -37,14 +38,15 @@ const adminNav = [
   { href: "/admin/places", label: "Quản lý Địa điểm", icon: MapPin },
   { href: "/admin/leads", label: "Quản lý Leads", icon: MessageSquare },
   { href: "/admin/bookings", label: "Quản lý Bookings", icon: Calendar },
-  { href: "/admin/payments", label: "Quản lý Thanh toán", icon: CreditCard },
-  { href: "/admin/reviews", label: "Kiểm duyệt Đánh giá", icon: Star },
-  { href: "/admin/vouchers", label: "Kho Voucher", icon: Ticket },
-  { href: "/admin/transactions", label: "Nhật ký Giao dịch", icon: CheckSquare },
+  { href: "/admin/orders", label: "Đơn tour & Sản phẩm", icon: Package },
+  { href: "/admin/payments", label: "Thanh toán & VietQR", icon: CreditCard },
   { href: "/admin/commissions", label: "Đối soát Hoa hồng", icon: DollarSign },
   { href: "/admin/reconciliation", label: "Trung tâm Quyết toán & Ký duyệt", icon: BarChart3 },
-  { href: "/admin/media", label: "Media & Cấu hình Website", icon: ImageIcon },
-  { href: "/admin/orders", label: "Đơn tour & Sản phẩm", icon: Package },
+  { href: "/admin/vouchers", label: "Kho Voucher", icon: Ticket },
+  { href: "/admin/reviews", label: "Kiểm duyệt Đánh giá", icon: Star },
+  { href: "/admin/transactions", label: "Nhật ký Giao dịch", icon: CheckSquare },
+  { href: "/admin/media", label: "Thư viện Media & Hình ảnh", icon: ImageIcon },
+  { href: "/admin/notifications", label: "Cấu hình Thông báo (Telegram)", icon: Bell },
   { href: "/admin/users", label: "Quản lý Người dùng", icon: Users },
   { href: "/admin/audit-logs", label: "Nhật ký Kiểm toán (Audit)", icon: ShieldAlert }
 ];

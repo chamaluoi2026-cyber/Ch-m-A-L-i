@@ -18,8 +18,15 @@ import {
   ExternalLink,
   ShieldCheck,
   Eye,
-  DollarSign
+  DollarSign,
+  Save,
+  Loader2,
+  Phone,
+  Sliders,
+  HelpCircle,
+  Info
 } from "lucide-react";
+import type { SiteSettings } from "@/lib/server-store";
 import { Button } from "@/components/ui/button";
 import {
   fetchAllPaymentsAction,
@@ -38,6 +45,52 @@ export default function AdminPaymentsPage() {
   const [refundReason, setRefundReason] = useState("");
   const [refundAmount, setRefundAmount] = useState<number | "">("");
   const [isPending, startTransition] = useTransition();
+  const [activeTab, setActiveTab] = useState<"transactions" | "vietqr">("transactions");
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>({
+    bankId: "VCB",
+    bankName: "Vietcombank",
+    bankAccountNumber: "1028899889",
+    bankAccountName: "HTX DU LICH CONG DONG A LUOI",
+    qrTemplate: "compact2",
+    contactPhone: "0905 000 118"
+  });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setSiteSettings(data.data);
+        }
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
+  const handleSaveBankSettings = async () => {
+    setIsSavingSettings(true);
+    setSaveSuccessMessage(null);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(siteSettings)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSaveSuccessMessage("Đã lưu cấu hình tài khoản ngân hàng & VietQR thành công!");
+        setTimeout(() => setSaveSuccessMessage(null), 5000);
+      } else {
+        alert(data.error || "Không thể lưu cấu hình.");
+      }
+    } catch {
+      alert("Lỗi kết nối máy chủ khi lưu cấu hình.");
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
 
   const loadData = () => {
     setLoading(true);
@@ -152,6 +205,35 @@ export default function AdminPaymentsPage() {
         </div>
       </div>
 
+      {/* Tab Switcher */}
+      <div className="flex items-center gap-2 border-b border-forest/10 pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab("transactions")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition ${
+            activeTab === "transactions"
+              ? "bg-forest text-white shadow-sm"
+              : "text-ink/70 hover:bg-beige hover:text-ink"
+          }`}
+        >
+          <CreditCard className="size-4" />
+          Danh sách Giao dịch & Dòng tiền
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("vietqr")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition ${
+            activeTab === "vietqr"
+              ? "bg-forest text-white shadow-sm"
+              : "text-ink/70 hover:bg-beige hover:text-ink"
+          }`}
+        >
+          <QrCode className="size-4" />
+          Cấu hình VietQR & Tài khoản thụ hưởng của Sàn
+        </button>
+      </div>
+
+      {activeTab === "transactions" && (<>
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 shadow-sm">
@@ -480,6 +562,206 @@ export default function AdminPaymentsPage() {
           </div>
         </div>
       )}
+
+      </>)}
+
+      {/* TAB 2: CẤU HÌNH VIETQR & TÀI KHOẢN NGÂN HÀNG THỤ HƯỞNG */}
+      {activeTab === "vietqr" && (
+        <div className="space-y-8">
+          {saveSuccessMessage && (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-emerald-800 flex items-center gap-2">
+              <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+              {saveSuccessMessage}
+            </div>
+          )}
+
+          <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-forest text-xs font-black uppercase tracking-wider mb-1">
+                <QrCode className="size-4" />
+                Tài khoản nhận tiền tổng của Sàn
+              </div>
+              <h2 className="text-xl font-black text-ink">Quản lý Tài khoản Ngân hàng & Mã VietQR</h2>
+              <p className="text-xs text-ink/70 mt-1 max-w-2xl leading-relaxed">
+                Mã QR này là <b>Tài khoản thanh toán chung của Sàn (Ban Quản Trị Chạm A Lưới)</b> dùng để thu tiền đặt tour và mua đặc sản từ du khách. Tiền sẽ chuyển thẳng 100% vào tài khoản này.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleSaveBankSettings}
+              disabled={isSavingSettings}
+              className="px-6 py-2.5 rounded-2xl bg-forest text-white text-xs font-bold hover:bg-forest/90 transition shadow flex items-center gap-2 disabled:opacity-50 self-start md:self-auto"
+            >
+              {isSavingSettings ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+              Lưu Cấu Hình VietQR
+            </button>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* Form cấu hình */}
+            <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 space-y-5">
+              <h3 className="text-sm font-black text-ink flex items-center gap-2">
+                <Sliders className="size-4 text-forest" />
+                Thông tin Tài khoản thụ hưởng
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5">Chọn Ngân hàng thụ hưởng *</label>
+                  <select
+                    value={siteSettings.bankId || "VCB"}
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      const banks: Record<string, string> = {
+                        VCB: "Vietcombank (Ngân hàng Ngoại thương)",
+                        BIDV: "BIDV (Đầu tư và Phát triển VN)",
+                        ICB: "VietinBank (Công thương Việt Nam)",
+                        VBA: "Agribank (Nông nghiệp & PTNT)",
+                        MB: "MBBank (Quân đội)",
+                        TCB: "Techcombank (Kỹ thương Việt Nam)",
+                        ACB: "ACB (Á Châu)",
+                        VPB: "VPBank (Việt Nam Thịnh Vượng)",
+                        TPB: "TPBank (Tiên Phong)",
+                        STB: "Sacombank (Sài Gòn Thương Tín)",
+                        HDB: "HDBank (Phát triển TP.HCM)",
+                        VIB: "VIB (Quốc tế)",
+                        LPB: "LPBank (Bưu điện Liên Việt)",
+                        MSB: "MSB (Hàng Hải)",
+                        OCB: "OCB (Phương Đông)",
+                        SHB: "SHB (Sài Gòn - Hà Nội)"
+                      };
+                      setSiteSettings((prev) => ({
+                        ...prev,
+                        bankId: selectedId,
+                        bankName: banks[selectedId] || selectedId
+                      }));
+                    }}
+                    className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-semibold text-ink focus:border-forest focus:outline-none"
+                  >
+                    <option value="VCB">Vietcombank (VCB)</option>
+                    <option value="BIDV">BIDV</option>
+                    <option value="ICB">VietinBank (ICB)</option>
+                    <option value="VBA">Agribank (VBA)</option>
+                    <option value="MB">MBBank (MB)</option>
+                    <option value="TCB">Techcombank (TCB)</option>
+                    <option value="ACB">ACB</option>
+                    <option value="VPB">VPBank</option>
+                    <option value="TPB">TPBank</option>
+                    <option value="STB">Sacombank</option>
+                    <option value="HDB">HDBank</option>
+                    <option value="VIB">VIB</option>
+                    <option value="LPB">LPBank</option>
+                    <option value="MSB">MSB</option>
+                    <option value="OCB">OCB</option>
+                    <option value="SHB">SHB</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5">Số tài khoản ngân hàng (Hoặc Số điện thoại mở tài khoản) *</label>
+                  <input
+                    type="text"
+                    value={siteSettings.bankAccountNumber || "1028899889"}
+                    onChange={(e) => setSiteSettings((prev) => ({ ...prev, bankAccountNumber: e.target.value.trim() }))}
+                    placeholder="Nhập số tài khoản hoặc số điện thoại (ví dụ: 0905123456)"
+                    className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-mono font-bold text-ink focus:border-forest focus:outline-none"
+                  />
+                  <p className="text-[10px] text-ink/50 mt-1">
+                    Nếu bạn dùng số điện thoại đăng ký tài khoản ngân hàng (như MBBank, Techcombank...), chỉ cần nhập số điện thoại vào ô này.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5">Tên chủ tài khoản (In hoa không dấu) *</label>
+                  <input
+                    type="text"
+                    value={siteSettings.bankAccountName || "HTX DU LICH CONG DONG A LUOI"}
+                    onChange={(e) => setSiteSettings((prev) => ({ ...prev, bankAccountName: e.target.value.toUpperCase() }))}
+                    placeholder="Ví dụ: NGUYEN VAN A hoặc HTX DU LICH CONG DONG A LUOI"
+                    className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-bold text-ink uppercase focus:border-forest focus:outline-none"
+                  />
+                  <p className="text-[10px] text-ink/50 mt-1">Tên chủ tài khoản khớp với thông tin đăng ký tại ngân hàng.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5 flex items-center gap-1.5">
+                    <Phone className="size-3.5 text-forest" />
+                    Số điện thoại / Zalo phụ trách thanh toán & đối soát
+                  </label>
+                  <input
+                    type="text"
+                    value={siteSettings.contactPhone || "0905 000 118"}
+                    onChange={(e) => setSiteSettings((prev) => ({ ...prev, contactPhone: e.target.value.trim() }))}
+                    placeholder="09xx xxx xxx"
+                    className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-bold text-ink focus:border-forest focus:outline-none"
+                  />
+                  <p className="text-[10px] text-ink/50 mt-1">Số điện thoại để du khách hoặc đối tác liên hệ khi cần hỗ trợ thanh toán.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-ink mb-1.5">Kiểu giao diện mã QR</label>
+                  <select
+                    value={siteSettings.qrTemplate || "compact2"}
+                    onChange={(e) => setSiteSettings((prev) => ({ ...prev, qrTemplate: e.target.value }))}
+                    className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-semibold text-ink focus:border-forest focus:outline-none"
+                  >
+                    <option value="compact2">Chuẩn VietQR Đầy đủ (Logo Napas + Tên ngân hàng + Số TK)</option>
+                    <option value="compact">Chuẩn VietQR Tối giản (Chỉ mã QR và số tiền)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-3">
+                <button
+                  type="button"
+                  onClick={handleSaveBankSettings}
+                  disabled={isSavingSettings}
+                  className="w-full py-3 rounded-2xl bg-forest text-white text-xs font-bold hover:bg-forest/90 transition shadow flex items-center justify-center gap-2"
+                >
+                  {isSavingSettings ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                  {isSavingSettings ? "Đang lưu..." : "Lưu Thay Đổi VietQR"}
+                </button>
+              </div>
+            </div>
+
+            {/* Live QR Preview */}
+            <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 flex flex-col items-center justify-center text-center space-y-4">
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                <Eye className="size-3.5" />
+                Mã VietQR Demo Trực Tiếp
+              </div>
+              <h4 className="text-sm font-black text-ink">Quét thử nghiệm bằng ứng dụng Ngân hàng</h4>
+              <p className="text-xs text-ink/70 max-w-xs leading-relaxed">
+                Mở app ngân hàng bất kỳ trên điện thoại và quét thử mã dưới đây để kiểm tra đúng tên chủ tài khoản thụ hưởng:
+              </p>
+
+              <div className="p-3 bg-white border-2 border-forest/20 rounded-2xl shadow-lg">
+                <img
+                  src={`https://img.vietqr.io/image/${siteSettings.bankId || "VCB"}-${siteSettings.bankAccountNumber || "1028899889"}-${siteSettings.qrTemplate || "compact2"}.png?amount=50000&addInfo=TEST%20CHAM%20A%20LUOI&accountName=${encodeURIComponent(siteSettings.bankAccountName || "HTX DU LICH CONG DONG A LUOI")}`}
+                  alt="Mã QR Demo"
+                  className="w-56 h-auto rounded-xl object-contain mx-auto"
+                />
+              </div>
+
+              <div className="text-xs text-ink/80 space-y-1">
+                <p className="font-bold text-forest">{siteSettings.bankName || "Vietcombank"}</p>
+                <p className="font-mono text-sm font-black tracking-wider text-ink">{siteSettings.bankAccountNumber || "1028899889"}</p>
+                <p className="font-bold text-xs text-clay uppercase">{siteSettings.bankAccountName || "HTX DU LICH CONG DONG A LUOI"}</p>
+                {siteSettings.contactPhone && (
+                  <p className="text-[11px] text-ink/60 mt-1">Hotline đối soát: <b>{siteSettings.contactPhone}</b></p>
+                )}
+              </div>
+
+              <div className="p-3.5 bg-beige/40 rounded-2xl border border-forest/10 text-left w-full text-[11px] text-ink/70 leading-relaxed">
+                <p className="font-bold text-forest mb-1">📌 Lưu ý phân biệt tài khoản:</p>
+                • <b>Tài khoản tại đây:</b> Là tài khoản tổng của Sàn Chạm A Lưới để nhận tiền từ du khách.<br />
+                • <b>Tài khoản của từng Cơ sở Homestay / Nghệ nhân:</b> Được cấu hình riêng tại mục <i>&quot;Doanh nghiệp & Cơ sở&quot;</i> để đối soát hoa hồng và chi trả doanh thu.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

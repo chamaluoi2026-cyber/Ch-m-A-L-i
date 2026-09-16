@@ -24,7 +24,8 @@ const ROUTE_PERMISSIONS: Array<{
   { prefix: "/admin/chat", allowedRoles: ["SUPER_ADMIN", "ADMIN", "SUPPORT", "SALES"] },
   { prefix: "/admin/reviews", allowedRoles: ["SUPER_ADMIN", "ADMIN", "SUPPORT", "CONTENT_MANAGER"] },
 
-  // System, Audit Logs & Users
+  // System, Audit Logs, Notifications & Users
+  { prefix: "/admin/notifications", allowedRoles: ["SUPER_ADMIN", "ADMIN"] },
   { prefix: "/admin/audit-logs", allowedRoles: ["SUPER_ADMIN", "ADMIN"] },
   { prefix: "/admin/users", allowedRoles: ["SUPER_ADMIN", "ADMIN"] },
   { prefix: "/admin/businesses", allowedRoles: ["SUPER_ADMIN", "ADMIN"] }
