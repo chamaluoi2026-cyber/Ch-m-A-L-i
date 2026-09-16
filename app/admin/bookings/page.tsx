@@ -108,17 +108,20 @@ export default function AdminBookingsPage() {
   const metrics = useMemo(() => {
     const todayStr = new Date().toISOString().split("T")[0];
     const total = bookings.length;
-    const todayCount = bookings.filter((b) => (b.bookingDate === todayStr || b.createdAt.startsWith(todayStr))).length;
+    const todayCount = bookings.filter((b) => (
+      (b.bookingDate && b.bookingDate.startsWith(todayStr)) ||
+      (b.createdAt && b.createdAt.startsWith(todayStr))
+    )).length;
     const pendingCount = bookings.filter((b) => (b.bookingStatus === "pending" || b.status === "pending")).length;
     const confirmedCount = bookings.filter((b) => (b.bookingStatus === "confirmed" || b.status === "confirmed")).length;
     const completedCount = bookings.filter((b) => (b.bookingStatus === "completed" || b.status === "completed")).length;
     const cancelledCount = bookings.filter((b) => (b.bookingStatus === "cancelled" || b.status === "cancelled")).length;
     const totalGMV = bookings
-      .filter((b) => b.status !== "cancelled")
-      .reduce((sum, b) => sum + (b.finalAmount || 0), 0);
+      .filter((b) => b.status !== "cancelled" && b.bookingStatus !== "cancelled")
+      .reduce((sum, b) => sum + (Number(b.finalAmount) || 0), 0);
     const totalCommission = bookings
-      .filter((b) => b.status !== "cancelled")
-      .reduce((sum, b) => sum + (b.commissionAmount || Math.round((b.finalAmount * (b.commissionRate || 10)) / 100)), 0);
+      .filter((b) => b.status !== "cancelled" && b.bookingStatus !== "cancelled")
+      .reduce((sum, b) => sum + (Number(b.commissionAmount) || Math.round(((Number(b.finalAmount) || 0) * (Number(b.commissionRate) || 10)) / 100)), 0);
 
     return {
       total,
@@ -136,19 +139,20 @@ export default function AdminBookingsPage() {
   const filtered = useMemo(() => {
     return bookings.filter((b) => {
       const matchType = activeTab === "all" || b.type === activeTab;
-      const curBookingSt = b.bookingStatus || b.status;
+      const curBookingSt = b.bookingStatus || b.status || "pending";
       const matchBookingSt = filterBookingStatus === "all" || curBookingSt === filterBookingStatus;
-      const matchPaymentSt = filterPaymentStatus === "all" || b.paymentStatus === filterPaymentStatus;
+      const curPaymentSt = b.paymentStatus || "unpaid";
+      const matchPaymentSt = filterPaymentStatus === "all" || curPaymentSt === filterPaymentStatus;
 
       const term = searchTerm.toLowerCase().trim();
       const matchSearch =
         term === "" ||
-        b.id.toLowerCase().includes(term) ||
-        b.customerName.toLowerCase().includes(term) ||
-        b.phone.includes(term) ||
-        b.itemTitle.toLowerCase().includes(term) ||
-        b.businessName.toLowerCase().includes(term) ||
-        (b.leadId && b.leadId.toLowerCase().includes(term));
+        Boolean(b.id && b.id.toLowerCase().includes(term)) ||
+        Boolean(b.customerName && b.customerName.toLowerCase().includes(term)) ||
+        Boolean(b.phone && String(b.phone).includes(term)) ||
+        Boolean(b.itemTitle && b.itemTitle.toLowerCase().includes(term)) ||
+        Boolean(b.businessName && b.businessName.toLowerCase().includes(term)) ||
+        Boolean(b.leadId && b.leadId.toLowerCase().includes(term));
 
       return matchType && matchBookingSt && matchPaymentSt && matchSearch;
     });
@@ -328,10 +332,18 @@ export default function AdminBookingsPage() {
                 </tr>
               ) : (
                 filtered.map((b) => {
-                  const curBookingSt = (b.bookingStatus || b.status) as BookingStatus;
-                  const curPaymentSt = b.paymentStatus as PaymentStatus;
-                  const bSt = bookingStatusConfig[curBookingSt] || { label: curBookingSt, badge: "bg-gray-100 text-gray-700" };
-                  const pSt = paymentStatusConfig[curPaymentSt] || { label: curPaymentSt, badge: "bg-gray-100 text-gray-700" };
+                  const curBookingSt = ((b.bookingStatus || b.status || "pending") as string).toLowerCase() as BookingStatus;
+                  const curPaymentSt = ((b.paymentStatus || "unpaid") as string).toLowerCase() as PaymentStatus;
+                  const bSt = bookingStatusConfig[curBookingSt] || { label: curBookingSt || "Chờ xác nhận", badge: "bg-amber-100 text-amber-800" };
+                  const pSt = paymentStatusConfig[curPaymentSt] || { label: curPaymentSt || "Chưa thanh toán", badge: "bg-stone-100 text-stone-700" };
+
+                  const displayDate = b.bookingDate 
+                    ? (b.bookingDate.includes("T") ? b.bookingDate.split("T")[0] : b.bookingDate)
+                    : (b.createdAt?.includes("T") ? b.createdAt.split("T")[0] : (b.createdAt || "Chưa xác định"));
+
+                  const experienceDateDisplay = b.experienceDate || b.startDate || "Linh hoạt / Tự túc";
+                  const finalAmountNum = Number(b.finalAmount) || 0;
+                  const commissionAmountNum = Number(b.commissionAmount);
 
                   return (
                     <tr key={b.id} className="hover:bg-beige/30 transition">
@@ -345,7 +357,7 @@ export default function AdminBookingsPage() {
                         </Link>
                         <div className="flex items-center gap-1 mt-1">
                           <span className="rounded bg-black/5 px-1.5 py-0.5 text-[10px] font-bold text-ink/70 uppercase">
-                            {b.type}
+                            {b.type || "tour"}
                           </span>
                           {b.leadId ? (
                             <Link
@@ -357,13 +369,13 @@ export default function AdminBookingsPage() {
                           ) : null}
                         </div>
                         <p className="text-[10px] text-ink/40 mt-1">
-                          Đặt: {b.bookingDate || b.createdAt.split("T")[0]}
+                          Đặt: {displayDate}
                         </p>
                       </td>
 
                       <td className="p-4">
-                        <p className="font-extrabold text-ink text-sm">{b.itemTitle}</p>
-                        <p className="text-[11px] text-ink/60 mt-0.5">{b.businessName}</p>
+                        <p className="font-extrabold text-ink text-sm">{b.itemTitle || "Dịch vụ du lịch"}</p>
+                        <p className="text-[11px] text-ink/60 mt-0.5">{b.businessName || "Chưa gán cơ sở"}</p>
                         {b.voucherCode || b.voucher ? (
                           <span className="inline-block mt-1 font-mono text-[10px] text-forest font-semibold">
                             Voucher: {b.voucher || b.voucherCode}
@@ -372,17 +384,17 @@ export default function AdminBookingsPage() {
                       </td>
 
                       <td className="p-4">
-                        <p className="font-extrabold text-ink">{b.customerName}</p>
-                        <p className="text-ink/70 font-mono mt-0.5">{b.phone}</p>
+                        <p className="font-extrabold text-ink">{b.customerName || "Khách hàng"}</p>
+                        <p className="text-ink/70 font-mono mt-0.5">{b.phone || "Chưa có SĐT"}</p>
                         {b.email ? <p className="text-[10px] text-ink/40">{b.email}</p> : null}
                       </td>
 
                       <td className="p-4">
                         <p className="font-bold text-ink flex items-center gap-1">
-                          <Calendar className="size-3 text-clay" /> {b.experienceDate || b.startDate}
+                          <Calendar className="size-3 text-clay" /> {experienceDateDisplay}
                         </p>
                         <p className="text-ink/60 mt-0.5">
-                          {b.numberOfPeople || b.quantity} {b.type === "product" ? "phần" : "người"}
+                          {b.numberOfPeople || b.quantity || 1} {b.type === "product" ? "phần" : "người"}
                         </p>
                         {b.experienceTime ? (
                           <p className="text-[10px] text-ink/40 mt-0.5">Giờ: {b.experienceTime}</p>
@@ -391,10 +403,10 @@ export default function AdminBookingsPage() {
 
                       <td className="p-4">
                         <p className="font-black text-forest text-sm">
-                          {b.finalAmount.toLocaleString("vi-VN")} đ
+                          {finalAmountNum.toLocaleString("vi-VN")} đ
                         </p>
                         <p className="text-[10px] text-clay font-medium mt-0.5">
-                          Hoa hồng: {b.commissionAmount ? b.commissionAmount.toLocaleString("vi-VN") + " đ" : (b.commissionRate || 10) + "%"}
+                          Hoa hồng: {!isNaN(commissionAmountNum) && commissionAmountNum > 0 ? commissionAmountNum.toLocaleString("vi-VN") + " đ" : (b.commissionRate || 10) + "%"}
                         </p>
                       </td>
 

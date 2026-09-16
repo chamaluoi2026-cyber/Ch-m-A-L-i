@@ -261,21 +261,21 @@ export default function AdminBookingDetailPage() {
             <div className="mt-4 space-y-2.5 text-xs">
               <div className="flex justify-between text-ink/70">
                 <span>Đơn giá niêm yết:</span>
-                <span className="font-bold text-ink">{booking.unitPrice.toLocaleString("vi-VN")} đ</span>
+                <span className="font-bold text-ink">{(Number(booking.unitPrice) || 0).toLocaleString("vi-VN")} đ</span>
               </div>
               <div className="flex justify-between text-ink/70">
                 <span>Tạm tính (Subtotal):</span>
-                <span className="font-bold text-ink">{booking.subtotal.toLocaleString("vi-VN")} đ</span>
+                <span className="font-bold text-ink">{(Number(booking.subtotal) || 0).toLocaleString("vi-VN")} đ</span>
               </div>
               {(booking.discount || booking.discountAmount) ? (
                 <div className="flex justify-between text-clay font-semibold">
                   <span>Ưu đãi Voucher ({booking.voucher || booking.voucherCode}):</span>
-                  <span>-{(booking.discount || booking.discountAmount || 0).toLocaleString("vi-VN")} đ</span>
+                  <span>-{(Number(booking.discount || booking.discountAmount) || 0).toLocaleString("vi-VN")} đ</span>
                 </div>
               ) : null}
               <div className="flex justify-between text-base font-black text-forest border-t border-black/5 pt-2">
                 <span>Tổng giá trị chốt (Final Amount):</span>
-                <span>{booking.finalAmount.toLocaleString("vi-VN")} đ</span>
+                <span>{(Number(booking.finalAmount) || 0).toLocaleString("vi-VN")} đ</span>
               </div>
 
               <div className="mt-3 rounded-2xl bg-emerald-50/70 border border-emerald-200/60 p-3.5 flex items-center justify-between text-emerald-950">
@@ -284,7 +284,7 @@ export default function AdminBookingDetailPage() {
                   <span className="text-[10px] text-emerald-700">Dùng cho đối soát định kỳ với cơ sở</span>
                 </div>
                 <span className="text-base font-black text-emerald-800">
-                  +{(booking.commissionAmount || Math.round((booking.finalAmount * (booking.commissionRate || 10)) / 100)).toLocaleString("vi-VN")} đ
+                  +{(Number(booking.commissionAmount) || Math.round(((Number(booking.finalAmount) || 0) * (Number(booking.commissionRate) || 10)) / 100)).toLocaleString("vi-VN")} đ
                 </span>
               </div>
             </div>
