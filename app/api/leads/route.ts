@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hcunfovtwbzfatudejfs.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjdW5mb3Z0d2J6ZmF0dWRlamZzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTM5NTM5OSwiZXhwIjoyMTA0OTcxMzk5fQ.7QwyRHqGXa6UwgbUNAhlWdmGZqpuS8Cxall2v8j7lMU';
 
-export async function fetchLeadsFromCloud(): Promise<LeadRecord[]> {
+async function fetchLeadsFromCloud(): Promise<LeadRecord[]> {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/system_store?id=eq.leads_store&select=data`, {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
@@ -32,7 +32,7 @@ export async function fetchLeadsFromCloud(): Promise<LeadRecord[]> {
   return [];
 }
 
-export async function saveLeadsToCloud(leads: LeadRecord[]): Promise<boolean> {
+async function saveLeadsToCloud(leads: LeadRecord[]): Promise<boolean> {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/system_store`, {
       method: "POST",
