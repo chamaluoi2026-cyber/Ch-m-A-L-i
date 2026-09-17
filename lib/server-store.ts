@@ -127,6 +127,9 @@ export type SiteSettings = {
   notificationEmail?: string;
   emailNotificationEnabled?: boolean;
 
+  // Cấu hình Trí tuệ nhân tạo (Google Gemini)
+  geminiApiKey?: string;
+
   updatedAt?: string;
 };
 
