@@ -65,23 +65,50 @@ export function AiReportModal({
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportKey, setReportKey] = useState(Date.now());
 
-  // Tải Gemini API key từ localStorage nếu có
+  const [cloudApiKeyLoaded, setCloudApiKeyLoaded] = useState(false);
+
+  // Tải Gemini API key từ Supabase Cloud (site_settings) hoặc fallback localStorage
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedKey = localStorage.getItem("cal_gemini_api_key");
-      if (savedKey) setApiKey(savedKey);
-    }
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        const s = data.settings || data.data;
+        if (s?.geminiApiKey?.trim()) {
+          setApiKey(s.geminiApiKey.trim());
+          setCloudApiKeyLoaded(true);
+        } else if (typeof window !== "undefined") {
+          const savedKey = localStorage.getItem("cal_gemini_api_key");
+          if (savedKey) setApiKey(savedKey);
+        }
+      })
+      .catch(() => {
+        if (typeof window !== "undefined") {
+          const savedKey = localStorage.getItem("cal_gemini_api_key");
+          if (savedKey) setApiKey(savedKey);
+        }
+      });
   }, []);
 
-  const handleSaveApiKey = (key: string) => {
-    setApiKey(key);
+  const handleSaveApiKey = async (key: string) => {
+    const trimmed = key.trim();
+    setApiKey(trimmed);
     if (typeof window !== "undefined") {
-      if (key.trim()) {
-        localStorage.setItem("cal_gemini_api_key", key.trim());
+      if (trimmed) {
+        localStorage.setItem("cal_gemini_api_key", trimmed);
       } else {
         localStorage.removeItem("cal_gemini_api_key");
       }
     }
+    // Tự động đồng bộ lên Database để mọi máy dùng chung
+    try {
+      await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ geminiApiKey: trimmed })
+      });
+      if (trimmed) setCloudApiKeyLoaded(true);
+      else setCloudApiKeyLoaded(false);
+    } catch {}
   };
 
   const activePrompt = customPrompt.trim() || PRESET_PROMPTS.find(p => p.id === selectedPreset)?.prompt || "";
@@ -177,7 +204,9 @@ export function AiReportModal({
                   title="Cấu hình Google Gemini API Key"
                 >
                   <Key className="size-3.5" />
-                  <span className="hidden md:inline">{apiKey.trim() ? "Gemini Key: Đã bật" : "Cấu hình Gemini"}</span>
+                  <span className="hidden md:inline">
+                    {apiKey.trim() ? (cloudApiKeyLoaded ? "Gemini Key: Đã kết nối Cloud" : "Gemini Key: Đã bật") : "Cấu hình Gemini"}
+                  </span>
                 </button>
 
                 <button
@@ -241,7 +270,7 @@ export function AiReportModal({
                     className="flex-1 min-w-[240px] px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white text-xs placeholder:text-white/40 focus:outline-none focus:border-emerald-400"
                   />
                   <span className="text-[11px] text-white/60">
-                    {apiKey ? "✓ Sẽ dùng trực tiếp Gemini 2.5 Flash" : "Để trống sẽ dùng Động cơ Phân tích Tự Động độc lập"}
+                    {apiKey ? (cloudApiKeyLoaded ? "✓ Đang dùng Gemini 2.5 Flash từ Cấu hình Hệ Thống (Supabase Cloud)" : "✓ Sẽ dùng trực tiếp Gemini 2.5 Flash") : "Để trống sẽ dùng Động cơ Phân tích Tự Động độc lập"}
                   </span>
                 </div>
               )}
