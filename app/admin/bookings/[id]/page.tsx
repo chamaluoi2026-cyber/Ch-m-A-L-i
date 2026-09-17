@@ -13,15 +13,18 @@ import {
   AlertCircle,
   ArrowLeft,
   Calendar,
+  Check,
   CheckCircle2,
   Clock,
   Copy,
   CreditCard,
   DollarSign,
   Download,
+  Edit3,
   ExternalLink,
   History,
   Info,
+  Layers,
   Mail,
   MapPin,
   MessageCircle,
@@ -33,12 +36,33 @@ import {
   Save,
   Share2,
   ShieldCheck,
+  Sliders,
   Sparkles,
   Ticket,
   User,
   Users,
+  X,
   XCircle
 } from "lucide-react";
+
+const VIETNAMESE_BANKS: { id: string; name: string; shortName: string }[] = [
+  { id: "MB", name: "MBBank - Ngân hàng Quân Đội", shortName: "MBBank" },
+  { id: "VCB", name: "Vietcombank - Ngoại thương Việt Nam", shortName: "Vietcombank" },
+  { id: "TCB", name: "Techcombank - Kỹ thương Việt Nam", shortName: "Techcombank" },
+  { id: "ICB", name: "VietinBank - Công thương Việt Nam", shortName: "VietinBank" },
+  { id: "BIDV", name: "BIDV - Đầu tư và Phát triển VN", shortName: "BIDV" },
+  { id: "ACB", name: "ACB - Á Châu", shortName: "ACB" },
+  { id: "VPB", name: "VPBank - Việt Nam Thịnh Vượng", shortName: "VPBank" },
+  { id: "TPB", name: "TPBank - Tiên Phong", shortName: "TPBank" },
+  { id: "STB", name: "Sacombank - Sài Gòn Thương Tín", shortName: "Sacombank" },
+  { id: "VBA", name: "Agribank - Nông nghiệp & PTNT", shortName: "Agribank" },
+  { id: "HDB", name: "HDBank - Phát triển TP.HCM", shortName: "HDBank" },
+  { id: "VIB", name: "VIB - Quốc Tế Việt Nam", shortName: "VIB" },
+  { id: "LPB", name: "LPBank - Lộc Phát Việt Nam", shortName: "LPBank" },
+  { id: "MSB", name: "MSB - Hàng Hải Việt Nam", shortName: "MSB" },
+  { id: "OCB", name: "OCB - Phương Đông", shortName: "OCB" },
+  { id: "SHB", name: "SHB - Sài Gòn - Hà Nội", shortName: "SHB" }
+];
 
 export default function AdminBookingDetailPage() {
   const params = useParams();
@@ -59,10 +83,35 @@ export default function AdminBookingDetailPage() {
   const [savingNote, setSavingNote] = useState(false);
   const [noteSavedMsg, setNoteSavedMsg] = useState(false);
 
-  // QR state
+  // QR & Bank state
+  const [bankId, setBankId] = useState("MB");
+  const [bankAccountNumber, setBankAccountNumber] = useState("");
+  const [bankAccountName, setBankAccountName] = useState("");
+  const [customQrImage, setCustomQrImage] = useState("");
+  const [isEditingBank, setIsEditingBank] = useState(false);
+  const [savingGlobalBank, setSavingGlobalBank] = useState(false);
+  const [globalBankSavedMsg, setGlobalBankSavedMsg] = useState(false);
+
   const [qrAmount, setQrAmount] = useState<number>(0);
   const [copiedQr, setCopiedQr] = useState(false);
+  const [copiedBankInfo, setCopiedBankInfo] = useState(false);
 
+  // 1. Tải cấu hình ngân hàng mặc định của hệ thống
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings) {
+          const s = data.settings;
+          if (s.bankId) setBankId(s.bankId);
+          if (s.bankAccountNumber) setBankAccountNumber(s.bankAccountNumber);
+          if (s.bankAccountName) setBankAccountName(s.bankAccountName);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // 2. Tải thông tin đơn booking từ Supabase Cloud
   function loadData() {
     if (!bookingId) return;
     setLoading(true);
@@ -198,6 +247,33 @@ export default function AdminBookingDetailPage() {
     setSavingNote(false);
   }
 
+  // Lưu tài khoản nhận tiền thực tế làm mặc định hệ thống
+  async function handleSaveBankAsDefault() {
+    setSavingGlobalBank(true);
+    try {
+      const selectedBank = VIETNAMESE_BANKS.find((b) => b.id === bankId);
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bankId: bankId,
+          bankName: selectedBank ? selectedBank.name : bankId,
+          bankAccountNumber: bankAccountNumber.trim(),
+          bankAccountName: bankAccountName.trim().toUpperCase()
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGlobalBankSavedMsg(true);
+        setTimeout(() => setGlobalBankSavedMsg(false), 3500);
+      }
+    } catch (e) {
+      console.error("Lỗi lưu tài khoản ngân hàng:", e);
+    } finally {
+      setSavingGlobalBank(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="py-24 text-center">
@@ -235,13 +311,19 @@ export default function AdminBookingDetailPage() {
   const commissionAmountNum = Number(booking.commissionAmount) || Math.round((finalAmountNum * commissionRateNum) / 100);
   const partnerPayout = Math.max(0, finalAmountNum - commissionAmountNum);
 
-  // VietQR generation
-  const bankId = "VCB";
-  const bankAcc = "1028899889";
-  const bankAccName = "HTX DU LICH CONG DONG A LUOI";
+  // Dynamic VietQR calculation based on real editable bank settings
+  const activeBank = VIETNAMESE_BANKS.find((b) => b.id === bankId) || VIETNAMESE_BANKS[0];
   const qrMemo = `BK ${booking.id} ${cleanPhone}`.trim();
   const currentQrAmount = qrAmount > 0 ? qrAmount : finalAmountNum;
-  const vietQrUrl = `https://img.vietqr.io/image/${bankId}-${bankAcc}-compact2.png?amount=${currentQrAmount}&addInfo=${encodeURIComponent(qrMemo)}&accountName=${encodeURIComponent(bankAccName)}`;
+  
+  // URL chuẩn VietQR Napas
+  const effectiveAccountNumber = bankAccountNumber.trim() || "0935391244";
+  const effectiveAccountName = bankAccountName.trim().toUpperCase() || "CHAM A LUOI";
+  const vietQrUrl = customQrImage.trim() 
+    ? customQrImage.trim() 
+    : `https://img.vietqr.io/image/${bankId}-${effectiveAccountNumber}-compact2.png?amount=${currentQrAmount}&addInfo=${encodeURIComponent(qrMemo)}&accountName=${encodeURIComponent(effectiveAccountName)}`;
+
+  const bankTransferText = `THÔNG TIN CHUYỂN KHOẢN ĐƠN ${booking.id}:\n- Ngân hàng: ${activeBank.name}\n- Số tài khoản: ${effectiveAccountNumber}\n- Chủ tài khoản: ${effectiveAccountName}\n- Số tiền: ${currentQrAmount.toLocaleString("vi-VN")} đ\n- Nội dung chuyển khoản: ${qrMemo}`;
 
   return (
     <div className="space-y-6 pb-20 print:p-0 print:space-y-4">
@@ -572,29 +654,160 @@ export default function AdminBookingDetailPage() {
             </div>
           </div>
 
-          {/* Quick VietQR Generator for this booking */}
+          {/* Quick VietQR Generator for this booking (THỰC TẾ & CHỈNH SỬA TÀI KHOẢN ĐƯỢC) */}
           <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 space-y-4">
             <div className="flex items-center justify-between border-b border-black/5 pb-4">
-              <h2 className="text-base font-extrabold text-ink flex items-center gap-2">
-                <QrCode className="size-4 text-forest" /> Mã VietQR Đơn này
-              </h2>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
-                Tự động tạo
-              </span>
+              <div className="flex items-center gap-2">
+                <QrCode className="size-4 text-forest" />
+                <h2 className="text-base font-extrabold text-ink">Mã VietQR Đơn này</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditingBank(!isEditingBank)}
+                className="inline-flex items-center gap-1 rounded-xl bg-forest/10 hover:bg-forest/20 text-forest px-3 py-1.5 text-xs font-bold transition"
+              >
+                <Edit3 className="size-3.5" />
+                {isEditingBank ? "Ẩn tùy chỉnh" : "Đổi tài khoản nhận tiền"}
+              </button>
             </div>
 
-            <div className="flex flex-col items-center justify-center p-3 bg-stone-50 rounded-2xl border border-black/5">
-              <img
-                src={vietQrUrl}
-                alt="VietQR Đơn đặt"
-                className="max-h-64 object-contain rounded-xl shadow-sm bg-white p-2"
-              />
-              <p className="font-mono text-xs font-bold text-forest mt-2">
-                {currentQrAmount.toLocaleString("vi-VN")} đ
-              </p>
-              <p className="text-[11px] text-ink/60 font-mono mt-0.5">
-                Cú pháp: {qrMemo}
-              </p>
+            {/* Thông báo nếu chưa có STK thật */}
+            {!bankAccountNumber.trim() && (
+              <div className="rounded-2xl bg-amber-50 border border-amber-200/80 p-3 text-xs text-amber-900 flex items-start gap-2">
+                <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Chưa thiết lập Số tài khoản thật!</p>
+                  <p className="mt-0.5 text-amber-800">
+                    Bấm <b>&ldquo;Đổi tài khoản nhận tiền&rdquo;</b> bên trên để nhập Ngân hàng & STK thực tế của bạn. Mã QR sẽ lập tức quét được tiền thật.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* FORM CHỈNH SỬA TÀI KHOẢN NGÂN HÀNG THỰC TẾ (NẰM TRỰC TIẾP TRÊN CARD) */}
+            {isEditingBank && (
+              <div className="p-4 rounded-2xl bg-[#F8F9FA] border border-black/10 space-y-3 text-xs animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-ink uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <Sliders className="size-3.5 text-forest" /> Cấu hình Tài khoản nhận tiền
+                  </span>
+                  <button onClick={() => setIsEditingBank(false)} className="text-ink/40 hover:text-ink">
+                    <X className="size-4" />
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-ink/70 mb-1">Ngân hàng thụ hưởng:</label>
+                  <select
+                    value={bankId}
+                    onChange={(e) => setBankId(e.target.value)}
+                    className="w-full rounded-xl border border-black/10 bg-white p-2 text-xs font-bold text-ink focus:ring-1 focus:ring-forest"
+                  >
+                    {VIETNAMESE_BANKS.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name} ({b.id})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-ink/70 mb-1">Số tài khoản (STK) *:</label>
+                    <input
+                      type="text"
+                      placeholder="Ví dụ: 0935391244..."
+                      value={bankAccountNumber}
+                      onChange={(e) => setBankAccountNumber(e.target.value.replace(/\s+/g, ""))}
+                      className="w-full rounded-xl border border-black/10 bg-white p-2 font-mono text-xs font-bold text-ink focus:ring-1 focus:ring-forest"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-ink/70 mb-1">Tên chủ tài khoản *:</label>
+                    <input
+                      type="text"
+                      placeholder="NGUYEN VAN A..."
+                      value={bankAccountName}
+                      onChange={(e) => setBankAccountName(e.target.value.toUpperCase())}
+                      className="w-full rounded-xl border border-black/10 bg-white p-2 font-mono text-xs font-bold text-ink uppercase focus:ring-1 focus:ring-forest"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-ink/70 mb-1">
+                    Hoặc dùng ảnh QR tĩnh có sẵn (Tùy chọn URL):
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://... ảnh QR của bạn"
+                    value={customQrImage}
+                    onChange={(e) => setCustomQrImage(e.target.value)}
+                    className="w-full rounded-xl border border-black/10 bg-white p-2 text-xs text-ink focus:ring-1 focus:ring-forest"
+                  />
+                </div>
+
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveBankAsDefault}
+                    disabled={savingGlobalBank || !bankAccountNumber.trim()}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-forest px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-forest/90 transition disabled:opacity-50"
+                  >
+                    <Save className="size-3.5" />
+                    {savingGlobalBank ? "Đang lưu..." : "Lưu làm mặc định toàn hệ thống"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingBank(false)}
+                    className="w-full sm:w-auto px-3 py-2 rounded-xl text-xs font-bold text-ink/70 hover:bg-black/5"
+                  >
+                    Áp dụng cho đơn này
+                  </button>
+                </div>
+
+                {globalBankSavedMsg && (
+                  <p className="text-emerald-700 font-bold text-[11px] flex items-center gap-1 pt-1">
+                    <CheckCircle2 className="size-3.5" /> Đã lưu tài khoản ngân hàng này làm mặc định cho toàn bộ website!
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* KHỐI HIỂN THỊ MÃ QR THỰC TẾ & THÔNG TIN CHUYỂN KHOẢN */}
+            <div className="flex flex-col items-center justify-center p-4 bg-stone-50 rounded-2xl border border-black/5">
+              <div className="relative group bg-white p-2.5 rounded-2xl shadow-sm border border-black/5">
+                <img
+                  src={vietQrUrl}
+                  alt={`VietQR ${effectiveAccountNumber}`}
+                  className="max-h-64 object-contain rounded-xl"
+                />
+              </div>
+
+              {/* Thông tin tài khoản thụ hưởng hiển thị rõ ràng */}
+              <div className="mt-3 w-full rounded-xl bg-white p-3 border border-black/5 text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-ink/60">Ngân hàng:</span>
+                  <span className="font-bold text-ink">{activeBank.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-ink/60">Số tài khoản:</span>
+                  <span className="font-mono font-bold text-forest text-sm">{effectiveAccountNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-ink/60">Chủ tài khoản:</span>
+                  <span className="font-mono font-bold text-ink uppercase">{effectiveAccountName}</span>
+                </div>
+                <div className="flex justify-between pt-1 border-t border-black/5">
+                  <span className="text-ink/60">Số tiền QR:</span>
+                  <span className="font-black text-forest">{currentQrAmount.toLocaleString("vi-VN")} đ</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-ink/60">Nội dung CK:</span>
+                  <span className="font-mono font-bold text-clay">{qrMemo}</span>
+                </div>
+              </div>
             </div>
 
             {/* QR Amount controls */}
@@ -631,7 +844,21 @@ export default function AdminBookingDetailPage() {
                 />
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
+              {/* Các nút sao chép & gửi nhanh */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(bankTransferText);
+                    setCopiedBankInfo(true);
+                    setTimeout(() => setCopiedBankInfo(false), 2500);
+                  }}
+                  className="inline-flex items-center justify-center gap-1 rounded-xl bg-forest/10 hover:bg-forest/20 text-forest py-2 px-2 text-xs font-bold transition text-center"
+                >
+                  <Copy className="size-3.5 shrink-0" />
+                  {copiedBankInfo ? "Đã chép nội dung!" : "Chép thông tin CK"}
+                </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -639,19 +866,20 @@ export default function AdminBookingDetailPage() {
                     setCopiedQr(true);
                     setTimeout(() => setCopiedQr(false), 2500);
                   }}
-                  className="w-full inline-flex items-center justify-center gap-1 rounded-xl bg-forest/10 hover:bg-forest/20 text-forest py-2 text-xs font-bold transition"
+                  className="inline-flex items-center justify-center gap-1 rounded-xl bg-forest/10 hover:bg-forest/20 text-forest py-2 px-2 text-xs font-bold transition text-center"
                 >
-                  <Copy className="size-3.5" />
-                  {copiedQr ? "Đã chép link QR!" : "Chép link ảnh QR"}
+                  <Share2 className="size-3.5 shrink-0" />
+                  {copiedQr ? "Đã chép link!" : "Chép link ảnh QR"}
                 </button>
+
                 <a
                   href={vietQrUrl}
                   target="_blank"
                   rel="noreferrer"
                   download={`vietqr-${booking.id}.png`}
-                  className="w-full inline-flex items-center justify-center gap-1 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 py-2 text-xs font-bold transition"
+                  className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 py-2.5 text-xs font-bold transition"
                 >
-                  <Download className="size-3.5" /> Tải ảnh QR
+                  <Download className="size-4" /> Tải ảnh mã QR về máy
                 </a>
               </div>
             </div>
