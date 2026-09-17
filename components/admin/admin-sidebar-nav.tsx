@@ -142,7 +142,10 @@ export function AdminSidebarNav({ initialBadges }: AdminSidebarNavProps) {
 
     async function fetchBadgeCounts() {
       try {
-        const res = await fetch("/api/admin/badge-counts", { cache: "no-store" });
+        let res = await fetch("/api/badge-counts", { cache: "no-store" });
+        if (!res.ok) {
+          res = await fetch("/api/admin/badge-counts", { cache: "no-store" });
+        }
         if (!res.ok) return;
         const data = await res.json();
         if (isMounted && data.success && data.badges) {
