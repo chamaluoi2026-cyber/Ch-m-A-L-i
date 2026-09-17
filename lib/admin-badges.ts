@@ -5,17 +5,25 @@ import {
   getAllReviews,
   getAllPayments,
   getNotifications,
+  getAllCommissions,
+  getAllTransactions,
+  getAllReconciliationBatches,
   type BookingRecord,
   type ChatSession
 } from "@/lib/server-store";
 import type { LeadRecord } from "@/lib/leads";
 
 export interface AdminBadgeCounts {
-  bookings: number;
-  leads: number;
   chat: number;
-  reviews: number;
+  leads: number;
+  bookings: number;
   payments: number;
+  reviews: number;
+  vouchers: number;
+  transactions: number;
+  commissions: number;
+  reconciliation: number;
+  orders: number;
   notifications: number;
 }
 
@@ -54,9 +62,13 @@ export async function getAdminSidebarBadgeCounts(): Promise<AdminBadgeCounts> {
   const reviews = getAllReviews ? getAllReviews() : [];
   const payments = getAllPayments ? getAllPayments() : [];
   const notifs = getNotifications ? getNotifications() : [];
+  const commissions = getAllCommissions ? getAllCommissions() : [];
+  const transactions = getAllTransactions ? getAllTransactions() : [];
+  const reconciliations = getAllReconciliationBatches ? getAllReconciliationBatches() : [];
 
   // Calculate counts
-  const pendingBookings = bookings.filter((b) => b.status === "pending").length;
+  const pendingBookings = bookings.filter((b) => b.status === "pending" && b.type !== "product").length;
+  const pendingOrders = bookings.filter((b) => b.status === "pending" && b.type === "product").length;
   const newLeads = leads.filter((l) => l.status === "new" && !l.isDeleted).length;
   const waitingChats = chats.filter(
     (c) => Boolean(c.unreadByAdmin) || Boolean((c as any).unreadCount && (c as any).unreadCount > 0) || (c as any).status === "waiting"
@@ -65,14 +77,28 @@ export async function getAdminSidebarBadgeCounts(): Promise<AdminBadgeCounts> {
   const pendingPayments = payments.filter(
     (p) => p.status === "PENDING" || p.status === "PROCESSING" || (p.status as string) === "pending"
   ).length;
+  const pendingCommissions = commissions.filter(
+    (c) => (c.status as string) === "pending" || (c.status as string) === "disputed"
+  ).length;
+  const pendingTransactions = transactions.filter(
+    (t) => t.status === "pending_reconciliation"
+  ).length;
+  const pendingReconciliation = reconciliations.filter(
+    (r) => (r.status as string) === "pending" || (r.status as string) === "waiting_approval"
+  ).length;
   const unreadNotifs = notifs.filter((n) => !n.isRead).length;
 
   return {
-    bookings: pendingBookings,
-    leads: newLeads,
     chat: waitingChats,
-    reviews: pendingReviews,
+    leads: newLeads,
+    bookings: pendingBookings,
+    orders: pendingOrders,
     payments: pendingPayments,
+    reviews: pendingReviews,
+    vouchers: 0,
+    transactions: pendingTransactions,
+    commissions: pendingCommissions,
+    reconciliation: pendingReconciliation,
     notifications: unreadNotifs
   };
 }

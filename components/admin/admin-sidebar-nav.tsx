@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
-  Bell,
   Building2,
   Calendar,
   CheckSquare,
@@ -45,7 +44,7 @@ const navItems: NavItem[] = [
     label: "Tư vấn & Live Chat",
     icon: Headphones,
     badgeKey: "chat",
-    badgeColor: "bg-teal-500 text-white",
+    badgeColor: "bg-teal-500 text-white font-bold",
     pulse: true
   },
   { href: "/admin/blogs", label: "Quản lý Blog", icon: FileText },
@@ -66,17 +65,13 @@ const navItems: NavItem[] = [
     badgeColor: "bg-rose-500 text-white font-extrabold shadow-sm",
     pulse: true
   },
-  { href: "/admin/orders", label: "Đơn tour & Sản phẩm", icon: Package },
   {
     href: "/admin/payments",
-    label: "Thanh toán & VietQR",
+    label: "Quản lý Thanh toán",
     icon: CreditCard,
     badgeKey: "payments",
     badgeColor: "bg-sky-500 text-white font-bold"
   },
-  { href: "/admin/commissions", label: "Đối soát Hoa hồng", icon: DollarSign },
-  { href: "/admin/reconciliation", label: "Trung tâm Quyết toán & Ký duyệt", icon: BarChart3 },
-  { href: "/admin/vouchers", label: "Kho Voucher", icon: Ticket },
   {
     href: "/admin/reviews",
     label: "Kiểm duyệt Đánh giá",
@@ -84,14 +79,41 @@ const navItems: NavItem[] = [
     badgeKey: "reviews",
     badgeColor: "bg-indigo-500 text-white font-bold"
   },
-  { href: "/admin/transactions", label: "Nhật ký Giao dịch", icon: CheckSquare },
-  { href: "/admin/media", label: "Thư viện Media & Hình ảnh", icon: ImageIcon },
   {
-    href: "/admin/notifications",
-    label: "Cấu hình Thông báo (Telegram)",
-    icon: Bell,
-    badgeKey: "notifications",
+    href: "/admin/vouchers",
+    label: "Kho Voucher",
+    icon: Ticket,
+    badgeKey: "vouchers",
+    badgeColor: "bg-purple-500 text-white font-bold"
+  },
+  {
+    href: "/admin/transactions",
+    label: "Nhật ký Giao dịch",
+    icon: CheckSquare,
+    badgeKey: "transactions",
+    badgeColor: "bg-emerald-600 text-white font-bold"
+  },
+  {
+    href: "/admin/commissions",
+    label: "Đối soát Hoa hồng",
+    icon: DollarSign,
+    badgeKey: "commissions",
+    badgeColor: "bg-yellow-500 text-slate-900 font-bold"
+  },
+  {
+    href: "/admin/reconciliation",
+    label: "Trung tâm Quyết toán & Ký duyệt",
+    icon: BarChart3,
+    badgeKey: "reconciliation",
     badgeColor: "bg-emerald-500 text-white font-bold"
+  },
+  { href: "/admin/media", label: "Media & Cấu hình Website", icon: ImageIcon },
+  {
+    href: "/admin/orders",
+    label: "Đơn tour & Sản phẩm",
+    icon: Package,
+    badgeKey: "orders",
+    badgeColor: "bg-rose-600 text-white font-bold"
   },
   { href: "/admin/users", label: "Quản lý Người dùng", icon: Users },
   { href: "/admin/audit-logs", label: "Nhật ký Kiểm toán (Audit)", icon: ShieldAlert }
@@ -101,11 +123,16 @@ export function AdminSidebarNav({ initialBadges }: AdminSidebarNavProps) {
   const pathname = usePathname();
   const [badges, setBadges] = useState<AdminBadgeCounts>(
     initialBadges || {
-      bookings: 0,
-      leads: 0,
       chat: 0,
-      reviews: 0,
+      leads: 0,
+      bookings: 0,
+      orders: 0,
       payments: 0,
+      reviews: 0,
+      vouchers: 0,
+      transactions: 0,
+      commissions: 0,
+      reconciliation: 0,
       notifications: 0
     }
   );
@@ -126,8 +153,8 @@ export function AdminSidebarNav({ initialBadges }: AdminSidebarNavProps) {
       }
     }
 
-    // Polling định kỳ mỗi 45 giây để cập nhật số lượng mới nhất
-    const interval = setInterval(fetchBadgeCounts, 45000);
+    // Polling định kỳ mỗi 30 giây để cập nhật số lượng mới nhất
+    const interval = setInterval(fetchBadgeCounts, 30000);
 
     // Cập nhật khi tab trình duyệt được active lại
     function handleVisibilityChange() {
@@ -161,13 +188,13 @@ export function AdminSidebarNav({ initialBadges }: AdminSidebarNavProps) {
             key={item.href}
             href={item.href}
             aria-current={isActive ? "page" : undefined}
-            className={`group relative flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
+            className={`group relative flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 ${
               isActive
-                ? "bg-emerald-500/20 text-white font-bold border-l-4 border-emerald-400 pl-2.5 shadow-sm"
-                : "text-white/75 hover:bg-white/10 hover:text-white"
+                ? "bg-emerald-500/20 text-white font-bold border-l-4 border-emerald-400 pl-2 shadow-sm"
+                : "text-white/80 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <div className="flex items-center gap-3 min-w-0 pr-2">
+            <div className="flex items-center gap-2.5 min-w-0 pr-1.5">
               <Icon
                 className={`size-4 shrink-0 transition-colors ${
                   isActive
@@ -183,7 +210,7 @@ export function AdminSidebarNav({ initialBadges }: AdminSidebarNavProps) {
                 className={`shrink-0 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] leading-none ${
                   item.badgeColor || "bg-emerald-500 text-white"
                 } ${item.pulse ? "animate-pulse" : ""}`}
-                title={`${count} mục cần xử lý`}
+                title={`${count} mục mới cần xử lý`}
               >
                 {displayCount}
               </span>
