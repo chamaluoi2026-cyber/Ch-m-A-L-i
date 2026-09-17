@@ -23,7 +23,7 @@ import {
   Ticket,
   Users
 } from "lucide-react";
-import type { AdminBadgeCounts } from "@/lib/admin-badges";
+import type { AdminBadgeCounts, AdminBadgeKey } from "@/lib/admin-badges";
 
 interface AdminSidebarNavProps {
   initialBadges?: AdminBadgeCounts;
@@ -33,7 +33,7 @@ export type NavItem = {
   href: string;
   label: string;
   icon: any;
-  badgeKey?: keyof AdminBadgeCounts;
+  badgeKey?: AdminBadgeKey;
   badgeColor?: string;
   pulse?: boolean;
 };
@@ -191,7 +191,7 @@ export function AdminSidebarNav({ initialBadges }: AdminSidebarNavProps) {
             ? pathname === "/admin"
             : pathname.startsWith(item.href);
 
-        const count = item.badgeKey ? badges[item.badgeKey] || 0 : 0;
+        const count = item.badgeKey ? (badges[item.badgeKey] as number) || 0 : 0;
         const displayCount = count > 99 ? "99+" : count.toString();
 
         return (

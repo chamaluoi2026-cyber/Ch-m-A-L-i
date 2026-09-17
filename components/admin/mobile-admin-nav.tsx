@@ -11,8 +11,11 @@ import {
   Home,
   LayoutDashboard,
   Menu,
-  X
+  X,
+  Volume2,
+  VolumeX
 } from "lucide-react";
+import { soundSynthesizer } from "@/lib/audio/notification-sound";
 import { AppImage } from "@/components/ui/app-image";
 import type { AdminBadgeCounts } from "@/lib/admin-badges";
 import type { SiteSettings } from "@/lib/server-store";
@@ -46,6 +49,16 @@ export function MobileAdminNav({
       notifications: 0
     }
   );
+  const [soundOn, setSoundOn] = useState(true);
+
+  useEffect(() => {
+    setSoundOn(soundSynthesizer.isEnabled());
+  }, []);
+
+  const handleToggleMobileSound = () => {
+    const next = soundSynthesizer.toggle();
+    setSoundOn(next);
+  };
 
   // Tự động đóng Drawer khi người dùng chuyển trang
   useEffect(() => {
@@ -127,7 +140,18 @@ export function MobileAdminNav({
           </Link>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          {/* Nút bật/tắt chuông nhanh trên điện thoại */}
+          <button
+            type="button"
+            onClick={handleToggleMobileSound}
+            title={soundOn ? "Đang bật chuông báo (bấm để tắt)" : "Đang tắt chuông (bấm để bật)"}
+            className="p-1.5 rounded-lg bg-white/10 text-white/80 hover:text-white transition active:scale-95"
+            aria-label="Bật tắt chuông báo"
+          >
+            {soundOn ? <Volume2 className="size-4 text-emerald-300" /> : <VolumeX className="size-4 text-white/40" />}
+          </button>
+
           {notificationsCount > 0 && (
             <span className="rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 text-[10px] font-bold">
               {notificationsCount} tin
@@ -198,7 +222,7 @@ export function MobileAdminNav({
                     ? pathname === "/admin"
                     : pathname.startsWith(item.href);
 
-                const count = item.badgeKey ? badges[item.badgeKey] || 0 : 0;
+                const count = item.badgeKey ? (badges[item.badgeKey] as number) || 0 : 0;
                 const displayCount = count > 99 ? "99+" : count.toString();
 
                 return (

@@ -6,6 +6,7 @@ import { getAdminSidebarBadgeCounts } from "@/lib/admin-badges";
 import { AppImage } from "@/components/ui/app-image";
 import { AdminSidebarNav } from "@/components/admin/admin-sidebar-nav";
 import { MobileAdminNav } from "@/components/admin/mobile-admin-nav";
+import { AdminAudioNotifier } from "@/components/admin/admin-audio-notifier";
 
 export const metadata = {
   title: "Quản trị hệ thống | Chạm A Lưới",
@@ -86,7 +87,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             <span className="text-forest font-bold">Hệ thống điều hành</span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* Chuông báo âm thanh Ding & Nhấp nháy tab khi có đơn mới */}
+            <AdminAudioNotifier />
+
             {notifications.length > 0 ? (
               <span className="rounded-full bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1 text-xs font-bold flex items-center gap-1.5 animate-pulse">
                 <span className="size-2 rounded-full bg-amber-500" />
