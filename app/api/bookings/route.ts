@@ -60,10 +60,19 @@ async function saveBookingsToCloud(bookings: BookingRecord[]): Promise<boolean> 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
     const userId = searchParams.get("userId");
     const customerView = searchParams.get("customerView");
 
     const all = await fetchBookingsFromCloud();
+
+    if (id) {
+      const found = all.find(b => b.id === id);
+      if (!found) {
+        return NextResponse.json({ success: false, error: "Không tìm thấy đơn đặt." }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, booking: found });
+    }
 
     if (userId || customerView) {
       const filtered = userId ? all.filter(b => b.customerId === userId || b.userId === userId) : all;

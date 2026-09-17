@@ -197,19 +197,41 @@ export async function updateBookingPaymentAction(
   }
 }
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hcunfovtwbzfatudejfs.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjdW5mb3Z0d2J6ZmF0dWRlamZzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTM5NTM5OSwiZXhwIjoyMTA0OTcxMzk5fQ.7QwyRHqGXa6UwgbUNAhlWdmGZqpuS8Cxall2v8j7lMU';
+
+async function getCloudBookings(): Promise<BookingRecord[]> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/system_store?id=eq.bookings_store&select=data`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+      cache: "no-store"
+    });
+    if (res.ok) {
+      const rows = await res.json();
+      if (Array.isArray(rows[0]?.data)) {
+        return rows[0].data as BookingRecord[];
+      }
+    }
+  } catch (e) {
+    console.error("[CLOUD_BOOKINGS_FETCH_ERR]", e);
+  }
+  return getAllBookings();
+}
+
 export async function fetchAllBookingsAction(): Promise<BookingRecord[]> {
   try {
     const session = await getSession();
+    const all = await getCloudBookings();
 
     // Data Isolation:
     // - Business chỉ xem đơn của cơ sở mình
     if (session && session.role === "BUSINESS" && session.businessId) {
-      return getAllBookings().filter((b) => b.businessId === session.businessId);
+      return all.filter((b) => b.businessId === session.businessId);
     }
 
     // - Customer chỉ xem đơn của mình
     if (session && session.role === "CUSTOMER") {
-      return getAllBookings().filter((b) => b.customerId === session.id || b.userId === session.id);
+      return all.filter((b) => b.customerId === session.id || b.userId === session.id);
     }
 
     // - Content Manager không có quyền xem booking khách
@@ -217,7 +239,7 @@ export async function fetchAllBookingsAction(): Promise<BookingRecord[]> {
       return [];
     }
 
-    return getAllBookings();
+    return all;
   } catch {
     return [];
   }
@@ -264,7 +286,11 @@ export async function fetchCustomerBookingsAction(clientUserId?: string): Promis
 export async function fetchBookingByIdAction(id: string): Promise<BookingRecord | null> {
   try {
     const session = await getSession();
-    const b = getBookingById(id);
+    let b: BookingRecord | null = getBookingById(id) || null;
+    if (!b) {
+      const cloudList = await getCloudBookings();
+      b = cloudList.find((item) => item.id === id) || null;
+    }
     if (!b) return null;
 
     // Data Isolation:
