@@ -30,6 +30,7 @@ import {
   XCircle
 } from "lucide-react";
 import { BookingDetailView } from "@/components/admin/booking-detail-view";
+import { ExportExcelDropdown } from "@/components/admin/export-excel-dropdown";
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
@@ -195,14 +196,7 @@ export default function AdminBookingsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2.5">
-          <a
-            href="/api/export?type=bookings"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-forest bg-white border border-forest/20 shadow-sm hover:bg-forest/5 hover:border-forest/40 transition"
-            title="Tải bảng tính Excel / CSV danh sách booking"
-          >
-            <Download className="size-3.5 text-emerald-600" />
-            <span>Xuất Excel</span>
-          </a>
+          <ExportExcelDropdown type="bookings" />
           <span className="rounded-2xl bg-forest/10 px-3.5 py-2 text-xs font-bold text-forest">
             {bookings.length} Booking toàn sàn
           </span>

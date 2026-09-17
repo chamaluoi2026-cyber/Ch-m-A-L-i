@@ -15,7 +15,9 @@ import {
   CloudRain,
   Home,
   ShoppingBag,
-  Compass
+  Compass,
+  Calendar,
+  Clock
 } from "lucide-react";
 
 interface AiReportModalProps {
@@ -60,10 +62,20 @@ export function AiReportModal({
   const [isOpen, setIsOpen] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [selectedPreset, setSelectedPreset] = useState("all");
+  const [selectedTimeRange, setSelectedTimeRange] = useState<string>("all");
   const [apiKey, setApiKey] = useState("");
   const [showKeyInput, setShowKeyInput] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportKey, setReportKey] = useState(Date.now());
+
+  const now = new Date();
+  const curY = now.getFullYear();
+  const curM = now.getMonth() + 1;
+  const prevDate = new Date(curY, curM - 2, 1);
+  const prevY = prevDate.getFullYear();
+  const prevM = prevDate.getMonth() + 1;
+  const currentQuarter = Math.floor((curM - 1) / 3) + 1;
+  const pad = (n: number) => String(n).padStart(2, "0");
 
   const [cloudApiKeyLoaded, setCloudApiKeyLoaded] = useState(false);
 
@@ -118,6 +130,7 @@ export function AiReportModal({
     if (activePrompt) params.set("prompt", activePrompt);
     if (selectedPreset) params.set("focus", selectedPreset);
     if (apiKey.trim()) params.set("apiKey", apiKey.trim());
+    if (selectedTimeRange && selectedTimeRange !== "all") params.set("timeRange", selectedTimeRange);
     if (download) params.set("download", "true");
     params.set("_t", reportKey.toString());
     return `/api/analytics/report?${params.toString()}`;
@@ -274,6 +287,37 @@ export function AiReportModal({
                   </span>
                 </div>
               )}
+
+              {/* Time Range Selector Bar */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 text-xs no-scrollbar border-b border-white/10">
+                <span className="text-amber-300/90 text-[11px] font-bold mr-1 shrink-0 flex items-center gap-1">
+                  <Calendar className="size-3" /> Kỳ đối soát:
+                </span>
+                {[
+                  { id: "all", label: "Toàn bộ thời gian" },
+                  { id: "this_month", label: `Tháng này (T${pad(curM)}/${curY})` },
+                  { id: "last_month", label: `Tháng trước (T${pad(prevM)}/${prevY})` },
+                  { id: "this_quarter", label: `Quý ${currentQuarter}/${curY}` }
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedTimeRange(t.id);
+                      setIsGenerating(true);
+                      setReportKey(Date.now());
+                      setTimeout(() => setIsGenerating(false), 1200);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+                      selectedTimeRange === t.id
+                        ? "bg-amber-400 text-[#06231C] shadow-sm font-bold"
+                        : "bg-white/10 text-white/80 hover:bg-white/20 hover:text-white"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
 
               {/* Preset Quick Focus Buttons */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">

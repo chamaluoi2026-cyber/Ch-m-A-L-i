@@ -42,29 +42,87 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || "bookings";
     const businessId = searchParams.get("businessId");
-    const month = searchParams.get("month"); // 'YYYY-MM' or 'all'
+    const timeRange = searchParams.get("timeRange") || "all";
+    const monthParam = searchParams.get("month"); // 'YYYY-MM' or undefined
+    const startDate = searchParams.get("startDate"); // 'YYYY-MM-DD'
+    const endDate = searchParams.get("endDate"); // 'YYYY-MM-DD'
+
+    // Xác định khoảng thời gian lọc
+    const now = new Date();
+    const curY = now.getFullYear();
+    const curM = now.getMonth() + 1; // 1-12
+    const pad = (n: number) => String(n).padStart(2, "0");
+
+    let targetMonth = monthParam && monthParam !== "all" ? monthParam : "";
+    let periodSuffix = "";
+
+    if (!targetMonth) {
+      if (timeRange === "this_month") {
+        targetMonth = `${curY}-${pad(curM)}`;
+        periodSuffix = `Thang-${pad(curM)}-${curY}`;
+      } else if (timeRange === "last_month") {
+        const prevDate = new Date(curY, curM - 2, 1);
+        const prevY = prevDate.getFullYear();
+        const prevM = prevDate.getMonth() + 1;
+        targetMonth = `${prevY}-${pad(prevM)}`;
+        periodSuffix = `Thang-${pad(prevM)}-${prevY}`;
+      } else if (timeRange === "this_quarter") {
+        const q = Math.floor((curM - 1) / 3) + 1;
+        periodSuffix = `Quy-${q}-${curY}`;
+      } else if (timeRange === "this_year") {
+        periodSuffix = `Nam-${curY}`;
+      } else if (startDate && endDate) {
+        periodSuffix = `${startDate}_den_${endDate}`;
+      } else {
+        periodSuffix = `Toan-Bo-${now.toISOString().split("T")[0]}`;
+      }
+    } else {
+      periodSuffix = `Thang-${targetMonth}`;
+    }
 
     const dateFilter = (dateStr?: string) => {
-      if (!month || month === "all" || !dateStr) return true;
-      return dateStr.startsWith(month);
+      if (!dateStr) return true;
+      const cleanDate = dateStr.split("T")[0];
+
+      if (targetMonth) {
+        return cleanDate.startsWith(targetMonth);
+      }
+
+      if (timeRange === "this_quarter") {
+        const q = Math.floor((curM - 1) / 3) + 1;
+        const qStartMonth = (q - 1) * 3 + 1;
+        const qEndMonth = q * 3;
+        const [yStr, mStr] = cleanDate.split("-");
+        const y = Number(yStr);
+        const m = Number(mStr);
+        return y === curY && m >= qStartMonth && m <= qEndMonth;
+      }
+
+      if (timeRange === "this_year") {
+        return cleanDate.startsWith(String(curY));
+      }
+
+      if (startDate && endDate) {
+        return cleanDate >= startDate && cleanDate <= endDate;
+      }
+
+      return true;
     };
 
     let filename = "";
     let headers: string[] = [];
     let rows: string[][] = [];
 
-    const todayStr = new Date().toISOString().split("T")[0];
-
     // 1. XUẤT BOOKINGS
     if (type === "bookings") {
-      filename = `ChamALuoi-Bookings-${todayStr}.csv`;
+      filename = `ChamALuoi-Bookings-${periodSuffix}.csv`;
       const cloudBookings = await fetchCloudStore<BookingRecord[]>("bookings_store");
       let list = cloudBookings || getAllBookings();
 
       if (businessId && businessId !== "all") {
         list = list.filter((b) => b.businessId === businessId || b.businessName === businessId);
       }
-      list = list.filter((b) => dateFilter(b.createdAt || b.startDate));
+      list = list.filter((b) => dateFilter(b.createdAt || b.startDate || b.bookingDate));
 
       headers = [
         "Mã Booking",
@@ -119,7 +177,7 @@ export async function GET(request: Request) {
 
     // 2. XUẤT LEADS (KHÁCH TƯ VẤN)
     else if (type === "leads") {
-      filename = `ChamALuoi-Leads-${todayStr}.csv`;
+      filename = `ChamALuoi-Leads-${periodSuffix}.csv`;
       const cloudLeads = await fetchCloudStore<LeadRecord[]>("leads_store");
       let list = cloudLeads || (getAllLeads ? getAllLeads() : []);
 
@@ -169,7 +227,7 @@ export async function GET(request: Request) {
 
     // 3. XUẤT GIAO DỊCH (TRANSACTIONS)
     else if (type === "transactions") {
-      filename = `ChamALuoi-Transactions-${todayStr}.csv`;
+      filename = `ChamALuoi-Transactions-${periodSuffix}.csv`;
       let list = getAllTransactions ? getAllTransactions() : [];
 
       if (businessId && businessId !== "all") {
@@ -211,7 +269,7 @@ export async function GET(request: Request) {
 
     // 4. XUẤT HOA HỒNG (COMMISSIONS)
     else if (type === "commissions") {
-      filename = `ChamALuoi-Commissions-${todayStr}.csv`;
+      filename = `ChamALuoi-Commissions-${periodSuffix}.csv`;
       let list = getAllCommissions ? getAllCommissions() : [];
 
       if (businessId && businessId !== "all") {

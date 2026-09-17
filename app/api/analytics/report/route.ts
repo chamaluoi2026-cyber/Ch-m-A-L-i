@@ -10,11 +10,19 @@ export async function GET(request: Request) {
     const prompt = searchParams.get("prompt") || undefined;
     const focus = searchParams.get("focus") || undefined;
     const apiKey = searchParams.get("apiKey") || undefined;
+    const timeRange = searchParams.get("timeRange") || undefined;
+    const month = searchParams.get("month") || undefined;
+    const startDate = searchParams.get("startDate") || undefined;
+    const endDate = searchParams.get("endDate") || undefined;
 
     const html = await generateDynamicAiReport({
       userPrompt: prompt,
       focusArea: focus,
-      apiKey: apiKey
+      apiKey: apiKey,
+      timeRange,
+      month,
+      startDate,
+      endDate
     });
 
     const todayStr = new Date().toISOString().split("T")[0];
@@ -23,7 +31,7 @@ export async function GET(request: Request) {
     };
 
     if (isDownload) {
-      headers["Content-Disposition"] = `attachment; filename="Bao-Cao-Chien-Luoc-Cham-A-Luoi-${todayStr}.html"`;
+      headers["Content-Disposition"] = `attachment; filename="Bao-Cao-Chien-Luoc-Cham-A-Luoi-${month || timeRange || todayStr}.html"`;
     }
 
     return new NextResponse(html, {
@@ -41,12 +49,16 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { prompt, focus, apiKey, isDownload } = body;
+    const { prompt, focus, apiKey, isDownload, timeRange, month, startDate, endDate } = body;
 
     const html = await generateDynamicAiReport({
       userPrompt: prompt,
       focusArea: focus,
-      apiKey: apiKey
+      apiKey: apiKey,
+      timeRange,
+      month,
+      startDate,
+      endDate
     });
 
     const todayStr = new Date().toISOString().split("T")[0];
@@ -55,7 +67,7 @@ export async function POST(request: Request) {
     };
 
     if (isDownload) {
-      headers["Content-Disposition"] = `attachment; filename="Bao-Cao-Chien-Luoc-Cham-A-Luoi-${todayStr}.html"`;
+      headers["Content-Disposition"] = `attachment; filename="Bao-Cao-Chien-Luoc-Cham-A-Luoi-${month || timeRange || todayStr}.html"`;
     }
 
     return new NextResponse(html, {

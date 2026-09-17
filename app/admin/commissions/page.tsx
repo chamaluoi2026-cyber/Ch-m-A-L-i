@@ -7,6 +7,7 @@ import { fetchAllBookingsAction } from "@/app/actions/bookings";
 import type { BookingRecord } from "@/lib/server-store";
 import type { TransactionRecord } from "@/lib/leads";
 import type { BusinessRecord } from "@/lib/server-store";
+import { ExportExcelDropdown } from "@/components/admin/export-excel-dropdown";
 import {
   CheckCircle2,
   Clock,
@@ -70,14 +71,7 @@ export default function AdminCommissionsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2.5">
-          <a
-            href="/api/export?type=commissions"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-forest bg-white border border-forest/20 shadow-sm hover:bg-forest/5 hover:border-forest/40 transition"
-            title="Tải bảng tính Excel / CSV đối soát hoa hồng"
-          >
-            <Download className="size-3.5 text-emerald-600" />
-            <span>Xuất Excel</span>
-          </a>
+          <ExportExcelDropdown type="commissions" />
         </div>
       </div>
 

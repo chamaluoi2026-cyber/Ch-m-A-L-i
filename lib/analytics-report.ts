@@ -42,6 +42,13 @@ export interface BusinessContext {
   pendingBookingsCount: number;
   aov: number;
   conversionRate: number;
+  periodLabel: string;
+  timeFilterParams: {
+    timeRange?: string;
+    month?: string;
+    startDate?: string;
+    endDate?: string;
+  };
   partnerStats: Array<{
     name: string;
     bookingsCount: number;
@@ -73,7 +80,17 @@ export interface BusinessContext {
   };
 }
 
-export async function extractBusinessContext(): Promise<BusinessContext> {
+export interface GenerateReportOptions {
+  userPrompt?: string;
+  focusArea?: string;
+  apiKey?: string;
+  timeRange?: string; // 'all' | 'this_month' | 'last_month' | 'this_quarter' | 'custom'
+  month?: string; // 'YYYY-MM'
+  startDate?: string;
+  endDate?: string;
+}
+
+export async function extractBusinessContext(options: GenerateReportOptions = {}): Promise<BusinessContext> {
   const [cloudBookings, cloudLeads, cloudChats, cloudSettings] = await Promise.all([
     fetchCloudStore<BookingRecord[]>("bookings_store"),
     fetchCloudStore<LeadRecord[]>("leads_store"),
@@ -81,12 +98,73 @@ export async function extractBusinessContext(): Promise<BusinessContext> {
     fetchCloudStore<SiteSettings>("site_settings")
   ]);
 
-  const bookings = cloudBookings || getAllBookings();
-  const leads = (cloudLeads || (getAllLeads ? getAllLeads() : [])).filter(l => !l.isDeleted);
-  const chats = (cloudChats || []) as ChatSession[];
+  // Xác định khoảng thời gian lọc
+  const now = new Date();
+  const curY = now.getFullYear();
+  const curM = now.getMonth() + 1; // 1-12
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  let targetMonth = options.month && options.month !== "all" ? options.month : "";
+  let periodLabel = "Toàn bộ thời gian";
+
+  if (!targetMonth) {
+    if (options.timeRange === "this_month") {
+      targetMonth = `${curY}-${pad(curM)}`;
+      periodLabel = `Tháng ${pad(curM)}/${curY}`;
+    } else if (options.timeRange === "last_month") {
+      const prevDate = new Date(curY, curM - 2, 1);
+      const prevY = prevDate.getFullYear();
+      const prevM = prevDate.getMonth() + 1;
+      targetMonth = `${prevY}-${pad(prevM)}`;
+      periodLabel = `Tháng ${pad(prevM)}/${prevY}`;
+    } else if (options.timeRange === "this_quarter") {
+      const q = Math.floor((curM - 1) / 3) + 1;
+      periodLabel = `Quý ${q}/${curY}`;
+    } else if (options.startDate && options.endDate) {
+      periodLabel = `Từ ${options.startDate} đến ${options.endDate}`;
+    }
+  } else {
+    periodLabel = `Tháng ${targetMonth}`;
+  }
+
+  const dateFilter = (dateStr?: string) => {
+    if (!dateStr) return true;
+    const cleanDate = dateStr.split("T")[0];
+
+    if (targetMonth) {
+      return cleanDate.startsWith(targetMonth);
+    }
+
+    if (options.timeRange === "this_quarter") {
+      const q = Math.floor((curM - 1) / 3) + 1;
+      const qStartMonth = (q - 1) * 3 + 1;
+      const qEndMonth = q * 3;
+      const [yStr, mStr] = cleanDate.split("-");
+      const y = Number(yStr);
+      const m = Number(mStr);
+      return y === curY && m >= qStartMonth && m <= qEndMonth;
+    }
+
+    if (options.startDate && options.endDate) {
+      return cleanDate >= options.startDate && cleanDate <= options.endDate;
+    }
+
+    return true;
+  };
+
+  const rawBookings = cloudBookings || getAllBookings();
+  const rawLeads = (cloudLeads || (getAllLeads ? getAllLeads() : [])).filter(l => !l.isDeleted);
+  const rawChats = (cloudChats || []) as ChatSession[];
   const settings = cloudSettings || null;
-  const transactions = getAllTransactions ? getAllTransactions() : [];
-  const commissions = getAllCommissions ? getAllCommissions() : [];
+  const rawTransactions = getAllTransactions ? getAllTransactions() : [];
+  const rawCommissions = getAllCommissions ? getAllCommissions() : [];
+
+  // Lọc theo thời gian
+  const bookings = rawBookings.filter(b => dateFilter(b.createdAt || b.bookingDate || b.startDate));
+  const leads = rawLeads.filter(l => dateFilter(l.createdAt));
+  const chats = rawChats.filter(c => dateFilter(c.updatedAt || c.messages?.[0]?.createdAt));
+  const transactions = rawTransactions.filter(t => dateFilter(t.confirmedAt || (t as any).createdAt));
+  const commissions = rawCommissions.filter(c => dateFilter(c.createdAt));
 
   let totalGMV = bookings.reduce((sum, b) => sum + (b.finalAmount || b.unitPrice || 0), 0);
   if (totalGMV === 0 && transactions.length > 0) {
@@ -152,7 +230,6 @@ export async function extractBusinessContext(): Promise<BusinessContext> {
   }));
 
   // Ngữ cảnh thời vụ A Lưới
-  const now = new Date();
   const currentMonth = now.getMonth() + 1;
   let seasonType = "Mùa Thu - Đông / Mùa Mưa Miền Trung";
   let weatherNote = "Thời tiết có mưa rải rác đến mưa lớn, nhiệt độ vùng cao A Lưới mát mẻ và se lạnh (18°C - 23°C), mây mù tạo cảnh quan săn mây tuyệt đẹp nhưng cần lưu ý đường trơn trượt.";
@@ -175,6 +252,13 @@ export async function extractBusinessContext(): Promise<BusinessContext> {
     pendingBookingsCount,
     aov,
     conversionRate,
+    periodLabel,
+    timeFilterParams: {
+      timeRange: options.timeRange,
+      month: targetMonth || options.month,
+      startDate: options.startDate,
+      endDate: options.endDate
+    },
     partnerStats: partnerStats.length > 0 ? partnerStats : [
       { name: "Homestay A Nôr Eco", bookingsCount: 4, revenue: 3200000, commission: 320000 },
       { name: "Khu du lịch Suối Pâr Le", bookingsCount: 3, revenue: 2100000, commission: 210000 },
@@ -189,12 +273,6 @@ export async function extractBusinessContext(): Promise<BusinessContext> {
       roadConditionNote
     }
   };
-}
-
-export interface GenerateReportOptions {
-  userPrompt?: string;
-  focusArea?: string;
-  apiKey?: string;
 }
 
 /**
@@ -776,7 +854,7 @@ function generateAutonomousReport(
       </div>
       <div class="btn-group">
         <button onclick="window.print()" class="btn btn-outline">🖨️ In Báo Cáo / Xuất PDF</button>
-        <a href="/api/export?type=bookings" class="btn">📥 Tải Bảng Excel Đối Soát</a>
+        <a href="/api/export?type=bookings&timeRange=${encodeURIComponent(context.timeFilterParams.timeRange || 'all')}&month=${encodeURIComponent(context.timeFilterParams.month || '')}" class="btn">📥 Tải Excel Đối Soát (${context.periodLabel})</a>
       </div>
     </div>
 
@@ -791,7 +869,8 @@ function generateAutonomousReport(
       </div>
 
       <div class="header-meta">
-        <span>📅 Thời điểm tạo: <strong>${timeStr}, ${dateStr}</strong></span>
+        <span>📅 Kỳ phân tích & đối soát: <strong>${context.periodLabel}</strong></span>
+        <span>⏱️ Thời điểm tạo: <strong>${timeStr}, ${dateStr}</strong></span>
         <span>🌤️ Thời vụ hiện tại: <strong>${context.seasonalContext.seasonType}</strong></span>
         <span>📍 Phạm vi: <strong>Toàn bộ mạng lưới Homestay & Dịch vụ A Lưới</strong></span>
       </div>
@@ -1086,7 +1165,7 @@ function generateAutonomousReport(
  * nếu chưa có key, sử dụng Bộ Phân Tích Động thích ứng cao cấp mà không đóng khung.
  */
 export async function generateDynamicAiReport(options: GenerateReportOptions = {}): Promise<string> {
-  const context = await extractBusinessContext();
+  const context = await extractBusinessContext(options);
 
   // Tìm kiếm Gemini API Key: từ options truyền vào -> từ SiteSettings -> từ biến môi trường
   const apiKey =
@@ -1145,6 +1224,8 @@ export function renderHtmlReport(data: any) {
     partnerStats: data.partnerStats || [],
     recentChatSnippets: [],
     leadInquiries: [],
+    periodLabel: "Toàn bộ thời gian",
+    timeFilterParams: {},
     seasonalContext: {
       currentMonth: new Date().getMonth() + 1,
       seasonType: "Mùa Thu - Đông / Mùa Mưa Miền Trung",
