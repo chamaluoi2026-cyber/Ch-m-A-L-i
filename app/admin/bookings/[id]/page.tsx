@@ -112,6 +112,16 @@ export default function AdminBookingDetailPage() {
   }, []);
 
   // 2. Tải thông tin đơn booking từ Supabase Cloud
+  function applyBookingData(b: BookingRecord) {
+    setBooking(b);
+    setNewBookingStatus(((b.bookingStatus || b.status || "pending") as string).toLowerCase() as BookingStatus);
+    setNewPaymentStatus(((b.paymentStatus || "unpaid") as string).toLowerCase() as PaymentStatus);
+    setRefundAmount(Number(b.finalAmount) || 0);
+    setBusinessNote(b.businessNote || "");
+    setQrAmount(Number(b.finalAmount) || 0);
+    setLoading(false);
+  }
+
   function loadData() {
     if (!bookingId) return;
     setLoading(true);
@@ -119,43 +129,77 @@ export default function AdminBookingDetailPage() {
     fetch(`/api/bookings?id=${bookingId}`, { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && data.booking) {
-          const b = data.booking;
-          setBooking(b);
-          setNewBookingStatus(((b.bookingStatus || b.status || "pending") as string).toLowerCase() as BookingStatus);
-          setNewPaymentStatus(((b.paymentStatus || "unpaid") as string).toLowerCase() as PaymentStatus);
-          setRefundAmount(Number(b.finalAmount) || 0);
-          setBusinessNote(b.businessNote || "");
-          setQrAmount(Number(b.finalAmount) || 0);
-          setLoading(false);
+        let b = data.booking;
+        if (!b && Array.isArray(data.bookings)) {
+          b = data.bookings.find((item: any) => item.id === bookingId);
+        }
+        if (b) {
+          applyBookingData(b);
           return;
         }
 
-        // Fallback to server action
-        fetchBookingByIdAction(bookingId).then((actionData) => {
-          setBooking(actionData);
-          if (actionData) {
-            setNewBookingStatus(((actionData.bookingStatus || actionData.status || "pending") as string).toLowerCase() as BookingStatus);
-            setNewPaymentStatus(((actionData.paymentStatus || "unpaid") as string).toLowerCase() as PaymentStatus);
-            setRefundAmount(Number(actionData.finalAmount) || 0);
-            setBusinessNote(actionData.businessNote || "");
-            setQrAmount(Number(actionData.finalAmount) || 0);
-          }
-          setLoading(false);
-        });
+        // Layer 2: Fetch all bookings directly from /api/bookings
+        fetch("/api/bookings", { cache: "no-store" })
+          .then((r) => r.json())
+          .then((allData) => {
+            if (Array.isArray(allData.bookings)) {
+              const matched = allData.bookings.find((item: any) => item.id === bookingId);
+              if (matched) {
+                applyBookingData(matched);
+                return;
+              }
+            }
+            // Layer 3: Server action
+            fetchBookingByIdAction(bookingId).then((actionData) => {
+              if (actionData) {
+                applyBookingData(actionData);
+              } else {
+                setBooking(null);
+                setLoading(false);
+              }
+            });
+          })
+          .catch(() => {
+            fetchBookingByIdAction(bookingId).then((actionData) => {
+              if (actionData) {
+                applyBookingData(actionData);
+              } else {
+                setBooking(null);
+                setLoading(false);
+              }
+            });
+          });
       })
       .catch(() => {
-        fetchBookingByIdAction(bookingId).then((actionData) => {
-          setBooking(actionData);
-          if (actionData) {
-            setNewBookingStatus(((actionData.bookingStatus || actionData.status || "pending") as string).toLowerCase() as BookingStatus);
-            setNewPaymentStatus(((actionData.paymentStatus || "unpaid") as string).toLowerCase() as PaymentStatus);
-            setRefundAmount(Number(actionData.finalAmount) || 0);
-            setBusinessNote(actionData.businessNote || "");
-            setQrAmount(Number(actionData.finalAmount) || 0);
-          }
-          setLoading(false);
-        });
+        fetch("/api/bookings", { cache: "no-store" })
+          .then((r) => r.json())
+          .then((allData) => {
+            if (Array.isArray(allData.bookings)) {
+              const matched = allData.bookings.find((item: any) => item.id === bookingId);
+              if (matched) {
+                applyBookingData(matched);
+                return;
+              }
+            }
+            fetchBookingByIdAction(bookingId).then((actionData) => {
+              if (actionData) {
+                applyBookingData(actionData);
+              } else {
+                setBooking(null);
+                setLoading(false);
+              }
+            });
+          })
+          .catch(() => {
+            fetchBookingByIdAction(bookingId).then((actionData) => {
+              if (actionData) {
+                applyBookingData(actionData);
+              } else {
+                setBooking(null);
+                setLoading(false);
+              }
+            });
+          });
       });
   }
 
