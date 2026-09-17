@@ -28,9 +28,11 @@ import {
   Users,
   XCircle
 } from "lucide-react";
+import { BookingDetailView } from "@/components/admin/booking-detail-view";
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<BookingRecord | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "tour" | "homestay" | "product">("all");
   const [filterBookingStatus, setFilterBookingStatus] = useState<string>("all");
   const [filterPaymentStatus, setFilterPaymentStatus] = useState<string>("all");
@@ -348,13 +350,15 @@ export default function AdminBookingsPage() {
                   return (
                     <tr key={b.id} className="hover:bg-beige/30 transition">
                       <td className="p-4">
-                        <Link
-                          href={`/admin/bookings/${b.id}`}
-                          className="font-mono font-black text-forest hover:underline text-sm flex items-center gap-1"
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBooking(b)}
+                          className="font-mono font-black text-forest hover:underline text-sm flex items-center gap-1 text-left"
+                          title="Bấm để xem chi tiết đơn tức thì"
                         >
                           {b.id}
                           <ExternalLink className="size-3 text-forest/50" />
-                        </Link>
+                        </button>
                         <div className="flex items-center gap-1 mt-1">
                           <span className="rounded bg-black/5 px-1.5 py-0.5 text-[10px] font-bold text-ink/70 uppercase">
                             {b.type || "tour"}
@@ -423,12 +427,24 @@ export default function AdminBookingsPage() {
                       </td>
 
                       <td className="p-4 text-right">
-                        <Link
-                          href={`/admin/bookings/${b.id}`}
-                          className="inline-flex items-center gap-1 rounded-xl bg-forest/10 px-3 py-1.5 text-xs font-bold text-forest hover:bg-forest/20 transition"
-                        >
-                          <Eye className="size-3.5" /> Chi tiết
-                        </Link>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedBooking(b)}
+                            className="inline-flex items-center gap-1 rounded-xl bg-forest px-3 py-1.5 text-xs font-bold text-white hover:bg-forest/90 transition shadow-sm"
+                            title="Xem chi tiết đơn tức thì"
+                          >
+                            <Eye className="size-3.5" /> Chi tiết
+                          </button>
+                          <Link
+                            href={`/admin/bookings/detail?id=${b.id}`}
+                            target="_blank"
+                            className="p-1.5 rounded-xl text-ink/40 hover:text-ink hover:bg-black/5 transition"
+                            title="Mở trang chi tiết trong tab mới"
+                          >
+                            <ExternalLink className="size-3.5" />
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -438,6 +454,23 @@ export default function AdminBookingsPage() {
           </table>
         </div>
       </div>
+      {/* Modal Popup Xem & Quản Lý Chi Tiết Booking Tức Thì */}
+      {selectedBooking && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-4 md:p-6 backdrop-blur-sm flex items-start justify-center animate-in fade-in">
+          <div className="relative w-full max-w-5xl rounded-3xl bg-white p-6 md:p-8 shadow-2xl border border-black/10 my-auto max-h-[92vh] overflow-y-auto">
+            <BookingDetailView
+              initialBooking={selectedBooking}
+              bookingId={selectedBooking.id}
+              isModal={true}
+              onClose={() => setSelectedBooking(null)}
+              onBookingUpdated={(updated) => {
+                setBookings((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+                setSelectedBooking(updated);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,59 +1,20 @@
 import Link from "next/link";
-import {
-  BarChart3,
-  Bell,
-  Building2,
-  CheckSquare,
-  CreditCard,
-  Calendar,
-  DollarSign,
-  FileText,
-  Headphones,
-  Home,
-  Image as ImageIcon,
-  LayoutDashboard,
-  MapPin,
-  MessageSquare,
-  Package,
-  Settings,
-  ShieldAlert,
-  Star,
-  Ticket,
-  Users
-} from "lucide-react";
+import { Building2, Home } from "lucide-react";
 import { ReactNode } from "react";
 import { getNotifications, getSiteSettings } from "@/lib/server-store";
+import { getAdminSidebarBadgeCounts } from "@/lib/admin-badges";
 import { AppImage } from "@/components/ui/app-image";
+import { AdminSidebarNav } from "@/components/admin/admin-sidebar-nav";
 
 export const metadata = {
   title: "Quản trị hệ thống | Chạm A Lưới",
   description: "Bảng điều khiển quản trị nền tảng kết nối du lịch cộng đồng Chạm A Lưới"
 };
 
-const adminNav = [
-  { href: "/admin", label: "Tổng quan Dashboard", icon: LayoutDashboard },
-  { href: "/admin/chat", label: "Tư vấn & Live Chat", icon: Headphones },
-  { href: "/admin/blogs", label: "Quản lý Blog", icon: FileText },
-  { href: "/admin/businesses", label: "Doanh nghiệp & Cơ sở", icon: Building2 },
-  { href: "/admin/places", label: "Quản lý Địa điểm", icon: MapPin },
-  { href: "/admin/leads", label: "Quản lý Leads", icon: MessageSquare },
-  { href: "/admin/bookings", label: "Quản lý Bookings", icon: Calendar },
-  { href: "/admin/orders", label: "Đơn tour & Sản phẩm", icon: Package },
-  { href: "/admin/payments", label: "Thanh toán & VietQR", icon: CreditCard },
-  { href: "/admin/commissions", label: "Đối soát Hoa hồng", icon: DollarSign },
-  { href: "/admin/reconciliation", label: "Trung tâm Quyết toán & Ký duyệt", icon: BarChart3 },
-  { href: "/admin/vouchers", label: "Kho Voucher", icon: Ticket },
-  { href: "/admin/reviews", label: "Kiểm duyệt Đánh giá", icon: Star },
-  { href: "/admin/transactions", label: "Nhật ký Giao dịch", icon: CheckSquare },
-  { href: "/admin/media", label: "Thư viện Media & Hình ảnh", icon: ImageIcon },
-  { href: "/admin/notifications", label: "Cấu hình Thông báo (Telegram)", icon: Bell },
-  { href: "/admin/users", label: "Quản lý Người dùng", icon: Users },
-  { href: "/admin/audit-logs", label: "Nhật ký Kiểm toán (Audit)", icon: ShieldAlert }
-];
-
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({ children }: { children: ReactNode }) {
   const notifications = getNotifications().filter((n) => !n.isRead);
   const siteSettings = getSiteSettings();
+  const initialBadges = await getAdminSidebarBadgeCounts();
 
   return (
     <div className="min-h-screen bg-[#F4F6F5] text-ink flex flex-col md:flex-row">
@@ -82,22 +43,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </span>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="p-3 space-y-1" aria-label="Menu Quản trị">
-            {adminNav.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-white/80 hover:bg-white/10 hover:text-white transition"
-                >
-                  <Icon className="size-4 shrink-0 text-emerald-400" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
+          {/* Navigation Links with Live Badges */}
+          <AdminSidebarNav initialBadges={initialBadges} />
         </div>
 
         {/* Bottom links */}
