@@ -15,6 +15,7 @@ import {
   Users
 } from "lucide-react";
 import { getAdminMetrics, getAllLeads, getAllTransactions, getAllBusinesses } from "@/lib/server-store";
+import { AiReportModal } from "@/components/admin/ai-report-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,7 @@ export default function AdminDashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2.5">
+          <AiReportModal buttonText="✨ Phân tích AI & Báo cáo HTML" />
           <Link
             href="/admin/commissions"
             className="rounded-xl bg-forest px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-forest/90 transition flex items-center gap-2"

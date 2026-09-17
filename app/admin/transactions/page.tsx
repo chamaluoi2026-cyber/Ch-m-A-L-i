@@ -1,5 +1,5 @@
 import { getAllTransactions } from "@/lib/server-store";
-import { CheckCircle2, Clock, DollarSign, FileCheck } from "lucide-react";
+import { CheckCircle2, Clock, DollarSign, Download, FileCheck } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,14 @@ export default function AdminTransactionsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <a
+            href="/api/export?type=transactions"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-forest bg-white border border-forest/20 shadow-sm hover:bg-forest/5 hover:border-forest/40 transition mr-1"
+            title="Tải bảng tính Excel / CSV nhật ký giao dịch"
+          >
+            <Download className="size-3.5 text-emerald-600" />
+            <span>Xuất Excel</span>
+          </a>
           <div className="text-right">
             <p className="text-[10px] uppercase font-bold text-ink/40">Tổng doanh thu</p>
             <p className="text-base font-black text-ink">{totalRevenue.toLocaleString("vi-VN")}đ</p>

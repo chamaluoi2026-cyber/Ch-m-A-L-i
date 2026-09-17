@@ -17,6 +17,7 @@ import {
 } from "@/app/actions/commission";
 import { fetchBusinessesAction } from "@/app/actions/business";
 import { getPlacesAction } from "@/app/actions/upload";
+import { AiReportModal } from "@/components/admin/ai-report-modal";
 import {
   AlertCircle,
   AlertTriangle,
@@ -365,6 +366,9 @@ export default function AdminReconciliationPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* AI Analytics Button */}
+          <AiReportModal buttonText="✨ Phân tích AI & Báo cáo HTML" />
+
           {/* Export Excel / CSV button (Yêu cầu 10) */}
           <a
             href={`/api/reconciliation/export?businessId=${selectedBusiness}&placeId=${selectedPlace}&status=${selectedStatus}`}

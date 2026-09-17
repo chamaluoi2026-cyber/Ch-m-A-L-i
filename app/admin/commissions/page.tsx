@@ -69,6 +69,16 @@ export default function AdminCommissionsPage() {
             Ghi nhận hoa hồng giới thiệu từ voucher, tính toán tự động và đối soát định kỳ với doanh nghiệp đối tác
           </p>
         </div>
+        <div className="flex items-center gap-2.5">
+          <a
+            href="/api/export?type=commissions"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-forest bg-white border border-forest/20 shadow-sm hover:bg-forest/5 hover:border-forest/40 transition"
+            title="Tải bảng tính Excel / CSV đối soát hoa hồng"
+          >
+            <Download className="size-3.5 text-emerald-600" />
+            <span>Xuất Excel</span>
+          </a>
+        </div>
       </div>
 
       {/* Marketing Attribution & Conversion Overview (Yêu cầu 8) */}
