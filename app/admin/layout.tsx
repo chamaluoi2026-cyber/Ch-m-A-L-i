@@ -5,6 +5,7 @@ import { getNotifications, getSiteSettings } from "@/lib/server-store";
 import { getAdminSidebarBadgeCounts } from "@/lib/admin-badges";
 import { AppImage } from "@/components/ui/app-image";
 import { AdminSidebarNav } from "@/components/admin/admin-sidebar-nav";
+import { MobileAdminNav } from "@/components/admin/mobile-admin-nav";
 
 export const metadata = {
   title: "Quản trị hệ thống | Chạm A Lưới",
@@ -18,8 +19,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <div className="min-h-screen bg-[#F4F6F5] text-ink flex flex-col md:flex-row">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-[#0F382E] text-white flex-shrink-0 flex flex-col justify-between">
+      {/* Mobile Navigation (Top Sticky Bar, Slide-in Drawer & Bottom Finger Navigation) */}
+      <MobileAdminNav
+        siteSettings={siteSettings}
+        initialBadges={initialBadges}
+        notificationsCount={notifications.length}
+      />
+
+      {/* Desktop Sidebar (Only visible on md screens and up) */}
+      <aside className="hidden md:flex md:w-64 bg-[#0F382E] text-white flex-shrink-0 flex-col justify-between">
         <div>
           {/* Brand header */}
           <div className="p-5 border-b border-white/10 flex items-center justify-between">
@@ -70,8 +78,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header */}
-        <header className="h-16 bg-white border-b border-black/5 px-6 flex items-center justify-between shadow-sm">
+        {/* Desktop Top Header (Hidden on Mobile because MobileAdminNav handles top bar) */}
+        <header className="hidden md:flex h-16 bg-white border-b border-black/5 px-6 items-center justify-between shadow-sm">
           <div className="flex items-center gap-2 text-xs font-semibold text-ink/60">
             <span>Khu vực Quản trị</span>
             <span>/</span>
@@ -98,8 +106,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 p-6 md:p-8 overflow-y-auto">{children}</main>
+        {/* Page Content with bottom padding pb-24 for mobile bottom nav bar */}
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto pb-24 md:pb-8">{children}</main>
       </div>
     </div>
   );

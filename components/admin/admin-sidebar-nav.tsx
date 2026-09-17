@@ -29,7 +29,7 @@ interface AdminSidebarNavProps {
   initialBadges?: AdminBadgeCounts;
 }
 
-type NavItem = {
+export type NavItem = {
   href: string;
   label: string;
   icon: any;
@@ -38,7 +38,7 @@ type NavItem = {
   pulse?: boolean;
 };
 
-const navItems: NavItem[] = [
+export const navItems: NavItem[] = [
   { href: "/admin", label: "Tổng quan Dashboard", icon: LayoutDashboard },
   {
     href: "/admin/chat",

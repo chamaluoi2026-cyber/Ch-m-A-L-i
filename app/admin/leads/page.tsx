@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Download,
   ExternalLink,
   Eye,
   Filter,
@@ -163,7 +164,15 @@ export default function AdminLeadsPage() {
             Theo dõi hành trình tư vấn từ khách hàng website, phân công cơ sở, chốt đơn đến chuyển đổi Booking
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          <a
+            href="/api/export?type=leads"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl text-xs font-bold text-forest bg-white border border-forest/20 shadow-sm hover:bg-forest/5 hover:border-forest/40 transition"
+            title="Tải bảng tính Excel / CSV danh sách Lead khách tư vấn"
+          >
+            <Download className="size-3.5 text-emerald-600" />
+            <span>Xuất Excel</span>
+          </a>
           <div className="bg-beige rounded-2xl p-1 flex items-center border border-black/5">
             <button
               type="button"

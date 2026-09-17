@@ -14,6 +14,7 @@ import {
   Clock,
   CreditCard,
   DollarSign,
+  Download,
   ExternalLink,
   Eye,
   Filter,
@@ -193,9 +194,19 @@ export default function AdminBookingsPage() {
             Theo dõi vòng đời booking, tình trạng đặt cọc/thanh toán VietQR, doanh số GMV và hoa hồng dịch vụ
           </p>
         </div>
-        <span className="rounded-2xl bg-forest/10 px-3.5 py-2 text-xs font-bold text-forest">
-          {bookings.length} Booking toàn sàn
-        </span>
+        <div className="flex items-center gap-2.5">
+          <a
+            href="/api/export?type=bookings"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-forest bg-white border border-forest/20 shadow-sm hover:bg-forest/5 hover:border-forest/40 transition"
+            title="Tải bảng tính Excel / CSV danh sách booking"
+          >
+            <Download className="size-3.5 text-emerald-600" />
+            <span>Xuất Excel</span>
+          </a>
+          <span className="rounded-2xl bg-forest/10 px-3.5 py-2 text-xs font-bold text-forest">
+            {bookings.length} Booking toàn sàn
+          </span>
+        </div>
       </div>
 
       {/* Dashboard KPI Cards (Yêu cầu 4) */}
