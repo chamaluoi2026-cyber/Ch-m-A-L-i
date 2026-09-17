@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  Bell,
   Building2,
   Calendar,
   CheckSquare,
@@ -108,6 +109,13 @@ const navItems: NavItem[] = [
     badgeColor: "bg-emerald-500 text-white font-bold"
   },
   { href: "/admin/media", label: "Media & Cấu hình Website", icon: ImageIcon },
+  {
+    href: "/admin/notifications",
+    label: "Cấu hình Thông báo (Telegram)",
+    icon: Bell,
+    badgeKey: "notifications",
+    badgeColor: "bg-emerald-500 text-white font-bold"
+  },
   {
     href: "/admin/orders",
     label: "Đơn tour & Sản phẩm",
