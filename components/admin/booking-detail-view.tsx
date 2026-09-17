@@ -99,6 +99,13 @@ export function BookingDetailView({
   const [copiedQr, setCopiedQr] = useState(false);
   const [copiedBankInfo, setCopiedBankInfo] = useState(false);
 
+  // Zalo Confirmation Modal states (Phương án A)
+  const [showZaloModal, setShowZaloModal] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<"confirmed" | "payment" | "guide">("confirmed");
+  const [customMessage, setCustomMessage] = useState("");
+  const [copiedMessage, setCopiedMessage] = useState(false);
+  const [statusUpdatedSuccess, setStatusUpdatedSuccess] = useState(false);
+
   // 1. Tải cấu hình ngân hàng mặc định của hệ thống
   useEffect(() => {
     fetch("/api/settings")
@@ -171,6 +178,90 @@ export function BookingDetailView({
       });
   }, [bookingId, initialBooking]);
 
+  function generateZaloTemplate(type: "confirmed" | "payment" | "guide") {
+    if (!booking) return "";
+    const name = booking.customerName || "Quý khách";
+    const service = booking.itemTitle || "Dịch vụ du lịch A Lưới";
+    const typeLabel = booking.type === "homestay" ? "Homestay / Phòng" : booking.type === "product" ? "Đặc sản" : "Tour trọn gói";
+    const dateStr = booking.experienceDate ? new Date(booking.experienceDate).toLocaleDateString("vi-VN") : "Linh hoạt / Tự túc";
+    const timeStr = booking.experienceTime ? " (" + booking.experienceTime + ")" : "";
+    const qty = booking.numberOfPeople || booking.quantity || 1;
+    const qtyUnit = booking.type === "product" ? "phần" : "người";
+    const total = (Number(booking.finalAmount) || 0).toLocaleString("vi-VN");
+    const activeBank = VIETNAMESE_BANKS.find((b) => b.id === bankId) || VIETNAMESE_BANKS[0];
+    const accNum = bankAccountNumber.trim() || "0935391244";
+    const accName = (bankAccountName.trim() || "HOANG MINH QUAN").toUpperCase();
+    const memo = ("BK " + booking.id + " " + (booking.phone || "").replace(/[^0-9]/g, "")).trim();
+    const depositAmount = Math.round((Number(booking.finalAmount) || 0) * 0.3).toLocaleString("vi-VN");
+
+    if (type === "confirmed") {
+      return `Chào ${name},
+
+🌿 DU LỊCH CỘNG ĐỒNG CHẠM A LƯỚI xin thông báo: Đơn đặt của Anh/Chị đã được DUYỆT & XÁC NHẬN THÀNH CÔNG!
+
+📌 Mã đơn đặt: ${booking.id}
+✨ Dịch vụ: ${service} (${typeLabel})
+🏡 Cơ sở phục vụ: ${booking.businessName || "Đối tác du lịch Chạm A Lưới"}
+📅 Thời gian: ${dateStr}${timeStr}
+👥 Số lượng: ${qty} ${qtyUnit}
+💰 Tổng chi phí: ${total} đ
+💳 Trạng thái: ${booking.paymentStatus === "paid" ? "Đã thanh toán đủ 100%" : booking.paymentStatus === "partially_paid" ? "Đã đặt cọc" : "Thanh toán khi nhận dịch vụ / COD"}
+
+📍 Điểm đón tiếp & Hỗ trợ: Huyện A Lưới, Tỉnh Thừa Thiên Huế
+📞 Hotline điều hành & Hỗ trợ 24/7: 0772 422 472
+
+Chạm A Lưới rất vinh hạnh được đồng hành cùng Anh/Chị. Chúc Anh/Chị có một hành trình trải nghiệm thật tuyệt vời cùng bà con bản địa!`;
+    }
+
+    if (type === "payment") {
+      return `Chào ${name},
+
+Chạm A Lưới đã tiếp nhận đơn đặt ${booking.id} (${service}).
+Để hoàn tất thủ tục giữ chỗ cho ngày ${dateStr}, Anh/Chị vui lòng chuyển khoản thanh toán / đặt cọc theo thông tin chính thức của HTX:
+
+🏦 Ngân hàng: ${activeBank.name}
+💳 Số tài khoản: ${accNum}
+👤 Chủ tài khoản: ${accName}
+💵 Số tiền cọc 30%: ${depositAmount} đ (Hoặc thanh toán 100%: ${total} đ)
+📝 Nội dung chuyển khoản: ${memo}
+
+Sau khi chuyển khoản thành công, Anh/Chị gửi lại ảnh chụp giao dịch tại Zalo này, hệ thống sẽ xác nhận ngay lập tức!
+📞 Hotline hỗ trợ: 0772 422 472`;
+    }
+
+    if (type === "guide") {
+      return `Chào ${name},
+
+Để chuyến trải nghiệm ${service} tại A Lưới vào ngày ${dateStr} được trọn vẹn và an toàn nhất, Chạm A Lưới xin dặn dò một số lưu ý:
+1. 🧥 Khí hậu A Lưới trong lành, ban đêm và sáng sớm se lạnh: Quý khách nên mang theo 1 áo khoác mỏng hoặc áo ấm.
+2. 👟 Giày dép: Nên chuẩn bị giày thể thao hoặc dép quai hậu chống trơn trượt để thuận tiện đi suối/thác và làng bản.
+3. 🏡 Điểm đón: ${booking.businessName || "Huyện A Lưới, Thừa Thiên Huế"}.
+
+📞 Hotline dẫn đường & Hỗ trợ: 0772 422 472. Hẹn gặp Anh/Chị tại A Lưới!`;
+    }
+
+    return "";
+  }
+
+  function handleOpenZaloModal(templateType?: "confirmed" | "payment" | "guide") {
+    const t = templateType || selectedTemplate;
+    setSelectedTemplate(t);
+    setCustomMessage(generateZaloTemplate(t));
+    setShowZaloModal(true);
+  }
+
+  function handleCopyAndOpenZalo() {
+    if (!customMessage) return;
+    navigator.clipboard.writeText(customMessage);
+    setCopiedMessage(true);
+    setTimeout(() => setCopiedMessage(false), 3000);
+    const raw = String(booking?.phone || "").replace(/[^0-9]/g, "");
+    const zPhone = raw.startsWith("84") && raw.length > 9 ? "0" + raw.slice(2) : raw;
+    if (zPhone) {
+      window.open("https://zalo.me/" + zPhone, "_blank");
+    }
+  }
+
   async function handleUpdateBookingStatus() {
     if (!booking) return;
     startTransition(async () => {
@@ -187,6 +278,12 @@ export function BookingDetailView({
         const data = await res.json();
         if (data.success && data.booking) {
           applyBookingData(data.booking);
+          setStatusUpdatedSuccess(true);
+          setTimeout(() => setStatusUpdatedSuccess(false), 5000);
+          if (newBookingStatus === "confirmed") {
+            // Tự động mở khung soạn tin Zalo xác nhận cho khách
+            handleOpenZaloModal("confirmed");
+          }
         }
       } catch (err) {
         console.error("Lỗi cập nhật trạng thái booking:", err);
@@ -375,14 +472,14 @@ export function BookingDetailView({
             <Printer className="size-4 text-ink/60" /> In phiếu xác nhận
           </button>
           {cleanPhone && (
-            <a
-              href={`https://zalo.me/${cleanPhone}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-2xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-blue-700 transition shadow-sm"
+            <button
+              type="button"
+              onClick={() => handleOpenZaloModal("confirmed")}
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition shadow-md"
+              title="Mở mẫu tin nhắn xác nhận Zalo đã soạn sẵn để gửi cho khách"
             >
-              <MessageCircle className="size-4" /> Nhắn Zalo khách
-            </a>
+              <MessageCircle className="size-4" /> Gửi xác nhận Zalo (Mẫu chuẩn)
+            </button>
           )}
           {isModal && (
             <Link
@@ -629,7 +726,30 @@ export function BookingDetailView({
                 disabled={isPending}
                 className="mt-2 w-full rounded-2xl bg-forest px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-forest/90 transition disabled:opacity-50"
               >
-                Lưu trạng thái Booking
+                {isPending ? "Đang lưu..." : "Lưu trạng thái Booking"}
+              </button>
+
+              {statusUpdatedSuccess && (
+                <div className="rounded-xl bg-emerald-50 p-2.5 border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between">
+                  <span className="font-bold flex items-center gap-1">
+                    <CheckCircle2 className="size-3.5 text-emerald-600" /> Đã cập nhật thành công!
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenZaloModal("confirmed")}
+                    className="font-bold text-blue-700 hover:underline flex items-center gap-1"
+                  >
+                    <MessageCircle className="size-3" /> Gửi Zalo ngay
+                  </button>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => handleOpenZaloModal("confirmed")}
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-2xl bg-blue-50 border border-blue-200 py-2 px-3 text-xs font-bold text-blue-700 hover:bg-blue-100 transition"
+              >
+                <MessageCircle className="size-3.5" /> Soạn tin nhắn Zalo gửi khách
               </button>
             </div>
 
@@ -952,6 +1072,146 @@ export function BookingDetailView({
           </div>
         </div>
       </div>
+      {/* Modal Soạn Tin Xác Nhận Zalo Tức Thì (Phương án A) */}
+      {showZaloModal && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/60 p-4 backdrop-blur-sm flex items-center justify-center animate-in fade-in">
+          <div className="relative w-full max-w-2xl rounded-3xl bg-white p-6 md:p-8 shadow-2xl border border-black/10 my-auto">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-black/5 pb-4">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+                  Chăm sóc du khách qua Zalo
+                </span>
+                <h3 className="text-lg font-black text-ink mt-1 flex items-center gap-2">
+                  <MessageCircle className="size-5 text-blue-600" />
+                  Soạn tin gửi Zalo: {booking.customerName || "Khách hàng"}
+                </h3>
+                <p className="text-xs text-ink/60 mt-0.5">
+                  Số điện thoại: <span className="font-mono font-bold text-ink">{booking.phone || "Chưa có"}</span>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowZaloModal(false)}
+                className="size-8 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center text-ink/60 transition"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Template Selector */}
+            <div className="mt-4 space-y-2">
+              <label className="text-xs font-bold text-ink block">Chọn mẫu tin nhắn chuẩn:</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedTemplate("confirmed");
+                    setCustomMessage(generateZaloTemplate("confirmed"));
+                  }}
+                  className={`p-2.5 rounded-xl border text-left text-xs transition ${
+                    selectedTemplate === "confirmed"
+                      ? "border-blue-600 bg-blue-50/70 text-blue-950 font-bold shadow-sm"
+                      : "border-black/10 bg-white text-ink/70 hover:bg-black/5 font-medium"
+                  }`}
+                >
+                  <p className="font-bold">1. Xác nhận thành công</p>
+                  <p className="text-[10px] text-ink/50 mt-0.5">Đã duyệt giữ chỗ 100%</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedTemplate("payment");
+                    setCustomMessage(generateZaloTemplate("payment"));
+                  }}
+                  className={`p-2.5 rounded-xl border text-left text-xs transition ${
+                    selectedTemplate === "payment"
+                      ? "border-blue-600 bg-blue-50/70 text-blue-950 font-bold shadow-sm"
+                      : "border-black/10 bg-white text-ink/70 hover:bg-black/5 font-medium"
+                  }`}
+                >
+                  <p className="font-bold">2. Nhắc cọc VietQR</p>
+                  <p className="text-[10px] text-ink/50 mt-0.5">Kèm STK & Cú pháp CK</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedTemplate("guide");
+                    setCustomMessage(generateZaloTemplate("guide"));
+                  }}
+                  className={`p-2.5 rounded-xl border text-left text-xs transition ${
+                    selectedTemplate === "guide"
+                      ? "border-blue-600 bg-blue-50/70 text-blue-950 font-bold shadow-sm"
+                      : "border-black/10 bg-white text-ink/70 hover:bg-black/5 font-medium"
+                  }`}
+                >
+                  <p className="font-bold">3. Dặn dò lịch trình</p>
+                  <p className="text-[10px] text-ink/50 mt-0.5">Trang phục, thời tiết, đón</p>
+                </button>
+              </div>
+            </div>
+
+            {/* Editable Textarea */}
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-ink">Nội dung tin nhắn (Có thể chỉnh sửa):</label>
+                <span className="text-[10px] text-ink/40">Tự động điền tên, mã đơn & tổng tiền</span>
+              </div>
+              <textarea
+                value={customMessage}
+                onChange={(e) => setCustomMessage(e.target.value)}
+                rows={9}
+                className="w-full rounded-2xl border border-black/10 p-3.5 text-xs text-ink leading-relaxed font-sans focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                placeholder="Nội dung tin nhắn..."
+              />
+            </div>
+
+            {/* Instruction Tip */}
+            <div className="mt-3 rounded-2xl bg-amber-50/80 p-3 border border-amber-200/60 text-[11px] text-amber-900 flex items-start gap-2">
+              <Info className="size-4 shrink-0 text-amber-700 mt-0.5" />
+              <p>
+                <span className="font-bold">Cách thức hoạt động:</span> Khi bạn bấm nút <span className="font-bold text-blue-700">"Sao chép & Mở Zalo khách"</span>, hệ thống sẽ tự động chép toàn bộ nội dung trên vào khay nhớ tạm và mở cửa sổ chat Zalo với khách. Bạn chỉ cần nhấn <kbd className="px-1.5 py-0.5 bg-white border border-amber-300 rounded font-mono font-bold">Ctrl + V</kbd> và gửi đi ngay!
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-black/5">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(customMessage);
+                  setCopiedMessage(true);
+                  setTimeout(() => setCopiedMessage(false), 3000);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 px-4 py-2.5 text-xs font-bold transition"
+              >
+                <Copy className="size-3.5" />
+                {copiedMessage ? "Đã chép nội dung!" : "Chép tin nhắn"}
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowZaloModal(false)}
+                  className="rounded-xl border border-black/10 px-4 py-2.5 text-xs font-semibold text-ink/70 hover:bg-black/5 transition"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyAndOpenZalo}
+                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 text-xs font-bold shadow-md transition"
+                >
+                  <MessageCircle className="size-4" />
+                  Sao chép & Mở Zalo khách
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
