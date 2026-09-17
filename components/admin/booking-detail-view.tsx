@@ -138,24 +138,32 @@ export function BookingDetailView({
       return;
     }
 
-    setLoading(true);
-
-    fetch("/api/bookings", { cache: "no-store" })
+    const targetUrl = `/api/bookings?id=${encodeURIComponent(id)}`;
+    fetch(targetUrl, { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && Array.isArray(data.bookings)) {
-          const found = data.bookings.find((item: any) => item.id === id);
-          if (found) {
-            applyBookingData(found);
-            return;
-          }
-        }
         if (data.success && data.booking && data.booking.id === id) {
           applyBookingData(data.booking);
           return;
         }
-        setBooking(null);
-        setLoading(false);
+        // Fallback: tải toàn bộ nếu query đơn lẻ không thấy
+        fetch("/api/bookings", { cache: "no-store" })
+          .then((res2) => res2.json())
+          .then((data2) => {
+            if (data2.success && Array.isArray(data2.bookings)) {
+              const found = data2.bookings.find((item: any) => item.id === id);
+              if (found) {
+                applyBookingData(found);
+                return;
+              }
+            }
+            setBooking(null);
+            setLoading(false);
+          })
+          .catch(() => {
+            setBooking(null);
+            setLoading(false);
+          });
       })
       .catch(() => {
         setBooking(null);
