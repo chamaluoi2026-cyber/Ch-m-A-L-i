@@ -377,9 +377,18 @@ export default function AdminPlacesPage() {
                           >
                             <Eye className="size-4" />
                           </Link>
+                          <Link
+                            href={`/admin/places/${place.slug}/edit`}
+                            target="_blank"
+                            title="Chỉnh sửa đầy đủ (tab mới) — nhiều ảnh, nội dung, SEO"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white bg-forest hover:bg-forest/90 transition"
+                          >
+                            <Edit2 className="size-3.5" />
+                            Chỉnh sửa đầy đủ
+                          </Link>
                           <button
                             onClick={() => handleOpenEdit(place)}
-                            title="Chỉnh sửa"
+                            title="Chỉnh sửa nhanh (modal)"
                             className="p-1.5 rounded-lg text-ink/60 hover:text-amber-600 hover:bg-amber-50 transition"
                           >
                             <Edit2 className="size-4" />
@@ -393,6 +402,7 @@ export default function AdminPlacesPage() {
                           </button>
                         </div>
                       </td>
+
                     </tr>
                   );
                 })
@@ -414,6 +424,16 @@ export default function AdminPlacesPage() {
                 <p className="text-xs text-ink/60 mt-0.5">
                   Dữ liệu này sẽ lập tức được AI Gemini nhận diện và đề xuất cho khách tạo lịch trình.
                 </p>
+                {editingPlace && (
+                  <Link
+                    href={`/admin/places/${editingPlace.slug}/edit`}
+                    target="_blank"
+                    className="inline-flex items-center gap-1.5 mt-2 text-xs font-bold text-forest hover:underline"
+                  >
+                    <ExternalLink className="size-3.5" />
+                    Mở trang chỉnh sửa đầy đủ (nhiều ảnh, nội dung, SEO) →
+                  </Link>
+                )}
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -422,6 +442,7 @@ export default function AdminPlacesPage() {
                 <X className="size-5" />
               </button>
             </div>
+
 
             <form onSubmit={handleSubmit} className="mt-4 space-y-4 max-h-[75vh] overflow-y-auto pr-2">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -637,6 +658,16 @@ export default function AdminPlacesPage() {
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/5">
+                {editingPlace && (
+                  <Link
+                    href={`/admin/places/${editingPlace.slug}/edit`}
+                    target="_blank"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-forest border border-forest/30 hover:bg-forest/5 transition"
+                  >
+                    <ExternalLink className="size-3.5" />
+                    Mở trang chỉnh sửa đầy đủ
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
@@ -660,6 +691,7 @@ export default function AdminPlacesPage() {
                   )}
                 </button>
               </div>
+
             </form>
           </div>
         </div>
