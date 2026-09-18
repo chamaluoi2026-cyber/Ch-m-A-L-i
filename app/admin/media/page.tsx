@@ -108,6 +108,21 @@ interface ImageUsageDetail {
   locations: { type: string; title: string; link?: string }[];
 }
 
+function hexToRgba(hex?: string, opacity = 30): string {
+  if (!hex) return `rgba(15, 56, 46, ${opacity / 100})`;
+  let clean = hex.replace("#", "").trim();
+  if (clean.length === 3) {
+    clean = clean.split("").map((c) => c + c).join("");
+  }
+  if (clean.length !== 6) {
+    return `rgba(15, 56, 46, ${opacity / 100})`;
+  }
+  const r = parseInt(clean.substring(0, 2), 16) || 0;
+  const g = parseInt(clean.substring(2, 4), 16) || 0;
+  const b = parseInt(clean.substring(4, 6), 16) || 0;
+  return `rgba(${r}, ${g}, ${b}, ${Math.min(Math.max(opacity, 0), 100) / 100})`;
+}
+
 export default function AdminMediaPage() {
   // Tabs: 'library' (Kho tài nguyên dùng chung), 'brand' (Cấu hình Logo & Banner), 'about' (Nội dung & Đội ngũ Giới thiệu), 'contact' (Thông tin liên hệ & Footer), 'picker-demo' (Thử nghiệm Media Picker)
   const [activeTab, setActiveTab] = useState<"library" | "brand" | "about" | "contact" | "picker-demo">("library");
@@ -158,6 +173,10 @@ export default function AdminMediaPage() {
     heroSecondaryBtnTextEn: "Book Tour",
     heroSecondaryBtnLink: "/book-tour",
     heroOverlayOpacity: 60,
+    heroCardStyle: "frosted",
+    heroCardColor: "#0f382e",
+    heroCardOpacity: 28,
+    heroCardBlur: "lg",
     aboutBadge: "Về chúng tôi",
     aboutTitle: "Cầu nối số cho du lịch cộng đồng",
     aboutSubtitle: "Chạm A Lưới là nền tảng du lịch trung gian giúp kết nối du khách với nét đẹp văn hóa bản địa, các chủ nhà homestay ấm áp, đơn vị dịch vụ trách nhiệm và những nghệ nhân vùng cao kiên trì gìn giữ nghề truyền thống.",
@@ -1910,144 +1929,331 @@ export default function AdminMediaPage() {
               </div>
 
               {/* Live Preview Mockup (Trực quan hóa thời gian thực) */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold text-ink">
-                  <span className="flex items-center gap-1.5 text-forest">
-                    <Eye className="size-4" />
-                    Xem trước giao diện thực tế (Live Preview):
-                  </span>
-                  <span className="text-[11px] text-ink/50 font-medium">
-                    Độ tối lớp phủ nền: {siteSettings.heroOverlayOpacity ?? 60}%
-                  </span>
-                </div>
+              {(() => {
+                const previewCardStyle = siteSettings.heroCardStyle || "frosted";
+                const previewCardColor = siteSettings.heroCardColor || "#0f382e";
+                const previewCardOpacity = siteSettings.heroCardOpacity ?? 28;
+                const previewCardBlur = siteSettings.heroCardBlur || "lg";
 
-                <div className="relative aspect-[16/8] sm:aspect-[21/9] rounded-2xl overflow-hidden border border-black/15 shadow-inner bg-forest flex items-center justify-center p-4 sm:p-6">
-                  <AppImage
-                    src={siteSettings.heroImage || "/images/home-hero-local.jpg"}
-                    alt="Hero Banner Live Preview"
-                    fill
-                    className="object-cover"
-                  />
-                  {/* Dynamic Dark Scrim Overlay */}
-                  <div
-                    className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/50 transition-opacity"
-                    style={{ opacity: ((siteSettings.heroOverlayOpacity ?? 60) / 100) }}
-                  />
-                  <div className="absolute inset-0 bg-radial-vignette opacity-70" />
+                const previewBlurClass = {
+                  none: "backdrop-blur-none",
+                  sm: "backdrop-blur-sm",
+                  md: "backdrop-blur-md",
+                  lg: "backdrop-blur-lg",
+                  xl: "backdrop-blur-xl"
+                }[previewCardBlur] || "backdrop-blur-md";
 
-                  {/* Frosted Glass Mockup Card */}
-                  <div className="relative z-10 w-full max-w-xl rounded-2xl border border-white/20 bg-black/45 p-4 sm:p-6 text-center text-white backdrop-blur-md shadow-xl">
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/35 bg-emerald-950/70 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
-                      <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      {siteSettings.heroBadge || "Du lịch cộng đồng tại Huế"}
-                    </div>
+                let previewBgStyle: React.CSSProperties = {};
+                let previewClasses = `relative z-10 w-full max-w-xl p-4 sm:p-6 text-center text-white transition-all duration-300 `;
 
-                    <h4 className="mt-2.5 text-lg sm:text-2xl font-black tracking-tight leading-snug drop-shadow-md">
-                      <span>{siteSettings.heroTitleLine1 || "Chạm A Lưới"}</span>
-                      <br />
-                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400">
-                        {siteSettings.heroTitleLine2 || "Du lịch cộng đồng"}
+                if (previewCardStyle === "none") {
+                  previewClasses += "bg-transparent border-0 shadow-none";
+                } else if (previewCardStyle === "radial") {
+                  previewClasses += `rounded-2xl border-0 shadow-none ${previewBlurClass}`;
+                  previewBgStyle = {
+                    background: `radial-gradient(ellipse at center, ${hexToRgba(previewCardColor, previewCardOpacity)} 0%, ${hexToRgba(previewCardColor, Math.round(previewCardOpacity * 0.4))} 55%, transparent 75%)`
+                  };
+                } else if (previewCardStyle === "gradient") {
+                  previewClasses += `rounded-2xl border border-white/20 shadow-xl ${previewBlurClass}`;
+                  previewBgStyle = {
+                    background: `linear-gradient(180deg, ${hexToRgba(previewCardColor, Math.min(previewCardOpacity + 15, 95))} 0%, ${hexToRgba(previewCardColor, previewCardOpacity)} 50%, ${hexToRgba(previewCardColor, Math.min(previewCardOpacity + 20, 95))} 100%)`
+                  };
+                } else {
+                  previewClasses += `rounded-2xl border border-white/20 shadow-xl ${previewBlurClass}`;
+                  previewBgStyle = {
+                    backgroundColor: hexToRgba(previewCardColor, previewCardOpacity)
+                  };
+                }
+
+                return (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold text-ink">
+                      <span className="flex items-center gap-1.5 text-forest">
+                        <Eye className="size-4" />
+                        Xem trước giao diện thực tế (Live Preview):
                       </span>
-                    </h4>
-
-                    <p className="mt-2 text-[11px] sm:text-xs text-white/90 line-clamp-2 max-w-md mx-auto">
-                      {siteSettings.heroDescription || "Nơi du khách tìm địa điểm đáng tin cậy, nhận voucher trước khi tư vấn và kết nối trực tiếp với doanh nghiệp địa phương."}
-                    </p>
-
-                    <div className="mt-3.5 flex items-center justify-center gap-2">
-                      <span className="rounded-full bg-emerald-500 text-slate-950 font-bold px-3.5 py-1 text-[11px] shadow">
-                        {siteSettings.heroPrimaryBtnText || "Khám phá địa điểm"} →
-                      </span>
-                      <span className="rounded-full border border-white/30 bg-white/10 text-white font-medium px-3.5 py-1 text-[11px] backdrop-blur-sm">
-                        {siteSettings.heroSecondaryBtnText || "Đặt tour"}
+                      <span className="text-[11px] text-ink/50 font-medium">
+                        Lớp phủ nền: {siteSettings.heroOverlayOpacity ?? 60}% | Layer giữa: {siteSettings.heroCardColor || "#0f382e"} ({siteSettings.heroCardOpacity ?? 28}%)
                       </span>
                     </div>
 
-                    <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-center gap-3 text-[9px] text-white/70">
-                      <span>✓ 100% Homestay bản địa</span>
-                      <span>•</span>
-                      <span>✓ Voucher ưu đãi</span>
-                      <span>•</span>
-                      <span>✓ An toàn đèo QL49</span>
+                    <div className="relative aspect-[16/8] sm:aspect-[21/9] rounded-2xl overflow-hidden border border-black/15 shadow-inner bg-forest flex items-center justify-center p-4 sm:p-6">
+                      <AppImage
+                        src={siteSettings.heroImage || "/images/home-hero-local.jpg"}
+                        alt="Hero Banner Live Preview"
+                        fill
+                        className="object-cover"
+                      />
+                      {/* Dynamic Dark Scrim Overlay */}
+                      <div
+                        className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/50 transition-opacity"
+                        style={{ opacity: ((siteSettings.heroOverlayOpacity ?? 60) / 100) }}
+                      />
+                      <div className="absolute inset-0 bg-radial-vignette opacity-70" />
+
+                      {/* Dynamic Middle Layer Card Mockup */}
+                      <div className={previewClasses} style={previewBgStyle}>
+                        {previewCardStyle !== "none" && previewCardStyle !== "radial" && (
+                          <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                        )}
+
+                        <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/35 bg-emerald-950/70 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                          <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          {siteSettings.heroBadge || "Du lịch cộng đồng tại Huế"}
+                        </div>
+
+                        <h4 className="mt-2.5 text-lg sm:text-2xl font-black tracking-tight leading-snug drop-shadow-md">
+                          <span>{siteSettings.heroTitleLine1 || "Chạm A Lưới"}</span>
+                          <br />
+                          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400">
+                            {siteSettings.heroTitleLine2 || "Du lịch cộng đồng"}
+                          </span>
+                        </h4>
+
+                        <p className="mt-2 text-[11px] sm:text-xs text-white/90 line-clamp-2 max-w-md mx-auto">
+                          {siteSettings.heroDescription || "Nơi du khách tìm địa điểm đáng tin cậy, nhận voucher trước khi tư vấn và kết nối trực tiếp với doanh nghiệp địa phương."}
+                        </p>
+
+                        <div className="mt-3.5 flex items-center justify-center gap-2">
+                          <span className="rounded-full bg-emerald-500 text-slate-950 font-bold px-3.5 py-1 text-[11px] shadow">
+                            {siteSettings.heroPrimaryBtnText || "Khám phá địa điểm"} →
+                          </span>
+                          <span className="rounded-full border border-white/30 bg-white/10 text-white font-medium px-3.5 py-1 text-[11px] backdrop-blur-sm">
+                            {siteSettings.heroSecondaryBtnText || "Đặt tour"}
+                          </span>
+                        </div>
+
+                        <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-center gap-3 text-[9px] text-white/70">
+                          <span>✓ 100% Homestay bản địa</span>
+                          <span>•</span>
+                          <span>✓ Voucher ưu đãi</span>
+                          <span>•</span>
+                          <span>✓ An toàn đèo QL49</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Form Controls Grid */}
               <div className="grid gap-6 lg:grid-cols-2 pt-2 border-t border-black/5">
-                {/* Cột 1: Cấu hình Ảnh & Lớp phủ nền */}
-                <div className="space-y-4">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-forest flex items-center gap-1.5">
-                    <ImageIcon className="size-3.5" />
-                    1. Hình ảnh nền &amp; Lớp phủ chống chói
-                  </h4>
+                {/* Cột 1: Cấu hình Ảnh nền & Layer Giữa */}
+                <div className="space-y-6">
+                  {/* Khối 1: Ảnh nền & Lớp phủ chống chói */}
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-forest flex items-center gap-1.5">
+                      <ImageIcon className="size-3.5" />
+                      1. Hình ảnh nền &amp; Lớp phủ chống chói
+                    </h4>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-ink">Đường dẫn ảnh Hero Banner:</label>
-                    <input
-                      type="text"
-                      value={siteSettings.heroImage || ""}
-                      onChange={(e) => setSiteSettings({ ...siteSettings, heroImage: e.target.value })}
-                      placeholder="URL ảnh hoặc /images/home-hero-local.jpg..."
-                      className="w-full px-3.5 py-2 rounded-xl bg-beige/60 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-forest"
-                    />
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-ink">Đường dẫn ảnh Hero Banner:</label>
+                      <input
+                        type="text"
+                        value={siteSettings.heroImage || ""}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, heroImage: e.target.value })}
+                        placeholder="URL ảnh hoặc /images/home-hero-local.jpg..."
+                        className="w-full px-3.5 py-2 rounded-xl bg-beige/60 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-forest"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="file"
+                        ref={heroInputRef}
+                        onChange={(e) => handleFileUploadForBrand(e, "heroImage", "hero")}
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => heroInputRef.current?.click()}
+                        disabled={uploadingField === "heroImage"}
+                        className="rounded-xl bg-forest py-2 px-4 text-xs font-bold text-white hover:bg-forest/90 transition flex items-center gap-1.5 shadow-sm"
+                      >
+                        {uploadingField === "heroImage" ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
+                        Tải banner mới từ máy
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSiteSettings({ ...siteSettings, heroImage: "/images/home-hero-local.jpg" })}
+                        className="rounded-xl border border-black/10 px-3 py-2 text-xs font-semibold text-ink/70 hover:bg-beige"
+                        title="Khôi phục ảnh phong cảnh gốc"
+                      >
+                        Dùng ảnh mặc định
+                      </button>
+                    </div>
+
+                    {/* Overlay Opacity Slider */}
+                    <div className="rounded-2xl bg-beige/40 p-3.5 border border-black/5 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-ink flex items-center gap-1.5">
+                          <Sliders className="size-3.5 text-forest" />
+                          Độ tối lớp phủ chống chói ảnh nền:
+                        </label>
+                        <span className="text-xs font-extrabold text-forest font-mono">
+                          {siteSettings.heroOverlayOpacity ?? 60}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="20"
+                        max="95"
+                        step="5"
+                        value={siteSettings.heroOverlayOpacity ?? 60}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, heroOverlayOpacity: Number(e.target.value) })}
+                        className="w-full accent-emerald-600 cursor-pointer"
+                      />
+                      <div className="flex justify-between text-[10px] text-ink/40 font-mono">
+                        <span>20% (Sáng rõ ảnh)</span>
+                        <span>60% (Cân bằng chuẩn)</span>
+                        <span>95% (Tối sâu nổi chữ)</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <input
-                      type="file"
-                      ref={heroInputRef}
-                      onChange={(e) => handleFileUploadForBrand(e, "heroImage", "hero")}
-                      accept="image/jpeg,image/png,image/webp"
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => heroInputRef.current?.click()}
-                      disabled={uploadingField === "heroImage"}
-                      className="rounded-xl bg-forest py-2 px-4 text-xs font-bold text-white hover:bg-forest/90 transition flex items-center gap-1.5 shadow-sm"
-                    >
-                      {uploadingField === "heroImage" ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
-                      Tải banner mới từ máy
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSiteSettings({ ...siteSettings, heroImage: "/images/home-hero-local.jpg" })}
-                      className="rounded-xl border border-black/10 px-3 py-2 text-xs font-semibold text-ink/70 hover:bg-beige"
-                      title="Khôi phục ảnh phong cảnh gốc"
-                    >
-                      Dùng ảnh phong cảnh mặc định
-                    </button>
-                  </div>
-
-                  {/* Overlay Opacity Slider */}
-                  <div className="rounded-2xl bg-beige/40 p-4 border border-black/5 space-y-2">
+                  {/* Khối 2: Tùy chỉnh Màu sắc & Kiểu dáng Layer Giữa (Khung chữ) */}
+                  <div className="rounded-2xl bg-beige/40 p-4 border border-black/5 space-y-4">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-ink flex items-center gap-1.5">
-                        <Sliders className="size-3.5 text-forest" />
-                        Độ tối lớp phủ chống chói (Overlay):
-                      </label>
-                      <span className="text-xs font-extrabold text-forest font-mono">
-                        {siteSettings.heroOverlayOpacity ?? 60}%
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-forest flex items-center gap-1.5">
+                        <Palette className="size-3.5" />
+                        2. Tùy chỉnh màu sắc &amp; kiểu dáng Layer Giữa (Khung chữ)
+                      </h4>
+                      <span className="text-[11px] font-mono text-emerald-800 font-bold">
+                        {siteSettings.heroCardColor || "#0f382e"} ({siteSettings.heroCardOpacity ?? 28}%)
                       </span>
                     </div>
-                    <p className="text-[11px] text-ink/60">
-                      Kéo tăng lên (60% - 80%) nếu ảnh nền có màu sáng hoặc nhiều chi tiết để chữ và thẻ nổi bật rõ nhất.
-                    </p>
-                    <input
-                      type="range"
-                      min="20"
-                      max="95"
-                      step="5"
-                      value={siteSettings.heroOverlayOpacity ?? 60}
-                      onChange={(e) => setSiteSettings({ ...siteSettings, heroOverlayOpacity: Number(e.target.value) })}
-                      className="w-full accent-emerald-600 cursor-pointer"
-                    />
-                    <div className="flex justify-between text-[10px] text-ink/40 font-mono">
-                      <span>20% (Sáng rõ ảnh)</span>
-                      <span>60% (Cân bằng chuẩn)</span>
-                      <span>95% (Tối sâu nổi chữ)</span>
+
+                    {/* Chọn Kiểu dáng Layer */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-ink">Kiểu dáng hiển thị:</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                        {[
+                          { id: "frosted", label: "Kính mờ siêu trong", desc: "Hiện đại, trong veo" },
+                          { id: "radial", label: "Tán mờ không viền", desc: "Lan tỏa mềm mại" },
+                          { id: "gradient", label: "Gradient Rừng Xanh", desc: "Hòa quyện tự nhiên" },
+                          { id: "custom", label: "Tùy chỉnh tự do", desc: "Màu hex riêng" },
+                          { id: "none", label: "Không dùng hộp", desc: "Chỉ đổ bóng chữ" }
+                        ].map((s) => (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => setSiteSettings({ ...siteSettings, heroCardStyle: s.id as any })}
+                            className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between ${
+                              (siteSettings.heroCardStyle || "frosted") === s.id
+                                ? "border-emerald-700 bg-emerald-50 text-emerald-950 font-bold ring-2 ring-emerald-600/30"
+                                : "border-black/10 bg-white hover:bg-beige text-ink/80"
+                            }`}
+                          >
+                            <span className="text-xs leading-tight">{s.label}</span>
+                            <span className="text-[10px] text-ink/50 font-normal mt-0.5">{s.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Bảng màu mẫu (Color Presets) */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-ink">Bảng màu mẫu gợi ý:</label>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {[
+                          { name: "Xanh rừng A Lưới", hex: "#0f382e" },
+                          { name: "Kính khói nhẹ", hex: "#18181b" },
+                          { name: "Nâu thổ cẩm", hex: "#3b1f14" },
+                          { name: "Xanh đêm", hex: "#0b192c" },
+                          { name: "Trắng ngọc", hex: "#ffffff" }
+                        ].map((preset) => (
+                          <button
+                            key={preset.hex}
+                            type="button"
+                            onClick={() => setSiteSettings({ ...siteSettings, heroCardColor: preset.hex })}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border transition ${
+                              (siteSettings.heroCardColor || "#0f382e").toLowerCase() === preset.hex.toLowerCase()
+                                ? "border-emerald-600 bg-white ring-2 ring-emerald-600/30 font-bold"
+                                : "border-black/10 bg-white/70 hover:bg-white text-ink/75"
+                            }`}
+                          >
+                            <span
+                              className="size-3 rounded-full border border-black/20 shrink-0"
+                              style={{ backgroundColor: preset.hex }}
+                            />
+                            <span>{preset.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Color Picker & Custom Hex Input */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-ink">Màu sắc tùy chọn (Hex / Picker):</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={siteSettings.heroCardColor || "#0f382e"}
+                            onChange={(e) => setSiteSettings({ ...siteSettings, heroCardColor: e.target.value })}
+                            className="size-8 rounded-lg cursor-pointer border border-black/20 p-0.5 bg-white shrink-0"
+                          />
+                          <input
+                            type="text"
+                            value={siteSettings.heroCardColor || "#0f382e"}
+                            onChange={(e) => setSiteSettings({ ...siteSettings, heroCardColor: e.target.value })}
+                            placeholder="#0f382e"
+                            className="flex-1 px-3 py-1.5 rounded-lg bg-white border border-black/10 text-xs font-mono uppercase focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-bold text-ink">Độ đậm / mờ layer giữa:</label>
+                          <span className="text-xs font-extrabold text-emerald-800 font-mono">
+                            {siteSettings.heroCardOpacity ?? 28}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="90"
+                          step="2"
+                          value={siteSettings.heroCardOpacity ?? 28}
+                          onChange={(e) => setSiteSettings({ ...siteSettings, heroCardOpacity: Number(e.target.value) })}
+                          className="w-full accent-emerald-600 cursor-pointer"
+                        />
+                        <div className="flex justify-between text-[9px] text-ink/40 font-mono">
+                          <span>0% (Trong veo)</span>
+                          <span>28% (Mờ êm)</span>
+                          <span>90% (Đậm sắc)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Backdrop Blur Selector */}
+                    <div className="space-y-1.5 pt-1">
+                      <label className="text-[11px] font-bold text-ink">Độ mờ hậu cảnh (Backdrop Blur):</label>
+                      <div className="flex flex-wrap gap-1.5 text-xs">
+                        {[
+                          { id: "none", label: "Không mờ" },
+                          { id: "sm", label: "Mờ nhẹ" },
+                          { id: "md", label: "Mờ vừa" },
+                          { id: "lg", label: "Mờ sâu" },
+                          { id: "xl", label: "Siêu mờ" }
+                        ].map((b) => (
+                          <button
+                            key={b.id}
+                            type="button"
+                            onClick={() => setSiteSettings({ ...siteSettings, heroCardBlur: b.id as any })}
+                            className={`px-2.5 py-1 rounded-lg text-xs border transition ${
+                              (siteSettings.heroCardBlur || "lg") === b.id
+                                ? "bg-forest text-white font-bold border-forest"
+                                : "bg-white text-ink/70 border-black/10 hover:bg-beige"
+                            }`}
+                          >
+                            {b.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2056,7 +2262,7 @@ export default function AdminMediaPage() {
                 <div className="space-y-4">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-forest flex items-center gap-1.5">
                     <Edit2 className="size-3.5" />
-                    2. Nội dung chữ trên Banner Hero
+                    3. Nội dung chữ trên Banner Hero
                   </h4>
 
                   <div className="space-y-1.5">
@@ -2251,7 +2457,11 @@ export default function AdminMediaPage() {
                       heroPrimaryBtnLink: "/places",
                       heroSecondaryBtnText: "Đặt tour",
                       heroSecondaryBtnLink: "/book-tour",
-                      heroOverlayOpacity: 60
+                      heroOverlayOpacity: 60,
+                      heroCardStyle: "frosted",
+                      heroCardColor: "#0f382e",
+                      heroCardOpacity: 28,
+                      heroCardBlur: "lg"
                     });
                   }}
                   className="rounded-xl border border-black/15 px-3.5 py-2 text-xs font-semibold text-ink/70 hover:bg-beige transition flex items-center gap-1.5"
@@ -2262,12 +2472,12 @@ export default function AdminMediaPage() {
 
                 <button
                   type="button"
-                  onClick={() => handleSaveSingleSetting("heroImage", "Hero Banner & Nội dung chữ")}
+                  onClick={() => handleSaveSingleSetting("heroImage", "Hero Banner & Layer Giữa")}
                   disabled={isSavingSettings}
                   className="rounded-xl bg-emerald-700 hover:bg-emerald-800 px-6 py-2.5 text-xs font-extrabold text-white transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
                 >
                   {isSavingSettings ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                  Lưu Hero Banner &amp; Nội dung Chữ lên Website
+                  Lưu Hero Banner &amp; Layer Giữa lên Website
                 </button>
               </div>
             </div>
