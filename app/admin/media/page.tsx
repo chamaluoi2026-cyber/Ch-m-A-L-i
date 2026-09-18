@@ -37,6 +37,7 @@ import {
   Sliders,
   Move,
   CheckSquare,
+  ChevronDown,
   ChevronRight,
   Clock,
   Code2,
@@ -113,6 +114,7 @@ export default function AdminMediaPage() {
 
   // State for editing avatar member with media picker
   const [pickingMemberId, setPickingMemberId] = useState<string | null>(null);
+  const [showHeroEnFields, setShowHeroEnFields] = useState(false);
 
   // --- Image Cropper & Resizer Modal State ---
   const [cropTarget, setCropTarget] = useState<{
@@ -141,6 +143,21 @@ export default function AdminMediaPage() {
     zaloUrl: "https://zalo.me/0905000118",
     footerDescription: "Nền tảng du lịch cộng đồng kết nối du khách với các homestay, làng nghề truyền thống, ẩm thực bản địa và những điểm đến sinh thái nguyên sơ tại A Lưới, Thừa Thiên Huế.",
     announcement: "Chào mừng quý khách đến với du lịch cộng đồng Chạm A Lưới!",
+    heroBadge: "Du lịch cộng đồng tại Huế",
+    heroBadgeEn: "Community Tourism in Hue",
+    heroTitleLine1: "Chạm A Lưới",
+    heroTitleLine1En: "Highland Adventure &",
+    heroTitleLine2: "Du lịch cộng đồng",
+    heroTitleLine2En: "Nature Retreat",
+    heroDescription: "Nơi du khách tìm địa điểm đáng tin cậy, nhận voucher trước khi tư vấn và kết nối trực tiếp với doanh nghiệp địa phương.",
+    heroDescriptionEn: "Discover verified community homestays, traditional craft villages, authentic cuisine, and pristine waterfalls in A Luoi, Thua Thien Hue.",
+    heroPrimaryBtnText: "Khám phá địa điểm",
+    heroPrimaryBtnTextEn: "Explore Places",
+    heroPrimaryBtnLink: "/places",
+    heroSecondaryBtnText: "Đặt tour",
+    heroSecondaryBtnTextEn: "Book Tour",
+    heroSecondaryBtnLink: "/book-tour",
+    heroOverlayOpacity: 60,
     aboutBadge: "Về chúng tôi",
     aboutTitle: "Cầu nối số cho du lịch cộng đồng",
     aboutSubtitle: "Chạm A Lưới là nền tảng du lịch trung gian giúp kết nối du khách với nét đẹp văn hóa bản địa, các chủ nhà homestay ấm áp, đơn vị dịch vụ trách nhiệm và những nghệ nhân vùng cao kiên trì gìn giữ nghề truyền thống.",
@@ -1873,77 +1890,384 @@ export default function AdminMediaPage() {
               </div>
             </div>
 
-            {/* 4. Hero Banner Trang chủ */}
-            <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 space-y-4 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between">
-                  <h3 className="font-extrabold text-sm text-ink flex items-center gap-2">
-                    <ImageIcon className="size-4 text-forest" />
-                    4. Ảnh Hero Banner Trang chủ (/)
+            {/* 4. Banner & Nội dung Chữ Hero Trang chủ */}
+            <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-card border border-black/5 space-y-6 md:col-span-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="font-extrabold text-base text-ink flex items-center gap-2">
+                    <ImageIcon className="size-5 text-forest" />
+                    4. Banner &amp; Nội dung Chữ Hero Trang chủ (/)
                   </h3>
-                  <span className="rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5">
-                    Trang chủ
+                  <p className="text-xs text-ink/65 mt-1">
+                    Tùy chỉnh hình nền, độ mờ của lớp phủ chống chói và toàn bộ nội dung chữ (thẻ tag, tiêu đề 2 dòng, mô tả, nút bấm) hiển thị trên màn hình đầu tiên của website khách.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1">
+                    Trang chủ (/)
                   </span>
-                </div>
-                <p className="text-xs text-ink/60 mt-1">
-                  Hình ảnh đầu tiên khách hàng nhìn thấy khi vào trang chủ Chạm A Lưới.
-                </p>
-
-                {/* Hero Preview Mockup */}
-                <div className="mt-4 relative aspect-[16/9] rounded-2xl overflow-hidden border border-black/10">
-                  <AppImage src={siteSettings.heroImage} alt="Hero Banner" fill className="object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-4 text-white">
-                    <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-300">Du lịch cộng đồng tại Huế</p>
-                    <h4 className="text-lg font-black leading-tight">Chạm A Lưới</h4>
-                  </div>
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  <label className="text-xs font-bold text-ink">Đường dẫn ảnh Hero Banner:</label>
-                  <input
-                    type="text"
-                    value={siteSettings.heroImage}
-                    onChange={(e) => setSiteSettings({ ...siteSettings, heroImage: e.target.value })}
-                    placeholder="URL ảnh hoặc /images/home-hero-local.jpg..."
-                    className="w-full px-3.5 py-2 rounded-xl bg-beige/60 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-forest"
-                  />
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-black/5">
-                <input
-                  type="file"
-                  ref={heroInputRef}
-                  onChange={(e) => handleFileUploadForBrand(e, "heroImage", "hero")}
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                />
+              {/* Live Preview Mockup (Trực quan hóa thời gian thực) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-ink">
+                  <span className="flex items-center gap-1.5 text-forest">
+                    <Eye className="size-4" />
+                    Xem trước giao diện thực tế (Live Preview):
+                  </span>
+                  <span className="text-[11px] text-ink/50 font-medium">
+                    Độ tối lớp phủ nền: {siteSettings.heroOverlayOpacity ?? 60}%
+                  </span>
+                </div>
+
+                <div className="relative aspect-[16/8] sm:aspect-[21/9] rounded-2xl overflow-hidden border border-black/15 shadow-inner bg-forest flex items-center justify-center p-4 sm:p-6">
+                  <AppImage
+                    src={siteSettings.heroImage || "/images/home-hero-local.jpg"}
+                    alt="Hero Banner Live Preview"
+                    fill
+                    className="object-cover"
+                  />
+                  {/* Dynamic Dark Scrim Overlay */}
+                  <div
+                    className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/50 transition-opacity"
+                    style={{ opacity: ((siteSettings.heroOverlayOpacity ?? 60) / 100) }}
+                  />
+                  <div className="absolute inset-0 bg-radial-vignette opacity-70" />
+
+                  {/* Frosted Glass Mockup Card */}
+                  <div className="relative z-10 w-full max-w-xl rounded-2xl border border-white/20 bg-black/45 p-4 sm:p-6 text-center text-white backdrop-blur-md shadow-xl">
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/35 bg-emerald-950/70 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                      <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      {siteSettings.heroBadge || "Du lịch cộng đồng tại Huế"}
+                    </div>
+
+                    <h4 className="mt-2.5 text-lg sm:text-2xl font-black tracking-tight leading-snug drop-shadow-md">
+                      <span>{siteSettings.heroTitleLine1 || "Chạm A Lưới"}</span>
+                      <br />
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400">
+                        {siteSettings.heroTitleLine2 || "Du lịch cộng đồng"}
+                      </span>
+                    </h4>
+
+                    <p className="mt-2 text-[11px] sm:text-xs text-white/90 line-clamp-2 max-w-md mx-auto">
+                      {siteSettings.heroDescription || "Nơi du khách tìm địa điểm đáng tin cậy, nhận voucher trước khi tư vấn và kết nối trực tiếp với doanh nghiệp địa phương."}
+                    </p>
+
+                    <div className="mt-3.5 flex items-center justify-center gap-2">
+                      <span className="rounded-full bg-emerald-500 text-slate-950 font-bold px-3.5 py-1 text-[11px] shadow">
+                        {siteSettings.heroPrimaryBtnText || "Khám phá địa điểm"} →
+                      </span>
+                      <span className="rounded-full border border-white/30 bg-white/10 text-white font-medium px-3.5 py-1 text-[11px] backdrop-blur-sm">
+                        {siteSettings.heroSecondaryBtnText || "Đặt tour"}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-center gap-3 text-[9px] text-white/70">
+                      <span>✓ 100% Homestay bản địa</span>
+                      <span>•</span>
+                      <span>✓ Voucher ưu đãi</span>
+                      <span>•</span>
+                      <span>✓ An toàn đèo QL49</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Controls Grid */}
+              <div className="grid gap-6 lg:grid-cols-2 pt-2 border-t border-black/5">
+                {/* Cột 1: Cấu hình Ảnh & Lớp phủ nền */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-forest flex items-center gap-1.5">
+                    <ImageIcon className="size-3.5" />
+                    1. Hình ảnh nền &amp; Lớp phủ chống chói
+                  </h4>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-ink">Đường dẫn ảnh Hero Banner:</label>
+                    <input
+                      type="text"
+                      value={siteSettings.heroImage || ""}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, heroImage: e.target.value })}
+                      placeholder="URL ảnh hoặc /images/home-hero-local.jpg..."
+                      className="w-full px-3.5 py-2 rounded-xl bg-beige/60 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-forest"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="file"
+                      ref={heroInputRef}
+                      onChange={(e) => handleFileUploadForBrand(e, "heroImage", "hero")}
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => heroInputRef.current?.click()}
+                      disabled={uploadingField === "heroImage"}
+                      className="rounded-xl bg-forest py-2 px-4 text-xs font-bold text-white hover:bg-forest/90 transition flex items-center gap-1.5 shadow-sm"
+                    >
+                      {uploadingField === "heroImage" ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
+                      Tải banner mới từ máy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSiteSettings({ ...siteSettings, heroImage: "/images/home-hero-local.jpg" })}
+                      className="rounded-xl border border-black/10 px-3 py-2 text-xs font-semibold text-ink/70 hover:bg-beige"
+                      title="Khôi phục ảnh phong cảnh gốc"
+                    >
+                      Dùng ảnh phong cảnh mặc định
+                    </button>
+                  </div>
+
+                  {/* Overlay Opacity Slider */}
+                  <div className="rounded-2xl bg-beige/40 p-4 border border-black/5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-ink flex items-center gap-1.5">
+                        <Sliders className="size-3.5 text-forest" />
+                        Độ tối lớp phủ chống chói (Overlay):
+                      </label>
+                      <span className="text-xs font-extrabold text-forest font-mono">
+                        {siteSettings.heroOverlayOpacity ?? 60}%
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-ink/60">
+                      Kéo tăng lên (60% - 80%) nếu ảnh nền có màu sáng hoặc nhiều chi tiết để chữ và thẻ nổi bật rõ nhất.
+                    </p>
+                    <input
+                      type="range"
+                      min="20"
+                      max="95"
+                      step="5"
+                      value={siteSettings.heroOverlayOpacity ?? 60}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, heroOverlayOpacity: Number(e.target.value) })}
+                      className="w-full accent-emerald-600 cursor-pointer"
+                    />
+                    <div className="flex justify-between text-[10px] text-ink/40 font-mono">
+                      <span>20% (Sáng rõ ảnh)</span>
+                      <span>60% (Cân bằng chuẩn)</span>
+                      <span>95% (Tối sâu nổi chữ)</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cột 2: Cấu hình Nội dung Chữ (Tiếng Việt) */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-forest flex items-center gap-1.5">
+                    <Edit2 className="size-3.5" />
+                    2. Nội dung chữ trên Banner Hero
+                  </h4>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-ink">Thẻ nhỏ phía trên (Badge / Tag):</label>
+                    <input
+                      type="text"
+                      value={siteSettings.heroBadge || ""}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, heroBadge: e.target.value })}
+                      placeholder="Du lịch cộng đồng tại Huế"
+                      className="w-full px-3.5 py-2 rounded-xl bg-beige/60 text-xs focus:outline-none focus:ring-2 focus:ring-forest"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-ink">Tiêu đề Dòng 1 (Chữ trắng):</label>
+                      <input
+                        type="text"
+                        value={siteSettings.heroTitleLine1 || ""}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, heroTitleLine1: e.target.value })}
+                        placeholder="Chạm A Lưới"
+                        className="w-full px-3.5 py-2 rounded-xl bg-beige/60 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-forest"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-ink">Tiêu đề Dòng 2 (Chữ nổi xanh ngọc):</label>
+                      <input
+                        type="text"
+                        value={siteSettings.heroTitleLine2 || ""}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, heroTitleLine2: e.target.value })}
+                        placeholder="Du lịch cộng đồng"
+                        className="w-full px-3.5 py-2 rounded-xl bg-beige/60 text-xs font-semibold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-forest"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-ink">Đoạn văn mô tả giới thiệu:</label>
+                    <textarea
+                      rows={2}
+                      value={siteSettings.heroDescription || ""}
+                      onChange={(e) => setSiteSettings({ ...siteSettings, heroDescription: e.target.value })}
+                      placeholder="Nơi du khách tìm địa điểm đáng tin cậy, nhận voucher trước khi tư vấn và kết nối trực tiếp với doanh nghiệp địa phương."
+                      className="w-full px-3.5 py-2 rounded-xl bg-beige/60 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-forest"
+                    />
+                  </div>
+
+                  {/* Nút bấm CTA */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-beige/30 p-3 border border-black/5 space-y-2">
+                      <p className="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
+                        <span className="size-2 rounded-full bg-emerald-600" /> Nút chính (Xanh lá)
+                      </p>
+                      <input
+                        type="text"
+                        value={siteSettings.heroPrimaryBtnText || ""}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, heroPrimaryBtnText: e.target.value })}
+                        placeholder="Tên nút (vd: Khám phá địa điểm)"
+                        className="w-full px-3 py-1.5 rounded-lg bg-white text-xs border border-black/10 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={siteSettings.heroPrimaryBtnLink || ""}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, heroPrimaryBtnLink: e.target.value })}
+                        placeholder="Đường dẫn (vd: /places)"
+                        className="w-full px-3 py-1.5 rounded-lg bg-white text-xs font-mono border border-black/10 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="rounded-xl bg-beige/30 p-3 border border-black/5 space-y-2">
+                      <p className="text-[11px] font-bold text-ink flex items-center gap-1">
+                        <span className="size-2 rounded-full bg-slate-400" /> Nút phụ (Viền kính mờ)
+                      </p>
+                      <input
+                        type="text"
+                        value={siteSettings.heroSecondaryBtnText || ""}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, heroSecondaryBtnText: e.target.value })}
+                        placeholder="Tên nút (vd: Đặt tour)"
+                        className="w-full px-3 py-1.5 rounded-lg bg-white text-xs border border-black/10 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={siteSettings.heroSecondaryBtnLink || ""}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, heroSecondaryBtnLink: e.target.value })}
+                        placeholder="Đường dẫn (vd: /book-tour)"
+                        className="w-full px-3 py-1.5 rounded-lg bg-white text-xs font-mono border border-black/10 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Phần mở rộng Tiếng Anh (English Hero Content) */}
+              <div className="rounded-2xl border border-black/10 overflow-hidden">
                 <button
                   type="button"
-                  onClick={() => heroInputRef.current?.click()}
-                  disabled={uploadingField === "heroImage"}
-                  className="flex-1 min-w-[120px] rounded-xl bg-forest py-2 px-3 text-xs font-bold text-white hover:bg-forest/90 transition flex items-center justify-center gap-1.5 shadow-sm"
+                  onClick={() => setShowHeroEnFields(!showHeroEnFields)}
+                  className="w-full px-4 py-2.5 bg-beige/40 hover:bg-beige/70 transition flex items-center justify-between text-xs font-bold text-ink"
                 >
-                  {uploadingField === "heroImage" ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
-                  Tải banner mới
+                  <span className="flex items-center gap-2">
+                    <Globe className="size-4 text-forest" />
+                    Tùy chỉnh bản dịch Tiếng Anh khi khách chọn GB English
+                  </span>
+                  {showHeroEnFields ? <ChevronDown className="size-4 text-ink/60" /> : <ChevronRight className="size-4 text-ink/60" />}
                 </button>
+
+                {showHeroEnFields && (
+                  <div className="p-4 bg-white border-t border-black/5 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-[11px] font-semibold text-ink/70">Badge (EN):</label>
+                        <input
+                          type="text"
+                          value={siteSettings.heroBadgeEn || ""}
+                          onChange={(e) => setSiteSettings({ ...siteSettings, heroBadgeEn: e.target.value })}
+                          placeholder="Community Tourism in Hue"
+                          className="w-full px-3 py-1.5 rounded-lg bg-beige/50 text-xs border border-black/10 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-ink/70">Title Line 1 (EN):</label>
+                        <input
+                          type="text"
+                          value={siteSettings.heroTitleLine1En || ""}
+                          onChange={(e) => setSiteSettings({ ...siteSettings, heroTitleLine1En: e.target.value })}
+                          placeholder="Highland Adventure &"
+                          className="w-full px-3 py-1.5 rounded-lg bg-beige/50 text-xs border border-black/10 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-ink/70">Title Line 2 (EN):</label>
+                        <input
+                          type="text"
+                          value={siteSettings.heroTitleLine2En || ""}
+                          onChange={(e) => setSiteSettings({ ...siteSettings, heroTitleLine2En: e.target.value })}
+                          placeholder="Nature Retreat"
+                          className="w-full px-3 py-1.5 rounded-lg bg-beige/50 text-xs border border-black/10 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-ink/70">Description (EN):</label>
+                      <input
+                        type="text"
+                        value={siteSettings.heroDescriptionEn || ""}
+                        onChange={(e) => setSiteSettings({ ...siteSettings, heroDescriptionEn: e.target.value })}
+                        placeholder="Discover verified community homestays, traditional craft villages, authentic cuisine, and pristine waterfalls in A Luoi, Thua Thien Hue."
+                        className="w-full px-3 py-1.5 rounded-lg bg-beige/50 text-xs border border-black/10 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-semibold text-ink/70">Primary Button (EN):</label>
+                        <input
+                          type="text"
+                          value={siteSettings.heroPrimaryBtnTextEn || ""}
+                          onChange={(e) => setSiteSettings({ ...siteSettings, heroPrimaryBtnTextEn: e.target.value })}
+                          placeholder="Explore Places"
+                          className="w-full px-3 py-1.5 rounded-lg bg-beige/50 text-xs border border-black/10 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-ink/70">Secondary Button (EN):</label>
+                        <input
+                          type="text"
+                          value={siteSettings.heroSecondaryBtnTextEn || ""}
+                          onChange={(e) => setSiteSettings({ ...siteSettings, heroSecondaryBtnTextEn: e.target.value })}
+                          placeholder="Book Tour"
+                          className="w-full px-3 py-1.5 rounded-lg bg-beige/50 text-xs border border-black/10 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-black/10">
                 <button
                   type="button"
-                  onClick={() => handleSaveSingleSetting("heroImage", "Hero Banner")}
-                  disabled={isSavingSettings}
-                  className="rounded-xl bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition flex items-center justify-center gap-1.5 shadow-sm"
-                  title="Lưu ngay thay đổi Hero Banner"
-                >
-                  <Save className="size-3.5" />
-                  Lưu Banner
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSiteSettings({ ...siteSettings, heroImage: "/images/home-hero-local.jpg" })}
-                  className="rounded-xl border border-black/10 px-3 py-2 text-xs font-semibold text-ink/70 hover:bg-beige"
-                  title="Khôi phục mặc định"
+                  onClick={() => {
+                    setSiteSettings({
+                      ...siteSettings,
+                      heroImage: "/images/home-hero-local.jpg",
+                      heroBadge: "Du lịch cộng đồng tại Huế",
+                      heroTitleLine1: "Chạm A Lưới",
+                      heroTitleLine2: "Du lịch cộng đồng",
+                      heroDescription: "Nơi du khách tìm địa điểm đáng tin cậy, nhận voucher trước khi tư vấn và kết nối trực tiếp với doanh nghiệp địa phương.",
+                      heroPrimaryBtnText: "Khám phá địa điểm",
+                      heroPrimaryBtnLink: "/places",
+                      heroSecondaryBtnText: "Đặt tour",
+                      heroSecondaryBtnLink: "/book-tour",
+                      heroOverlayOpacity: 60
+                    });
+                  }}
+                  className="rounded-xl border border-black/15 px-3.5 py-2 text-xs font-semibold text-ink/70 hover:bg-beige transition flex items-center gap-1.5"
                 >
                   <RotateCcw className="size-3.5" />
+                  Khôi phục toàn bộ mặc định
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSaveSingleSetting("heroImage", "Hero Banner & Nội dung chữ")}
+                  disabled={isSavingSettings}
+                  className="rounded-xl bg-emerald-700 hover:bg-emerald-800 px-6 py-2.5 text-xs font-extrabold text-white transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                >
+                  {isSavingSettings ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                  Lưu Hero Banner &amp; Nội dung Chữ lên Website
                 </button>
               </div>
             </div>

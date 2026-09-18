@@ -100,6 +100,23 @@ export type SiteSettings = {
   footerDescription?: string;
   announcement?: string;
 
+  // Cấu hình Banner Hero Trang Chủ (Homepage Hero)
+  heroBadge?: string;
+  heroBadgeEn?: string;
+  heroTitleLine1?: string;
+  heroTitleLine1En?: string;
+  heroTitleLine2?: string;
+  heroTitleLine2En?: string;
+  heroDescription?: string;
+  heroDescriptionEn?: string;
+  heroPrimaryBtnText?: string;
+  heroPrimaryBtnTextEn?: string;
+  heroPrimaryBtnLink?: string;
+  heroSecondaryBtnText?: string;
+  heroSecondaryBtnTextEn?: string;
+  heroSecondaryBtnLink?: string;
+  heroOverlayOpacity?: number;
+
   // Cấu hình Trang Giới thiệu (/about) & Đội ngũ thực hiện
   aboutBadge?: string;
   aboutTitle?: string;
@@ -1690,6 +1707,15 @@ export function getSiteSettings(): SiteSettings {
     zaloUrl: "https://zalo.me/0905000118",
     footerDescription: "Nền tảng du lịch cộng đồng kết nối du khách với các homestay, làng nghề truyền thống, ẩm thực bản địa và những điểm đến sinh thái nguyên sơ tại A Lưới, Thừa Thiên Huế.",
     announcement: "Chào mừng quý khách đến với du lịch cộng đồng Chạm A Lưới!",
+    heroBadge: "Du lịch cộng đồng tại Huế",
+    heroTitleLine1: "Chạm A Lưới",
+    heroTitleLine2: "Du lịch cộng đồng",
+    heroDescription: "Nơi du khách tìm địa điểm đáng tin cậy, nhận voucher trước khi tư vấn và kết nối trực tiếp với doanh nghiệp địa phương.",
+    heroPrimaryBtnText: "Khám phá địa điểm",
+    heroPrimaryBtnLink: "/places",
+    heroSecondaryBtnText: "Đặt tour",
+    heroSecondaryBtnLink: "/book-tour",
+    heroOverlayOpacity: 60,
     aboutBadge: "Về chúng tôi",
     aboutTitle: "Cầu nối số cho du lịch cộng đồng",
     aboutSubtitle: "Chạm A Lưới là nền tảng du lịch trung gian giúp kết nối du khách với nét đẹp văn hóa bản địa, các chủ nhà homestay ấm áp, đơn vị dịch vụ trách nhiệm và những nghệ nhân vùng cao kiên trì gìn giữ nghề truyền thống.",

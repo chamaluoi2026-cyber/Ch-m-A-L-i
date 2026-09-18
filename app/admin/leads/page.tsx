@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  fetchAllLeadsAction,
   updateLeadStatusAction
 } from "@/app/actions/leads";
 import type { LeadRecord, LeadStatus, LeadSource } from "@/lib/leads";

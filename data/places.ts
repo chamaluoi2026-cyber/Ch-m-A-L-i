@@ -96,11 +96,11 @@ export const places: Place[] = [
     voucherOffer: "Giảm 10% gói hướng dẫn viên & mâm cơm bản địa",
     zaloUrl: "https://zalo.me/0905000118",
     phone: "0905 000 118",
-    image: imageFor("photo-1506744038136-46273834b3fb"),
+    image: "/images/aluoi/ho-sinh-thai-a-luoi.jpg",
     gallery: [
-      imageFor("photo-1506744038136-46273834b3fb"),
-      imageFor("photo-1433086966358-54859d0ed716"),
-      imageFor("photo-1500534314209-a25ddb2bd429")
+      "/images/aluoi/ho-sinh-thai-a-luoi.jpg",
+      "/images/aluoi/homestay-bungalow.jpg",
+      "/images/aluoi/homestay-swing.jpg"
     ],
     services: ["Thuê chòi nghỉ", "Tắm thác tự nhiên", "Mâm cơm Pa Cô", "Cho thuê áo phao", "Hướng dẫn viên bản địa"],
     highlights: ["Thác nước 3 tầng tuyệt đẹp", "Nước suối mát lạnh tự nhiên", "Bãi tắm an toàn có người giám sát", "Có chòi nghỉ ngơi ven suối"],
@@ -128,11 +128,11 @@ export const places: Place[] = [
     voucherOffer: "Giảm 50.000đ cho đoàn từ 5 khách",
     zaloUrl: "https://zalo.me/0966000118",
     phone: "0966 000 118",
-    image: imageFor("photo-1500534314209-a25ddb2bd429"),
+    image: "/images/aluoi/ho-sinh-thai-a-luoi.jpg",
     gallery: [
-      imageFor("photo-1500534314209-a25ddb2bd429"),
-      imageFor("photo-1433086966358-54859d0ed716"),
-      imageFor("photo-1506744038136-46273834b3fb")
+      "/images/aluoi/ho-sinh-thai-a-luoi.jpg",
+      "/images/aluoi/homestay-swing.jpg",
+      "/images/aluoi/homestay-relax.jpg"
     ],
     services: ["Chòi dừng chân", "Bếp than & dụng cụ nướng", "Tắm suối sinh thái", "Hỗ trợ xe đưa đón"],
     highlights: ["Lòng suối nông và nhiều phiến đá rộng", "Không gian tĩnh mịch hoang sơ", "Rất thích hợp cho dã ngoại gia đình"],
@@ -160,11 +160,11 @@ export const places: Place[] = [
     voucherOffer: "Giảm 10% gói combo vé + mâm nướng ven suối",
     zaloUrl: "https://zalo.me/0922000118",
     phone: "0922 000 118",
-    image: imageFor("photo-1432405972618-c60b0225b8f9"),
+    image: "/images/aluoi/ho-sinh-thai-a-luoi.jpg",
     gallery: [
-      imageFor("photo-1432405972618-c60b0225b8f9"),
-      imageFor("photo-1500534314209-a25ddb2bd429"),
-      imageFor("photo-1501785888041-af3ef285b470")
+      "/images/aluoi/ho-sinh-thai-a-luoi.jpg",
+      "/images/aluoi/homestay-relax.jpg",
+      "/images/aluoi/homestay-bungalow.jpg"
     ],
     services: ["Vé vào cổng", "Cho thuê sạp gỗ", "Bữa trưa đặc sản vùng cao", "Phao bơi", "Cứu hộ chuyên trách"],
     highlights: ["Vịnh tắm rộng nước trong xanh", "Vị trí gần đèo Tà Lương thuận tiện đi lại", "Món cá suối nướng muối ớt đặc biệt ngon"],
@@ -192,11 +192,11 @@ export const places: Place[] = [
     voucherOffer: "Giảm 10% phí tour cho nhóm từ 4 khách",
     zaloUrl: "https://zalo.me/0977000118",
     phone: "0977 000 118",
-    image: imageFor("photo-1441974231531-c6227db76b6e"),
+    image: "/images/aluoi/ho-sinh-thai-a-luoi.jpg",
     gallery: [
-      imageFor("photo-1441974231531-c6227db76b6e"),
-      imageFor("photo-1511497584788-876760111969"),
-      imageFor("photo-1500534314209-a25ddb2bd429")
+      "/images/aluoi/ho-sinh-thai-a-luoi.jpg",
+      "/images/aluoi/nha-san-truyen-thong.jpg",
+      "/images/aluoi/homestay-bungalow.jpg"
     ],
     services: ["Hướng dẫn viên kiểm lâm & người bản địa", "Bữa ăn đi rừng đóng gói lá chuối", "Gậy trekking & túi cứu thương", "Ngâm suối khoáng nóng"],
     highlights: ["Hệ sinh thái rừng Trường Sơn nguyên vẹn", "Suối nước khoáng ấm tự nhiên", "Được học kỹ năng sinh tồn trong rừng"],
@@ -224,11 +224,11 @@ export const places: Place[] = [
     voucherOffer: "Giảm 10% gói trải nghiệm trọn gói văn hóa + ăn ở",
     zaloUrl: "https://zalo.me/0905000118",
     phone: "0905 000 118",
-    image: imageFor("photo-1511497584788-876760111969"),
+    image: "/images/aluoi/nha-san-truyen-thong.jpg",
     gallery: [
-      imageFor("photo-1511497584788-876760111969"),
-      imageFor("photo-1506744038136-46273834b3fb"),
-      imageFor("photo-1520250497591-112f2f40a3f4")
+      "/images/aluoi/nha-san-truyen-thong.jpg",
+      "/images/aluoi/giao-luu-ban-dia.jpg",
+      "/images/aluoi/van-hoa-cong-dong.jpg"
     ],
     services: ["Lưu trú nhà sàn tập thể & phòng riêng", "Phục vụ ẩm thực truyền thống", "Workshop nghề thủ công", "Đón tiếp văn nghệ", "Đạp xe ngắm bản"],
     highlights: ["Mô hình du lịch bền vững vì cộng đồng", "Môi trường trong lành, sạch sẽ", "Bà con thân thiện hiếu khách", "Đa dạng hoạt động cho mọi lứa tuổi"],
@@ -256,11 +256,11 @@ export const places: Place[] = [
     voucherOffer: "Tặng 1 bình rượu cần lớn cho đoàn từ 10 khách",
     zaloUrl: "https://zalo.me/0905000118",
     phone: "0905 000 118",
-    image: imageFor("photo-1470225620780-dba8ba36b745"),
+    image: "/images/aluoi/cong-chieng-giao-luu.jpg",
     gallery: [
-      imageFor("photo-1470225620780-dba8ba36b745"),
-      imageFor("photo-1514525253161-7a46d19cd819"),
-      imageFor("photo-1500534314209-a25ddb2bd429")
+      "/images/aluoi/cong-chieng-giao-luu.jpg",
+      "/images/aluoi/am-nhac-dan-toc.jpg",
+      "/images/aluoi/giao-luu-ban-dia.jpg"
     ],
     services: ["Đốt củi lửa trại lớn", "Biểu diễn cồng chiêng & đàn Ta Lư", "Bình rượu cần đặc biệt", "MC bản địa kết nối trò chơi dân gian", "Khoai ngô nướng than"],
     highlights: ["Không khí giao lưu gắn kết ấm cúng", "Được tận mắt xem biểu diễn nhạc cụ cổ truyền", "Trải nghiệm đặc sắc nhất về đêm ở vùng cao"],
@@ -288,11 +288,11 @@ export const places: Place[] = [
     voucherOffer: "Giảm 10% tiền phòng khi đặt qua Chạm A Lưới",
     zaloUrl: "https://zalo.me/0905000118",
     phone: "0905 000 118",
-    image: imageFor("photo-1505693416388-ac5ce068fe85"),
+    image: "/images/aluoi/homestay-bungalow.jpg",
     gallery: [
-      imageFor("photo-1505693416388-ac5ce068fe85"),
-      imageFor("photo-1520250497591-112f2f40a3f4"),
-      imageFor("photo-1506744038136-46273834b3fb")
+      "/images/aluoi/homestay-bungalow.jpg",
+      "/images/aluoi/homestay-swing.jpg",
+      "/images/aluoi/homestay-relax.jpg"
     ],
     services: ["Phòng ngủ tiện nghi thoáng mát", "Ăn sáng bản địa miễn phí", "Cho thuê xe máy khám phá đèo dốc", "Phục vụ cơm gia đình", "Wifi tốc độ cao"],
     highlights: ["Sát bờ suối không khí cực kỳ trong lành", "Chủ nhà nồng hậu chu đáo", "Vị trí gần thác A Nôr chỉ 5 phút đi bộ"],
@@ -320,11 +320,11 @@ export const places: Place[] = [
     voucherOffer: "Tặng ấm trà thảo mộc núi & đĩa hoa quả tráng miệng",
     zaloUrl: "https://zalo.me/0912345678",
     phone: "0912 345 678",
-    image: imageFor("photo-1504674900247-0877df9cc836"),
+    image: "/images/aluoi/am-thuc-nha-san.jpg",
     gallery: [
-      imageFor("photo-1504674900247-0877df9cc836"),
-      imageFor("photo-1544025162-d76694265947"),
-      imageFor("photo-1543353071-873f17a7a088")
+      "/images/aluoi/am-thuc-nha-san.jpg",
+      "/images/aluoi/checkin-nong-trai.jpg",
+      "/images/aluoi/nha-san-truyen-thong.jpg"
     ],
     services: ["Đặt tiệc cơm đoàn", "Gà đồi nướng than hoa", "Cơm lam ống nứa", "Rau rừng theo mùa", "Đóng gói mang về"],
     highlights: ["Hương vị nướng hạt tiêu rừng đặc sắc", "Nguyên liệu hữu cơ hái lượm tự nhiên", "Phục vụ nhanh nhẹn chu đáo"],
@@ -354,9 +354,9 @@ export const places: Place[] = [
     phone: "0933 000 118",
     image: "/images/products/zeng-brocade.png",
     gallery: [
-      "/images/products/zeng-brocade.png",
-      imageFor("photo-1452860606245-08befc0ff44b"),
-      imageFor("photo-1513519245088-0e12902e5a38")
+      "/images/aluoi/det-zeng-artisan.jpg",
+      "/images/aluoi/det-zeng-loom.jpg",
+      "/images/products/zeng-brocade.png"
     ],
     services: ["Tham quan không gian dệt Zèng", "Thực hành dệt trực tiếp cùng nghệ nhân", "Mặc trang phục truyền thống chụp ảnh", "Cửa hàng lưu niệm thổ cẩm"],
     highlights: ["Gặp gỡ những nghệ nhân ưu tú lưu giữ di sản", "Tự tay làm nên món quà kỷ niệm độc nhất", "Ủng hộ sinh kế cho phụ nữ dân tộc thiểu số"],
@@ -384,11 +384,11 @@ export const places: Place[] = [
     voucherOffer: "Tặng gói hỗ trợ chụp ảnh flycam/máy cơ cho đoàn từ 6 người",
     zaloUrl: "https://zalo.me/0977000118",
     phone: "0977 000 118",
-    image: imageFor("photo-1500530855697-b586d89ba3ee"),
+    image: "/images/aluoi/homestay-swing.jpg",
     gallery: [
-      imageFor("photo-1500530855697-b586d89ba3ee"),
-      imageFor("photo-1501785888041-af3ef285b470"),
-      imageFor("photo-1482192505345-5655af888cc4")
+      "/images/aluoi/homestay-swing.jpg",
+      "/images/aluoi/checkin-nong-trai.jpg",
+      "/images/aluoi/ho-sinh-thai-a-luoi.jpg"
     ],
     services: ["Hướng dẫn viên tuyến ảnh", "Cho thuê trang phục dân tộc chụp hình", "Nước uống giải khát tại chỗ", "Ghép tour rừng nguyên sinh"],
     highlights: ["Cảnh sắc cầu treo bắc qua thung lũng thơ mộng", "Góc máy chụp phong cảnh tuyệt đẹp", "Dễ kết hợp cùng suối A Lin và rừng A Roàng"],
@@ -416,11 +416,11 @@ export const places: Place[] = [
     voucherOffer: "Giảm 50.000đ cho chuyến khứ hồi đầu tiên đặt qua web",
     zaloUrl: "https://zalo.me/0944000118",
     phone: "0944 000 118",
-    image: imageFor("photo-1544620347-c4fd4a3d5957"),
+    image: "/images/aluoi/di-chuyen-hue-a-luoi.jpg",
     gallery: [
-      imageFor("photo-1544620347-c4fd4a3d5957"),
-      imageFor("photo-1500530855697-b586d89ba3ee"),
-      imageFor("photo-1488646953014-85cb44e25828")
+      "/images/aluoi/di-chuyen-hue-a-luoi.jpg",
+      "/images/aluoi/trung-tam-a-luoi.jpg",
+      "/images/home-hero-local.jpg"
     ],
     services: ["Xe 7 chỗ Xpander, Innova đời mới", "Xe 16 chỗ Ford Transit du lịch", "Đón trả sân bay Phú Bài", "Nhận chở hàng đặc sản gửi về xuôi"],
     highlights: ["Tài xế dân địa phương vui tính, am hiểu tuyến điểm", "Xe sạch sẽ máy lạnh mát mẻ", "Đúng giờ hẹn, không bắt khách dọc đường"],
@@ -451,8 +451,7 @@ export const places: Place[] = [
     image: "/images/products/forest-honey.png",
     gallery: [
       "/images/products/forest-honey.png",
-      imageFor("photo-1471943311424-646960669fbc"),
-      imageFor("photo-1587049352851-8d4e89133924")
+      "/images/aluoi/ho-sinh-thai-a-luoi.jpg"
     ],
     services: ["Thử mật trực tiếp trước khi mua", "Đóng chai thủy tinh đóng seal vệ sinh", "Hộp quà biếu sang trọng", "Ship hàng COD toàn quốc"],
     highlights: ["Cam kết 100% mật rừng tự nhiên nói không với mật nuôi đường", "Có tem truy xuất nguồn gốc hợp tác xã", "Món quà quý giá cho sức khỏe"],
@@ -483,8 +482,7 @@ export const places: Place[] = [
     image: "/images/products/mountain-tea.png",
     gallery: [
       "/images/products/mountain-tea.png",
-      imageFor("photo-1544787219-7f47ccb76574"),
-      imageFor("photo-1576092768241-dec231879fc3")
+      "/images/aluoi/homestay-relax.jpg"
     ],
     services: ["Pha trà tiếp khách dùng thử miễn phí", "Đóng gói hút chân không bảo quản lâu dài", "Tư vấn công dụng thảo dược"],
     highlights: ["Nguyên liệu thảo mộc thu hái tự nhiên sạch 100%", "Giúp ngủ sâu giấc và giảm ợ chua dạ dày", "Giá cả mộc mạc đúng giá bản địa"],
@@ -512,11 +510,11 @@ export const places: Place[] = [
     voucherOffer: "Giảm 10% cho đơn combo từ 1kg thịt bò + 1 ghè rượu cần",
     zaloUrl: "https://zalo.me/0988000118",
     phone: "0988 000 118",
-    image: imageFor("photo-1544025162-d76694265947"),
+    image: "/images/aluoi/am-thuc-nha-san.jpg",
     gallery: [
-      imageFor("photo-1544025162-d76694265947"),
-      imageFor("photo-1504674900247-0877df9cc836"),
-      imageFor("photo-1470225620780-dba8ba36b745")
+      "/images/aluoi/am-thuc-nha-san.jpg",
+      "/images/aluoi/checkin-nong-trai.jpg",
+      "/images/aluoi/nha-san-truyen-thong.jpg"
     ],
     services: ["Đóng gói hút chân không tiêu chuẩn", "Cung cấp cần trúc uống rượu cần", "Giao hàng nhanh toàn quốc"],
     highlights: ["Hương vị hun khói củi rừng tự nhiên độc đáo", "Thịt bò mềm dai ngọt bùi càng nhai càng thơm", "Rượu cần men lá ủ truyền thống không đau đầu"],
