@@ -566,18 +566,26 @@ export async function saveCroppedImageAction(
     const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, "");
     const buffer = Buffer.from(base64Data, "base64");
     const fileName = `${category || "cropped"}-${Date.now()}-${(name || "image").replace(/[^a-zA-Z0-9]/g, "_")}.png`;
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-    const filePath = path.join(uploadsDir, fileName);
-    try {
-      fs.writeFileSync(filePath, buffer);
-    } catch (e) {
-      console.error("Lỗi ghi file cropped local:", e);
-    }
+
+    // Upload to Supabase Storage FIRST (works on Vercel + local)
     const cloudUrl = await uploadToSupabaseStorage(buffer, fileName, "image/png");
-    return { success: true, url: cloudUrl || `/uploads/${fileName}` };
+
+    // Try local write as fallback for dev environment (silently skip on Vercel)
+    if (!cloudUrl) {
+      try {
+        const uploadsDir = path.join(process.cwd(), "public", "uploads");
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        fs.writeFileSync(path.join(uploadsDir, fileName), buffer);
+        return { success: true, url: `/uploads/${fileName}` };
+      } catch (localErr) {
+        console.warn("Local write skipped (read-only filesystem):", localErr);
+        return { success: false, error: "Không thể lưu ảnh: Supabase Storage không khả dụng và filesystem read-only." };
+      }
+    }
+
+    return { success: true, url: cloudUrl };
   } catch (err: any) {
     return { success: false, error: err.message || "Lỗi lưu ảnh cắt." };
   }
