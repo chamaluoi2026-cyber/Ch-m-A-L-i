@@ -353,39 +353,53 @@ ${contextDataJson}
 Hãy sinh toàn bộ mã HTML của bản báo cáo phân tích chiến lược này. Lưu ý không bọc trong markdown code block (không dùng \`\`\`html), chỉ trả về đúng chuỗi HTML từ <!DOCTYPE html> đến </html>.
 `;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const candidateModels = [
+    "gemini-2.0-flash",
+    "gemini-1.5-flash-latest",
+    "gemini-1.5-flash-002",
+    "gemini-1.5-flash",
+    "gemini-pro"
+  ];
 
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          { role: "user", parts: [{ text: `${systemInstruction}\n\n${userContent}` }] }
-        ],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 8192
-        }
-      })
-    });
+  for (const model of candidateModels) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-    if (res.ok) {
-      const result = await res.json();
-      let text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text && typeof text === "string") {
-        // Clean markdown block if present
-        text = text.replace(/^```html\s*/i, "").replace(/^```\s*/, "").replace(/```$/, "").trim();
-        if (text.includes("<!DOCTYPE html>") || text.includes("<html")) {
-          return text;
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            { role: "user", parts: [{ text: `${systemInstruction}\n\n${userContent}` }] }
+          ],
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 8192
+          }
+        })
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        let text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text && typeof text === "string") {
+          // Clean markdown block if present
+          text = text.replace(/^```html\s*/i, "").replace(/^```\s*/, "").replace(/```$/, "").trim();
+          if (text.includes("<!DOCTYPE html>") || text.includes("<html")) {
+            return text;
+          }
         }
+      } else {
+        // If 404 or model not found, try next candidate model
+        if (res.status === 404) {
+          continue;
+        }
+        const errText = await res.text();
+        console.warn(`Gemini API call (${model}) returned non-OK status:`, res.status, errText);
       }
-    } else {
-      const errText = await res.text();
-      console.warn("Gemini API call returned non-OK status:", res.status, errText);
+    } catch (err: any) {
+      console.warn(`Gemini API call (${model}) failed:`, err?.message);
     }
-  } catch (err: any) {
-    console.warn("Gemini API call failed:", err?.message);
   }
 
   return null;
