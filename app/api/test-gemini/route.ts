@@ -58,25 +58,46 @@ export async function POST(req: NextRequest) {
       const listData = await listRes.json();
       if (Array.isArray(listData?.models)) {
         availableModels = listData.models
-          .filter((m: any) => m.supportedGenerationMethods?.includes("generateContent"))
+          .filter((m: any) => {
+            const name = (m.name || "").toLowerCase();
+            const isContentGen = m.supportedGenerationMethods?.includes("generateContent");
+            // Loại bỏ hoàn toàn các model chuyên biệt về âm thanh/ảnh/nhúng không dành cho text chat/phân tích
+            const isExcluded =
+              name.includes("-tts") ||
+              name.includes("-image") ||
+              name.includes("-audio") ||
+              name.includes("-transcribe") ||
+              name.includes("-embedding") ||
+              name.includes("-clip") ||
+              name.includes("-er-") ||
+              name.includes("-banana") ||
+              name.includes("-robotics") ||
+              name.includes("-computer-use") ||
+              name.includes("-deep-research") ||
+              name.includes("lyria") ||
+              name.includes("veo") ||
+              name.includes("aqa");
+
+            return isContentGen && !isExcluded;
+          })
           .map((m: any) => m.name.replace(/^models\//, ""));
       }
     } catch (listErr: any) {
       console.warn("[TEST_GEMINI_LIST_WARN]", listErr?.message);
     }
 
-    // 2. Danh sách model ưu tiên từ cao xuống thấp
+    // 2. Danh sách model ưu tiên từ cao xuống thấp (chuẩn Google 2026)
     const preferredCandidates = [
+      "gemini-3.6-flash",
+      "gemini-3.5-flash",
+      "gemini-3.7-flash",
+      "gemini-3.5-flash-lite",
+      "gemini-3.1-flash-lite",
+      "gemini-flash-latest",
+      "gemini-3.8-flash",
+      "gemini-2.5-flash",
       "gemini-2.0-flash",
-      "gemini-2.0-flash-exp",
-      "gemini-1.5-flash-latest",
-      "gemini-1.5-flash-002",
-      "gemini-1.5-flash-001",
-      "gemini-1.5-flash",
-      "gemini-1.5-flash-8b",
-      "gemini-2.0-pro-exp-02-05",
-      "gemini-1.5-pro",
-      "gemini-pro"
+      "gemini-1.5-flash"
     ];
 
     const modelsToTry: string[] = [];
@@ -86,7 +107,7 @@ export async function POST(req: NextRequest) {
         modelsToTry.push(match);
       }
     }
-    // Bổ sung các model còn lại trong availableModels
+    // Bổ sung các model text còn lại trong availableModels
     for (const m of availableModels) {
       if (!modelsToTry.includes(m)) {
         modelsToTry.push(m);
@@ -97,9 +118,9 @@ export async function POST(req: NextRequest) {
       modelsToTry.push(...preferredCandidates);
     }
 
-    // 3. Thử nghiệm gửi prompt kiểm tra
+    // 3. Thử nghiệm gửi prompt kiểm tra (lặp qua các model khả dụng cho đến khi thành công)
     let lastError = "";
-    for (const model of modelsToTry.slice(0, 5)) {
+    for (const model of modelsToTry.slice(0, 6)) {
       try {
         const testRes = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${trimmedKey}`,
@@ -134,6 +155,8 @@ export async function POST(req: NextRequest) {
         } else {
           const errData = await testRes.json().catch(() => ({}));
           lastError = errData?.error?.message || `Mã lỗi HTTP ${testRes.status}`;
+          // Nếu model này bị 404 (không khả dụng), 503 (quá tải) hoặc 429 (quota=0), tiếp tục thử model tiếp theo trong danh sách
+          continue;
         }
       } catch (callErr: any) {
         lastError = callErr?.message || "Lỗi kết nối";
