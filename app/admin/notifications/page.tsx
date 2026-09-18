@@ -19,7 +19,11 @@ import {
   Eye,
   EyeOff,
   Cpu,
-  Database
+  Database,
+  Webhook,
+  ArrowRightLeft,
+  RefreshCw,
+  Trash2
 } from "lucide-react";
 import type { SiteSettings } from "@/lib/server-store";
 
@@ -39,6 +43,33 @@ export default function AdminNotificationsPage() {
     model?: string;
   } | null>(null);
 
+  // Webhook 2-way chat states
+  const [webhookInfo, setWebhookInfo] = useState<any>(null);
+  const [loadingWebhook, setLoadingWebhook] = useState(false);
+  const [registeringWebhook, setRegisteringWebhook] = useState(false);
+  const [customWebhookUrl, setCustomWebhookUrl] = useState("");
+  const [webhookResult, setWebhookResult] = useState<{ success?: boolean; message?: string; error?: string } | null>(null);
+
+  const checkWebhook = async () => {
+    setLoadingWebhook(true);
+    try {
+      const res = await fetch("/api/telegram-webhook/setup");
+      const data = await res.json();
+      if (data.success && data.webhookInfo) {
+        setWebhookInfo(data.webhookInfo);
+        if (data.webhookInfo.url) {
+          setCustomWebhookUrl(data.webhookInfo.url);
+        }
+      } else {
+        setWebhookInfo(null);
+      }
+    } catch {
+      setWebhookInfo(null);
+    } finally {
+      setLoadingWebhook(false);
+    }
+  };
+
   useEffect(() => {
     fetch("/api/settings")
       .then((res) => res.json())
@@ -46,6 +77,9 @@ export default function AdminNotificationsPage() {
         const s = data.settings || data.data;
         if (s) {
           setSettings(s);
+          if (s.telegramBotToken?.trim()) {
+            checkWebhook();
+          }
         }
       })
       .catch((err) => console.error(err))
@@ -145,6 +179,60 @@ export default function AdminNotificationsPage() {
       showToast("error", "Lỗi kết nối tới máy chủ.");
     } finally {
       setTestingGemini(false);
+    }
+  };
+
+  const handleRegisterWebhook = async () => {
+    if (!settings.telegramBotToken?.trim()) {
+      showToast("error", "Cần cấu hình và lưu Telegram Bot Token trước khi kích hoạt Webhook.");
+      return;
+    }
+    setRegisteringWebhook(true);
+    setWebhookResult(null);
+    try {
+      const res = await fetch("/api/telegram-webhook/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ webhookUrl: customWebhookUrl?.trim() || undefined })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setWebhookResult({ success: true, message: data.message });
+        showToast("success", "Kích hoạt Webhook 2 chiều thành công!");
+        checkWebhook();
+      } else {
+        setWebhookResult({ error: data.error || "Đăng ký webhook thất bại." });
+        showToast("error", data.error || "Đăng ký webhook thất bại.");
+      }
+    } catch (err: any) {
+      setWebhookResult({ error: err.message || "Lỗi kết nối máy chủ." });
+      showToast("error", "Lỗi kết nối tới máy chủ.");
+    } finally {
+      setRegisteringWebhook(false);
+    }
+  };
+
+  const handleDeleteWebhook = async () => {
+    if (!confirm("Bạn có chắc chắn muốn hủy đăng ký Telegram Webhook? Khi hủy, nhân viên sẽ không thể reply trực tiếp từ Telegram.")) return;
+    setRegisteringWebhook(true);
+    setWebhookResult(null);
+    try {
+      const res = await fetch("/api/telegram-webhook/setup", {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (data.success) {
+        setWebhookResult({ success: true, message: "Đã hủy đăng ký Webhook thành công." });
+        showToast("info", "Đã hủy đăng ký Webhook.");
+        checkWebhook();
+      } else {
+        setWebhookResult({ error: data.error });
+        showToast("error", data.error || "Lỗi khi xóa Webhook.");
+      }
+    } catch (err: any) {
+      setWebhookResult({ error: err.message || "Lỗi kết nối máy chủ." });
+    } finally {
+      setRegisteringWebhook(false);
     }
   };
 
@@ -592,6 +680,228 @@ export default function AdminNotificationsPage() {
             <div className="pt-2 border-t border-white/10 text-xs text-emerald-300 flex items-center gap-2">
               <ShieldCheck className="size-4 shrink-0" />
               Thông báo qua Telegram hoàn toàn miễn phí 100%, bảo mật cao và tức thời 24/7.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* SECTION 3: TƯƠNG TÁC 2 CHIỀU TELEGRAM ⇄ WEBSITE (LIVE CHAT WEBHOOK)       */}
+      {/* ========================================================================= */}
+      <div className="space-y-4 pt-4 border-t border-forest/10">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-emerald-600 text-white shadow-sm">
+              <ArrowRightLeft className="size-4" />
+            </span>
+            <div>
+              <h2 className="text-base md:text-lg font-black text-ink">
+                3. Chat 2 Chiều Trực Tiếp: Telegram ⇄ Khách Website (Webhook)
+              </h2>
+              <p className="text-[11px] text-ink/60 mt-0.5">
+                Nhân viên chỉ cần quẹt phải <b>Reply (Trả lời)</b> tin nhắn trong Telegram &rarr; Tin lập tức hiện lên khung chat của khách trên web.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold ${
+                webhookInfo?.url
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  : "bg-amber-50 text-amber-700 border border-amber-200"
+              }`}
+            >
+              {webhookInfo?.url ? (
+                <>
+                  <CheckCircle2 className="size-3 text-emerald-600" />
+                  Đang Kết Nối Webhook
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="size-3 text-amber-600" />
+                  Chưa Kích Hoạt Webhook
+                </>
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={checkWebhook}
+              disabled={loadingWebhook}
+              title="Làm mới trạng thái Webhook"
+              className="p-1.5 rounded-xl border border-black/10 text-ink/60 hover:text-forest hover:bg-forest/5 transition"
+            >
+              <RefreshCw className={`size-3.5 ${loadingWebhook ? "animate-spin text-forest" : ""}`} />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Card Cấu hình Webhook URL & Kích hoạt */}
+          <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 space-y-5 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-black/5 pb-3">
+                <h3 className="text-sm font-black text-ink flex items-center gap-2">
+                  <Webhook className="size-4 text-emerald-600" />
+                  Đăng Ký Webhook Với Telegram
+                </h3>
+                <span className="text-[10px] font-bold text-ink/50 bg-slate-100 px-2.5 py-1 rounded-lg">
+                  Tự động đồng bộ Supabase
+                </span>
+              </div>
+
+              {/* Status Banner */}
+              <div className={`p-4 rounded-2xl border text-xs space-y-1.5 ${
+                webhookInfo?.url 
+                  ? "bg-emerald-50/70 border-emerald-200 text-emerald-900" 
+                  : "bg-amber-50/70 border-amber-200 text-amber-900"
+              }`}>
+                <div className="flex items-center gap-2 font-bold">
+                  {webhookInfo?.url ? (
+                    <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertCircle className="size-4 text-amber-600 shrink-0" />
+                  )}
+                  <span>{webhookInfo?.url ? "Webhook đang hoạt động bình thường" : "Chưa kích hoạt Webhook 2 chiều"}</span>
+                </div>
+                {webhookInfo?.url ? (
+                  <div className="text-[11px] space-y-1 pl-6">
+                    <p className="break-all font-mono text-ink">
+                      <b>URL đã đăng ký:</b> {webhookInfo.url}
+                    </p>
+                    <p className="text-ink/60">
+                      Tin chờ xử lý (pending): <b>{webhookInfo.pending_update_count ?? 0}</b> | SSL: <b>Hợp lệ</b>
+                    </p>
+                    {webhookInfo.last_error_message && (
+                      <p className="text-red-600 text-[10px]">
+                        Lưu ý lỗi gần nhất: {webhookInfo.last_error_message}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[11px] pl-6 text-amber-800 leading-relaxed">
+                    Sau khi điền Bot Token ở mục 2, hãy bấm nút <b>&ldquo;Kích Hoạt Webhook 2 Chiều&rdquo;</b> bên dưới để Telegram tự động bắn các câu trả lời của nhân viên về hệ thống.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-ink mb-1.5">
+                  Địa chỉ URL Webhook Nhận Phản Hồi (Tùy chọn ghi đè)
+                </label>
+                <input
+                  type="text"
+                  value={customWebhookUrl}
+                  onChange={(e) => setCustomWebhookUrl(e.target.value.trim())}
+                  placeholder="Mặc định: https://chamaluoiadmin.netlify.app/api/telegram-webhook"
+                  className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-mono text-ink focus:border-forest focus:outline-none"
+                />
+                <p className="text-[10px] text-ink/50 mt-1">
+                  Mặc định: <code>https://chamaluoiadmin.netlify.app/api/telegram-webhook</code> (yêu cầu giao thức HTTPS)
+                </p>
+              </div>
+
+              {webhookResult && (
+                <div className={`p-3 rounded-2xl text-xs font-semibold flex items-center gap-2 ${
+                  webhookResult.success 
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200" 
+                    : "bg-red-50 text-red-800 border border-red-200"
+                }`}>
+                  {webhookResult.success ? (
+                    <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                  ) : (
+                    <AlertCircle className="size-4 shrink-0 text-red-600" />
+                  )}
+                  <span>{webhookResult.message || webhookResult.error}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-3 flex flex-col sm:flex-row gap-2.5">
+              <button
+                type="button"
+                onClick={handleRegisterWebhook}
+                disabled={registeringWebhook || !settings.telegramBotToken}
+                className="flex-1 py-3 rounded-2xl bg-forest text-white text-xs font-bold hover:bg-forest/90 transition shadow flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {registeringWebhook ? <Loader2 className="size-4 animate-spin" /> : <ArrowRightLeft className="size-4" />}
+                {registeringWebhook ? "Đang gửi yêu cầu tới Telegram..." : "Kích Hoạt Webhook 2 Chiều"}
+              </button>
+
+              {webhookInfo?.url && (
+                <button
+                  type="button"
+                  onClick={handleDeleteWebhook}
+                  disabled={registeringWebhook}
+                  className="px-4 py-3 rounded-2xl border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  title="Hủy đăng ký webhook"
+                >
+                  <Trash2 className="size-3.5" />
+                  <span>Hủy Webhook</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Quy trình hoạt động trực quan */}
+          <div className="rounded-3xl bg-[#0F382E] text-white p-6 md:p-7 shadow-card space-y-5 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 className="text-sm md:text-base font-black text-emerald-300 flex items-center gap-2">
+                  <Sparkles className="size-4" />
+                  Cơ Chế Hoạt Động & Hướng Dẫn Sử Dụng
+                </h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-400/20 text-emerald-300">
+                  Zero App Switch
+                </span>
+              </div>
+
+              <div className="text-xs text-white/85 space-y-3.5 leading-relaxed">
+                <div className="flex gap-3 items-start">
+                  <span className="size-6 rounded-full bg-emerald-400 text-forest font-black grid place-items-center shrink-0 text-xs mt-0.5">1</span>
+                  <div>
+                    <p className="font-bold text-white">Khách gửi tin nhắn trên Website</p>
+                    <p className="text-white/70 mt-0.5">
+                      Khách hàng mở khung chat ở góc phải website Chạm A Lưới và nhắn tin tư vấn.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 items-start">
+                  <span className="size-6 rounded-full bg-emerald-400 text-forest font-black grid place-items-center shrink-0 text-xs mt-0.5">2</span>
+                  <div>
+                    <p className="font-bold text-white">Telegram báo rung điện thoại nhân viên</p>
+                    <p className="text-white/70 mt-0.5">
+                      Bot gửi thông báo tức thì kèm nội dung chat và mã nhận diện phiên <code>[SID:chat-...]</code>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 items-start">
+                  <span className="size-6 rounded-full bg-emerald-400 text-forest font-black grid place-items-center shrink-0 text-xs mt-0.5">3</span>
+                  <div>
+                    <p className="font-bold text-emerald-300">Nhân viên quẹt phải &ldquo;Trả Lời&rdquo; (Reply)</p>
+                    <p className="text-white/70 mt-0.5">
+                      Nhân viên mở Telegram, <b>quẹt phải trực tiếp</b> vào tin nhắn thông báo đó hoặc chọn <b>Reply</b> rồi gõ câu trả lời gửi đi.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 items-start">
+                  <span className="size-6 rounded-full bg-emerald-400 text-forest font-black grid place-items-center shrink-0 text-xs mt-0.5">4</span>
+                  <div>
+                    <p className="font-bold text-white">Tin nhắn lập tức hiện trên màn hình khách</p>
+                    <p className="text-white/70 mt-0.5">
+                      Webhook tự động đẩy nội dung vào cuộc trò chuyện trên Supabase. Trình duyệt của khách tự cập nhật sau 3 giây mà nhân viên không cần mở máy tính hay đăng nhập Admin!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-white/10 text-[11px] text-emerald-200/90 flex items-center gap-2">
+              <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
+              <span>Tiện lợi tối đa: Tư vấn cho khách mọi lúc mọi nơi ngay trên điện thoại di động!</span>
             </div>
           </div>
         </div>

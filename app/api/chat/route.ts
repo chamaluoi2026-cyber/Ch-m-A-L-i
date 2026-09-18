@@ -215,7 +215,10 @@ export async function POST(req: NextRequest) {
             `⏰ <b>Thời gian:</b> ${new Date().toLocaleTimeString("vi-VN")} ${new Date().toLocaleDateString("vi-VN")}\n\n` +
             `👉 <a href="tel:${aiAnalysis.detectedPhone}"><b>📞 BẤM ĐỂ GỌI ĐIỆN NGAY CHO KHÁCH</b></a>\n` +
             `👉 <a href="https://zalo.me/${aiAnalysis.detectedPhone}"><b>💬 NHẮN ZALO CHO KHÁCH</b></a>\n` +
-            `👉 <a href="https://chamaluoiadmin.netlify.app/admin/chat"><b>💻 MỞ LIVE CHAT ADMIN</b></a>`;
+            `👉 <a href="https://chamaluoiadmin.netlify.app/admin/chat"><b>💻 MỞ LIVE CHAT ADMIN</b></a>\n` +
+            `──────────────────\n` +
+            `👉 <i>Quẹt phải để <b>Trả lời (Reply)</b> tin nhắn này, câu trả lời sẽ gửi thẳng về web của khách!</i>\n` +
+            `<code>[SID:${session.id}]</code>`;
           await sendTelegramNotification(urgentTgMsg);
         } catch (e) {
           console.error("[TELEGRAM_URGENT_ERR]", e);
@@ -227,8 +230,11 @@ export async function POST(req: NextRequest) {
             `👤 <b>Khách:</b> ${session.guestName || "Khách truy cập"}\n` +
             (session.guestPhone ? `📞 <b>SĐT:</b> ${session.guestPhone}\n` : "") +
             `💬 <b>Tin nhắn:</b> "${newMsg.text}"\n` +
-            `🤖 <i>Trợ lý AI Bản Địa đã phản hồi tức thì.</i>\n` +
-            `👉 <a href="https://chamaluoiadmin.netlify.app/admin/chat">Mở hộp chat phản hồi thêm</a>`;
+            `🤖 <i>Trợ lý AI Bản Địa đã phản hồi sơ bộ.</i>\n` +
+            `👉 <a href="https://chamaluoiadmin.netlify.app/admin/chat">Mở hộp chat admin</a>\n` +
+            `──────────────────\n` +
+            `👉 <i>Quẹt phải để <b>Trả lời (Reply)</b> tin nhắn này, câu trả lời sẽ gửi thẳng về web của khách!</i>\n` +
+            `<code>[SID:${session.id}]</code>`;
           await sendTelegramNotification(tgMsg);
         } catch (e) {
           console.error("[TELEGRAM_NORMAL_ERR]", e);
