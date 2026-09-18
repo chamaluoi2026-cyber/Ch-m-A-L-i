@@ -7,6 +7,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const isDownload = searchParams.get("download") === "true";
+    const isFast = searchParams.get("fast") === "true";
     const prompt = searchParams.get("prompt") || undefined;
     const focus = searchParams.get("focus") || undefined;
     const apiKey = searchParams.get("apiKey") || undefined;
@@ -19,6 +20,7 @@ export async function GET(request: Request) {
       userPrompt: prompt,
       focusArea: focus,
       apiKey: apiKey,
+      skipGemini: isFast,
       timeRange,
       month,
       startDate,
@@ -49,12 +51,13 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { prompt, focus, apiKey, isDownload, timeRange, month, startDate, endDate } = body;
+    const { prompt, focus, apiKey, isDownload, fast, timeRange, month, startDate, endDate } = body;
 
     const html = await generateDynamicAiReport({
       userPrompt: prompt,
       focusArea: focus,
       apiKey: apiKey,
+      skipGemini: Boolean(fast),
       timeRange,
       month,
       startDate,

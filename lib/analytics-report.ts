@@ -84,6 +84,7 @@ export interface GenerateReportOptions {
   userPrompt?: string;
   focusArea?: string;
   apiKey?: string;
+  skipGemini?: boolean;
   timeRange?: string; // 'all' | 'this_month' | 'last_month' | 'this_quarter' | 'custom'
   month?: string; // 'YYYY-MM'
   startDate?: string;
@@ -1193,7 +1194,7 @@ export async function generateDynamicAiReport(options: GenerateReportOptions = {
     process.env.GEMINI_API_KEY?.trim() ||
     process.env.NEXT_PUBLIC_GEMINI_API_KEY?.trim();
 
-  if (apiKey) {
+  if (apiKey && !options.skipGemini) {
     const aiHtml = await callGeminiApi(context, options, apiKey);
     if (aiHtml) {
       return aiHtml;

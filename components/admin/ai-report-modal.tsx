@@ -123,13 +123,15 @@ export function AiReportModal({
     } catch {}
   };
 
+  const [useFastMode, setUseFastMode] = useState(false);
   const activePrompt = customPrompt.trim() || PRESET_PROMPTS.find(p => p.id === selectedPreset)?.prompt || "";
 
   const getReportUrl = (download = false) => {
     const params = new URLSearchParams();
     if (activePrompt) params.set("prompt", activePrompt);
     if (selectedPreset) params.set("focus", selectedPreset);
-    if (apiKey.trim()) params.set("apiKey", apiKey.trim());
+    if (!useFastMode && apiKey.trim()) params.set("apiKey", apiKey.trim());
+    if (useFastMode) params.set("fast", "true");
     if (selectedTimeRange && selectedTimeRange !== "all") params.set("timeRange", selectedTimeRange);
     if (download) params.set("download", "true");
     params.set("_t", reportKey.toString());
@@ -139,9 +141,10 @@ export function AiReportModal({
   const handleTriggerAnalysis = () => {
     setIsGenerating(true);
     setReportKey(Date.now());
+    // Safe timeout fallback
     setTimeout(() => {
       setIsGenerating(false);
-    }, 1500);
+    }, 45000);
   };
 
   return (
@@ -365,6 +368,23 @@ export function AiReportModal({
 
                 <button
                   type="button"
+                  onClick={() => {
+                    setUseFastMode(!useFastMode);
+                    setIsGenerating(true);
+                    setReportKey(Date.now());
+                  }}
+                  className={`inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold border transition shrink-0 ${
+                    useFastMode
+                      ? "bg-amber-400 text-black border-amber-300 font-bold"
+                      : "bg-white/10 text-white/90 border-white/20 hover:bg-white/20"
+                  }`}
+                  title="Chuyển chế độ phân tích tức thì trong 1 giây hoặc phân tích chuyên sâu qua Gemini"
+                >
+                  {useFastMode ? "⚡ Chế độ Tức thì (1s)" : "🤖 Google Gemini AI"}
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleTriggerAnalysis}
                   disabled={isGenerating}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white text-xs font-bold shadow transition disabled:opacity-50 shrink-0"
@@ -378,16 +398,39 @@ export function AiReportModal({
             {/* Iframe Content with Loading Overlay */}
             <div className="relative flex-1 bg-[#F4F6F5] p-2 overflow-hidden">
               {isGenerating && (
-                <div className="absolute inset-0 z-10 bg-white/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
-                  <div className="size-10 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin" />
-                  <p className="text-xs font-bold text-emerald-900 animate-pulse">
-                    AI đang phân tích sâu dữ liệu hội thoại, leads và thị trường A Lưới...
-                  </p>
+                <div className="absolute inset-0 z-10 bg-white/85 backdrop-blur-sm flex flex-col items-center justify-center gap-3 p-6 text-center">
+                  <div className="size-12 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-emerald-950">
+                      {useFastMode
+                        ? "Đang tổng hợp dữ liệu thời gian thực Chạm A Lưới..."
+                        : "Google Gemini 3.6 Flash đang phân tích sâu dữ liệu..."}
+                    </p>
+                    <p className="text-xs text-ink/70 max-w-md">
+                      {useFastMode
+                        ? "Động cơ nội bộ phân tích ngay trong 1 giây."
+                        : "AI đang quét cơ sở dữ liệu bookings, leads, hội thoại khách và thời vụ A Lưới (khoảng 10-20 giây)."}
+                    </p>
+                  </div>
+                  {!useFastMode && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUseFastMode(true);
+                        setIsGenerating(true);
+                        setReportKey(Date.now());
+                      }}
+                      className="mt-2 text-xs font-bold text-emerald-800 underline hover:text-emerald-950"
+                    >
+                      Bấm vào đây nếu muốn xem nhanh tức thì (không cần đợi AI) →
+                    </button>
+                  )}
                 </div>
               )}
               <iframe
                 id="ai-report-frame"
                 src={getReportUrl(false)}
+                onLoad={() => setIsGenerating(false)}
                 title="Báo cáo phân tích chiến lược AI"
                 className="w-full h-full rounded-xl bg-white border border-black/5 shadow-inner"
               />
