@@ -136,7 +136,7 @@ export default function AdminMediaPage() {
     url: string;
     name: string;
     field?: keyof SiteSettings | "mediaItem" | null;
-    aspect?: "free" | "4:1" | "3:1" | "1:1" | "16:9";
+    aspect?: "free" | "3.5:1" | "4:1" | "3:1" | "1:1" | "16:9";
   } | null>(null);
 
   // Site Settings
@@ -173,10 +173,11 @@ export default function AdminMediaPage() {
     heroSecondaryBtnTextEn: "Book Tour",
     heroSecondaryBtnLink: "/book-tour",
     heroOverlayOpacity: 60,
-    heroCardStyle: "frosted",
+    heroPosition: "top" as "top" | "center" | "bottom",
+    heroCardStyle: "crystal" as "crystal" | "frosted" | "radial" | "gradient" | "custom" | "none",
     heroCardColor: "#0f382e",
-    heroCardOpacity: 28,
-    heroCardBlur: "lg",
+    heroCardOpacity: 20,
+    heroCardBlur: "md",
     aboutBadge: "Về chúng tôi",
     aboutTitle: "Cầu nối số cho du lịch cộng đồng",
     aboutSubtitle: "Chạm A Lưới là nền tảng du lịch trung gian giúp kết nối du khách với nét đẹp văn hóa bản địa, các chủ nhà homestay ấm áp, đơn vị dịch vụ trách nhiệm và những nghệ nhân vùng cao kiên trì gìn giữ nghề truyền thống.",
@@ -1930,10 +1931,11 @@ export default function AdminMediaPage() {
 
               {/* Live Preview Mockup (Trực quan hóa thời gian thực) */}
               {(() => {
-                const previewCardStyle = siteSettings.heroCardStyle || "frosted";
+                const previewCardStyle = siteSettings.heroCardStyle || "crystal";
                 const previewCardColor = siteSettings.heroCardColor || "#0f382e";
-                const previewCardOpacity = siteSettings.heroCardOpacity ?? 28;
-                const previewCardBlur = siteSettings.heroCardBlur || "lg";
+                const previewCardOpacity = siteSettings.heroCardOpacity ?? 20;
+                const previewCardBlur = siteSettings.heroCardBlur || "md";
+                const previewPosition = (siteSettings as any).heroPosition || "top";
 
                 const previewBlurClass = {
                   none: "backdrop-blur-none",
@@ -1943,11 +1945,26 @@ export default function AdminMediaPage() {
                   xl: "backdrop-blur-xl"
                 }[previewCardBlur] || "backdrop-blur-md";
 
+                // Alignment class based on heroPosition
+                const alignClass =
+                  previewPosition === "top"
+                    ? "items-start pt-5 pb-2"
+                    : previewPosition === "bottom"
+                    ? "items-end pt-2 pb-4"
+                    : "items-center";
+
                 let previewBgStyle: React.CSSProperties = {};
-                let previewClasses = `relative z-10 w-full max-w-xl p-4 sm:p-6 text-center text-white transition-all duration-300 `;
+                let previewClasses = `relative z-10 w-full max-w-sm p-3 sm:p-4 text-center text-white transition-all duration-300 `;
 
                 if (previewCardStyle === "none") {
                   previewClasses += "bg-transparent border-0 shadow-none";
+                } else if (previewCardStyle === "crystal") {
+                  // Apple Liquid Crystal Glass – light, không che mặt người
+                  previewClasses += `rounded-2xl border border-white/30 shadow-xl ${previewBlurClass}`;
+                  previewBgStyle = {
+                    background: "linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.05) 100%)",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.25)"
+                  };
                 } else if (previewCardStyle === "radial") {
                   previewClasses += `rounded-2xl border-0 shadow-none ${previewBlurClass}`;
                   previewBgStyle = {
@@ -1973,11 +1990,11 @@ export default function AdminMediaPage() {
                         Xem trước giao diện thực tế (Live Preview):
                       </span>
                       <span className="text-[11px] text-ink/50 font-medium">
-                        Lớp phủ nền: {siteSettings.heroOverlayOpacity ?? 60}% | Layer giữa: {siteSettings.heroCardColor || "#0f382e"} ({siteSettings.heroCardOpacity ?? 28}%)
+                        Vị trí: {previewPosition === "top" ? "⬆️ Trên" : previewPosition === "bottom" ? "⬇️ Dưới" : "⏺️ Giữa"} | Style: {previewCardStyle} | Lớp phủ: {siteSettings.heroOverlayOpacity ?? 60}%
                       </span>
                     </div>
 
-                    <div className="relative aspect-[16/8] sm:aspect-[21/9] rounded-2xl overflow-hidden border border-black/15 shadow-inner bg-forest flex items-center justify-center p-4 sm:p-6">
+                    <div className={`relative aspect-[16/8] sm:aspect-[21/9] rounded-2xl overflow-hidden border border-black/15 shadow-inner bg-forest flex flex-col justify-center p-4 sm:p-6 ${alignClass}`}>
                       <AppImage
                         src={siteSettings.heroImage || "/images/home-hero-local.jpg"}
                         alt="Hero Banner Live Preview"
@@ -1993,8 +2010,11 @@ export default function AdminMediaPage() {
 
                       {/* Dynamic Middle Layer Card Mockup */}
                       <div className={previewClasses} style={previewBgStyle}>
-                        {previewCardStyle !== "none" && previewCardStyle !== "radial" && (
+                        {previewCardStyle !== "none" && previewCardStyle !== "radial" && previewCardStyle !== "crystal" && (
                           <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                        )}
+                        {previewCardStyle === "crystal" && (
+                          <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
                         )}
 
                         <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/35 bg-emerald-950/70 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
@@ -2035,6 +2055,7 @@ export default function AdminMediaPage() {
                   </div>
                 );
               })()}
+
 
               {/* Form Controls Grid */}
               <div className="grid gap-6 lg:grid-cols-2 pt-2 border-t border-black/5">
@@ -2121,8 +2142,39 @@ export default function AdminMediaPage() {
                         2. Tùy chỉnh màu sắc &amp; kiểu dáng Layer Giữa (Khung chữ)
                       </h4>
                       <span className="text-[11px] font-mono text-emerald-800 font-bold">
-                        {siteSettings.heroCardColor || "#0f382e"} ({siteSettings.heroCardOpacity ?? 28}%)
+                        {siteSettings.heroCardColor || "#0f382e"} ({siteSettings.heroCardOpacity ?? 20}%)
                       </span>
+                    </div>
+
+                    {/* Vị trí chữ (Tránh che mặt người) */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-ink flex items-center gap-1.5">
+                        📍 Vị trí hiển thị chữ trên ảnh <span className="font-normal text-emerald-700">(Tránh che mặt người)</span>
+                      </label>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        {[
+                          { id: "top", label: "⬆️ Trên cao", desc: "Mái nhà / Bầu trời · Khuyên dùng" },
+                          { id: "center", label: "⏺️ Chính giữa", desc: "Cân đối, phù hợp ảnh phong cảnh" },
+                          { id: "bottom", label: "⬇️ Dưới chân", desc: "Phần dưới của ảnh" }
+                        ].map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => setSiteSettings({ ...siteSettings, heroPosition: p.id as any })}
+                            className={`p-2.5 rounded-xl border text-left transition flex flex-col gap-0.5 ${
+                              ((siteSettings as any).heroPosition || "top") === p.id
+                                ? "border-emerald-700 bg-emerald-50 text-emerald-950 font-bold ring-2 ring-emerald-600/30"
+                                : "border-black/10 bg-white hover:bg-beige text-ink/80"
+                            }`}
+                          >
+                            <span className="text-xs leading-tight">{p.label}</span>
+                            <span className="text-[10px] text-ink/50 font-normal">{p.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-amber-700 bg-amber-50 rounded-lg px-3 py-2 border border-amber-200">
+                        💡 <strong>Gợi ý:</strong> Chọn <strong>⬆️ Trên cao</strong> khi ảnh có người đứng — chữ sẽ hiện ở khu vực trời/mái nhà, không che mặt ai.
+                      </p>
                     </div>
 
                     {/* Chọn Kiểu dáng Layer */}
@@ -2130,6 +2182,7 @@ export default function AdminMediaPage() {
                       <label className="text-[11px] font-bold text-ink">Kiểu dáng hiển thị:</label>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                         {[
+                          { id: "crystal", label: "💎 Kính Pha Lê Siêu Trong", desc: "Không che mặt người · Được khuyên dùng" },
                           { id: "frosted", label: "Kính mờ siêu trong", desc: "Hiện đại, trong veo" },
                           { id: "radial", label: "Tán mờ không viền", desc: "Lan tỏa mềm mại" },
                           { id: "gradient", label: "Gradient Rừng Xanh", desc: "Hòa quyện tự nhiên" },
@@ -2141,7 +2194,7 @@ export default function AdminMediaPage() {
                             type="button"
                             onClick={() => setSiteSettings({ ...siteSettings, heroCardStyle: s.id as any })}
                             className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between ${
-                              (siteSettings.heroCardStyle || "frosted") === s.id
+                              (siteSettings.heroCardStyle || "crystal") === s.id
                                 ? "border-emerald-700 bg-emerald-50 text-emerald-950 font-bold ring-2 ring-emerald-600/30"
                                 : "border-black/10 bg-white hover:bg-beige text-ink/80"
                             }`}
@@ -2458,10 +2511,11 @@ export default function AdminMediaPage() {
                       heroSecondaryBtnText: "Đặt tour",
                       heroSecondaryBtnLink: "/book-tour",
                       heroOverlayOpacity: 60,
-                      heroCardStyle: "frosted",
+                      heroPosition: "top",
+                      heroCardStyle: "crystal",
                       heroCardColor: "#0f382e",
-                      heroCardOpacity: 28,
-                      heroCardBlur: "lg"
+                      heroCardOpacity: 20,
+                      heroCardBlur: "md"
                     });
                   }}
                   className="rounded-xl border border-black/15 px-3.5 py-2 text-xs font-semibold text-ink/70 hover:bg-beige transition flex items-center gap-1.5"
@@ -4098,6 +4152,39 @@ export default function AdminMediaPage() {
           items={allMediaItems}
         />
       )}
+
+      {/* ========================================================
+          MODAL: CẮT XÉN & THU PHÓNG HÌNH ẢNH (CROP & SCALE)
+         ======================================================== */}
+      {cropTarget && (
+        <ImageCropperModal
+          target={cropTarget}
+          onClose={() => setCropTarget(null)}
+          onSaved={async (newUrl, field) => {
+            setCropTarget(null);
+            if (field && field !== "mediaItem") {
+              const nextSettings: SiteSettings = { ...siteSettings, [field]: newUrl };
+              setSiteSettings(nextSettings);
+              setIsSavingSettings(true);
+              try {
+                const saveRes = await saveSettingsViaApi(nextSettings);
+                if (saveRes.success && saveRes.settings) {
+                  setSiteSettings(saveRes.settings);
+                  setInitialSettings(saveRes.settings);
+                  showToast("success", `✅ Đã cắt logo và CẬP NHẬT website thành công!`);
+                } else {
+                  showToast("error", saveRes.error || "Không thể lưu cấu hình sau khi cắt.");
+                }
+              } finally {
+                setIsSavingSettings(false);
+              }
+            } else {
+              showToast("success", `✅ Đã lưu ảnh đã cắt vào thư viện!`);
+            }
+            await loadImages();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -4223,6 +4310,14 @@ function MediaPickerModal({
 
 /**
  * Interactive HTML5 Canvas Image Cropper & Scaler Modal
+ * Tính năng nâng cao:
+ * - Tỉ lệ 3.5:1 chuẩn Navbar, 4:1, 3:1, 1:1, 16:9, Tự do
+ * - Xoay 90° CW/CCW
+ * - Lật ngang (Flip Horizontal)
+ * - Touch drag & pinch-zoom trên di động
+ * - Tự động phát hiện % viền trống khi mở
+ * - Tự động gợi ý cắt sát nếu viền > 25%
+ * - Phím tắt: R = xoay, Z = reset zoom, Enter = lưu
  */
 function ImageCropperModal({
   target,
@@ -4233,46 +4328,69 @@ function ImageCropperModal({
     url: string;
     name: string;
     field?: keyof SiteSettings | "mediaItem" | null;
-    aspect?: "free" | "4:1" | "3:1" | "1:1" | "16:9";
+    aspect?: "free" | "3.5:1" | "4:1" | "3:1" | "1:1" | "16:9";
   };
   onClose: () => void;
   onSaved: (newUrl: string, field?: keyof SiteSettings | "mediaItem" | null) => void;
 }) {
-  const [aspect, setAspect] = useState<"free" | "4:1" | "3:1" | "1:1" | "16:9">(target.aspect || "4:1");
+  const [aspect, setAspect] = useState<"free" | "3.5:1" | "4:1" | "3:1" | "1:1" | "16:9">(target.aspect || "4:1");
   const [zoom, setZoom] = useState<number>(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState<number>(0); // 0, 90, 180, 270
+  const [flipH, setFlipH] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isSaving, setIsSaving] = useState(false);
   const [isAutoTrimming, setIsAutoTrimming] = useState(false);
   const [previewDataUrl, setPreviewDataUrl] = useState<string>("");
+  const [transparentPercent, setTransparentPercent] = useState<number | null>(null);
+  const [showTrimSuggestion, setShowTrimSuggestion] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  // Touch support refs
+  const lastTouchDistRef = useRef<number>(0);
+  const lastTouchPanRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Load Image
+  // Load Image & auto-detect transparent padding on mount
   useEffect(() => {
     const img = new window.Image();
     img.crossOrigin = "anonymous";
     img.src = target.url;
     img.onload = () => {
       imgRef.current = img;
-      renderCanvas();
+      setImageLoaded(true);
+      // Auto-detect transparent/white margin
+      analyzeTransparency(img);
     };
   }, [target.url]);
 
   // Update canvas on changes
   useEffect(() => {
-    if (imgRef.current) {
+    if (imgRef.current && imageLoaded) {
       renderCanvas();
     }
-  }, [zoom, pan, aspect]);
+  }, [zoom, pan, aspect, rotation, flipH, imageLoaded]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+      if (e.key === "r" || e.key === "R") setRotation((r) => (r + 90) % 360);
+      if (e.key === "z" || e.key === "Z") { setZoom(1); setPan({ x: 0, y: 0 }); }
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSaveCropped(); }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
   function getTargetDimensions() {
-    if (aspect === "4:1") return { w: 600, h: 150 };
-    if (aspect === "3:1") return { w: 600, h: 200 };
-    if (aspect === "1:1") return { w: 400, h: 400 };
-    if (aspect === "16:9") return { w: 640, h: 360 };
+    if (aspect === "3.5:1") return { w: 700, h: 200 };
+    if (aspect === "4:1")   return { w: 600, h: 150 };
+    if (aspect === "3:1")   return { w: 600, h: 200 };
+    if (aspect === "1:1")   return { w: 400, h: 400 };
+    if (aspect === "16:9")  return { w: 640, h: 360 };
     return { w: 600, h: 300 }; // free
   }
 
@@ -4287,11 +4405,12 @@ function ImageCropperModal({
     const { w, h } = getTargetDimensions();
     canvas.width = w;
     canvas.height = h;
-
     ctx.clearRect(0, 0, w, h);
 
-    // Calculate scaling to cover canvas
-    const imgRatio = img.naturalWidth / img.naturalHeight;
+    const isRotated90or270 = rotation === 90 || rotation === 270;
+    const naturalW = isRotated90or270 ? img.naturalHeight : img.naturalWidth;
+    const naturalH = isRotated90or270 ? img.naturalWidth : img.naturalHeight;
+    const imgRatio = naturalW / naturalH;
     const canvasRatio = w / h;
 
     let drawW, drawH;
@@ -4306,10 +4425,50 @@ function ImageCropperModal({
     const drawX = (w - drawW) / 2 + pan.x;
     const drawY = (h - drawH) / 2 + pan.y;
 
-    ctx.drawImage(img, drawX, drawY, drawW, drawH);
+    ctx.save();
+    ctx.translate(drawX + drawW / 2, drawY + drawH / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    if (flipH) ctx.scale(-1, 1);
+    // Draw at rotation-adjusted size
+    const rW = isRotated90or270 ? drawH : drawW;
+    const rH = isRotated90or270 ? drawW : drawH;
+    ctx.drawImage(img, -rW / 2, -rH / 2, rW, rH);
+    ctx.restore();
 
     try {
       setPreviewDataUrl(canvas.toDataURL("image/png"));
+    } catch {
+      // ignore CORS
+    }
+  }
+
+  // Analyze transparent / white border percentage
+  function analyzeTransparency(img: HTMLImageElement) {
+    try {
+      const off = document.createElement("canvas");
+      const MAX = 400;
+      const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+      off.width = Math.round(img.naturalWidth * scale);
+      off.height = Math.round(img.naturalHeight * scale);
+      const ctx = off.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0, off.width, off.height);
+      const imgData = ctx.getImageData(0, 0, off.width, off.height);
+      const data = imgData.data;
+      let emptyPixels = 0;
+      const total = off.width * off.height;
+      for (let i = 0; i < data.length; i += 4) {
+        const a = data[i + 3];
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        if (a < 20 || (r > 240 && g > 240 && b > 240 && a > 200)) {
+          emptyPixels++;
+        }
+      }
+      const pct = Math.round((emptyPixels / total) * 100);
+      setTransparentPercent(pct);
+      if (pct > 25) {
+        setShowTrimSuggestion(true);
+      }
     } catch {
       // ignore
     }
@@ -4319,38 +4478,26 @@ function ImageCropperModal({
   function handleAutoTrim() {
     const img = imgRef.current;
     if (!img) return;
-
     setIsAutoTrimming(true);
+    setShowTrimSuggestion(false);
     try {
-      // Offscreen canvas at natural size
       const off = document.createElement("canvas");
       off.width = img.naturalWidth;
       off.height = img.naturalHeight;
       const ctx = off.getContext("2d");
       if (!ctx) return;
-
       ctx.drawImage(img, 0, 0);
       const imgData = ctx.getImageData(0, 0, off.width, off.height);
       const data = imgData.data;
 
-      let minX = off.width,
-        maxX = -1,
-        minY = off.height,
-        maxY = -1;
-
+      let minX = off.width, maxX = -1, minY = off.height, maxY = -1;
       for (let y = 0; y < off.height; y++) {
         for (let x = 0; x < off.width; x++) {
           const idx = (y * off.width + x) * 4;
           const a = data[idx + 3];
-          const r = data[idx];
-          const g = data[idx + 1];
-          const b = data[idx + 2];
-
-          // Check if pixel is not transparent and not solid white/light background
-          const isNotTransparent = a > 20;
-          const isNotWhite = !(r > 245 && g > 245 && b > 245);
-
-          if (isNotTransparent && isNotWhite) {
+          const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+          const isNotEmpty = a > 20 && !(r > 240 && g > 240 && b > 240 && a > 200);
+          if (isNotEmpty) {
             if (x < minX) minX = x;
             if (x > maxX) maxX = x;
             if (y < minY) minY = y;
@@ -4360,59 +4507,86 @@ function ImageCropperModal({
       }
 
       if (maxX >= minX && maxY >= minY) {
-        // We found bounding box!
-        const boxW = maxX - minX;
-        const boxH = maxY - minY;
+        const boxW = maxX - minX + 1;
+        const boxH = maxY - minY + 1;
         const { w, h } = getTargetDimensions();
-
-        // Calculate needed zoom so this box covers ~90% of the canvas
-        const scaleX = (w * 0.9) / boxW;
-        const scaleY = (h * 0.9) / boxH;
+        // Scale so box fits 95% of canvas
+        const scaleX = (w * 0.95) / boxW;
+        const scaleY = (h * 0.95) / boxH;
         const fitScale = Math.min(scaleX, scaleY);
-
-        const newZoom = Math.max(1, Math.min(4, fitScale / (w / img.naturalWidth)));
+        const baseScale = img.naturalWidth > img.naturalHeight
+          ? img.naturalWidth / w
+          : img.naturalHeight / h;
+        const newZoom = Math.max(0.5, Math.min(8, fitScale * (img.naturalWidth / w)));
         setZoom(newZoom);
-
-        // Center on the bounding box center
+        // Pan to center the content bounding box
         const boxCenterX = minX + boxW / 2;
         const boxCenterY = minY + boxH / 2;
         const imgCenterX = img.naturalWidth / 2;
         const imgCenterY = img.naturalHeight / 2;
-
         const panOffsetX = -(boxCenterX - imgCenterX) * (w / img.naturalWidth) * newZoom;
         const panOffsetY = -(boxCenterY - imgCenterY) * (h / img.naturalHeight) * newZoom;
-
         setPan({ x: panOffsetX, y: panOffsetY });
       } else {
-        // Fallback: zoom 2x
         setZoom(2);
         setPan({ x: 0, y: 0 });
       }
     } catch {
-      setZoom(1.8);
+      setZoom(2);
     } finally {
       setIsAutoTrimming(false);
     }
   }
 
-  // Mouse Drag / Touch Drag handlers
+  // Mouse handlers
   const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
     setIsDragging(true);
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
   };
-
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
     setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
   };
-
   const handleMouseUp = () => setIsDragging(false);
+
+  // Wheel zoom
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    setZoom((z) => Math.max(0.3, Math.min(8, z + delta)));
+  };
+
+  // Touch handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.touches[0].clientX - pan.x, y: e.touches[0].clientY - pan.y });
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastTouchDistRef.current = Math.sqrt(dx * dx + dy * dy);
+    }
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (e.touches.length === 1 && isDragging) {
+      setPan({ x: e.touches[0].clientX - dragStart.x, y: e.touches[0].clientY - dragStart.y });
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const ratio = dist / (lastTouchDistRef.current || dist);
+      lastTouchDistRef.current = dist;
+      setZoom((z) => Math.max(0.3, Math.min(8, z * ratio)));
+    }
+  };
+  const handleTouchEnd = () => setIsDragging(false);
 
   // Save Cropped Image
   async function handleSaveCropped() {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     setIsSaving(true);
     try {
       const dataUrl = canvas.toDataURL("image/png");
@@ -4421,7 +4595,6 @@ function ImageCropperModal({
         name: target.name,
         category: target.field === "logo" ? "brand" : "cropped"
       });
-
       if (res.success && res.url) {
         onSaved(res.url, target.field);
       } else {
@@ -4435,12 +4608,28 @@ function ImageCropperModal({
   }
 
   const { w, h } = getTargetDimensions();
+  const trimColorClass = transparentPercent === null
+    ? "bg-blue-50 border-blue-200 text-blue-800"
+    : transparentPercent > 50
+      ? "bg-red-50 border-red-200 text-red-800"
+      : transparentPercent > 25
+        ? "bg-amber-50 border-amber-200 text-amber-800"
+        : "bg-emerald-50 border-emerald-200 text-emerald-800";
+
+  const ASPECT_PRESETS: { id: "3.5:1" | "4:1" | "3:1" | "1:1" | "16:9" | "free"; label: string; hint?: string }[] = [
+    { id: "3.5:1", label: "Logo Navbar (3.5:1)", hint: "Tối ưu cho Header website" },
+    { id: "4:1",   label: "Logo ngang (4:1)" },
+    { id: "3:1",   label: "Logo compact (3:1)" },
+    { id: "1:1",   label: "Vuông 1:1" },
+    { id: "16:9",  label: "Banner 16:9" },
+    { id: "free",  label: "Tự do" },
+  ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in">
-      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20 flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 animate-in fade-in">
+      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20 flex flex-col max-h-[95vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-black/10 bg-beige/60">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-black/10 bg-beige/60 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-forest text-white">
               <Scissors className="size-4" />
@@ -4448,133 +4637,242 @@ function ImageCropperModal({
             <div>
               <h3 className="font-black text-sm text-ink flex items-center gap-2">
                 Trình Cắt Xén & Thu Phóng Hình Ảnh
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/5 text-ink/60">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/5 text-ink/60 max-w-[120px] truncate">
                   {target.name}
                 </span>
               </h3>
-              <p className="text-xs text-ink/50">
-                Kéo thả để định vị, phóng to để loại bỏ viền trống, hoặc bấm nút Tự động cắt sát viền
+              <p className="text-[11px] text-ink/50">
+                Kéo thả để định vị · Cuộn chuột hoặc thanh trượt để zoom · Phím R = xoay · Enter = lưu
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl bg-black/5 hover:bg-black/10 text-ink/75">
+          <button onClick={onClose} className="p-2 rounded-xl bg-black/5 hover:bg-black/10 text-ink/75 transition shrink-0">
             <X className="size-5" />
           </button>
         </div>
 
+        {/* Auto-trim suggestion banner */}
+        {showTrimSuggestion && (
+          <div className="px-5 py-2.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center gap-2 text-amber-900 text-xs">
+              <AlertTriangle className="size-4 text-amber-600 shrink-0" />
+              <span>
+                <strong>Phát hiện {transparentPercent}% viền trống!</strong>{" "}
+                Logo sẽ hiển thị nhỏ. Nên dùng &ldquo;Cắt thông minh&rdquo; để loại bỏ viền thừa.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleAutoTrim}
+              disabled={isAutoTrimming}
+              className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-black flex items-center gap-1.5 shrink-0 transition disabled:opacity-50"
+            >
+              <Sparkles className="size-3.5" />
+              Cắt ngay!
+            </button>
+          </div>
+        )}
+
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 grid md:grid-cols-[1fr_320px] gap-6">
+        <div className="flex-1 overflow-y-auto p-5 grid md:grid-cols-[1fr_300px] gap-5">
           {/* Left: Viewport */}
-          <div className="space-y-4 flex flex-col items-center">
+          <div className="space-y-3 flex flex-col items-center">
             {/* Aspect Ratio Selector */}
-            <div className="flex flex-wrap items-center gap-1.5 self-start">
-              <span className="text-xs font-bold text-ink mr-1">Tỉ lệ khung hình:</span>
-              {[
-                { id: "4:1", label: "Logo ngang (4:1)" },
-                { id: "3:1", label: "Logo chuẩn (3:1)" },
-                { id: "1:1", label: "Vuông 1:1" },
-                { id: "16:9", label: "Banner 16:9" },
-                { id: "free", label: "Tự do" }
-              ].map((item) => (
+            <div className="flex flex-wrap items-center gap-1.5 self-start w-full">
+              <span className="text-xs font-black text-ink mr-1 shrink-0">Tỉ lệ:</span>
+              {ASPECT_PRESETS.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => setAspect(item.id as any)}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold transition ${
-                    aspect === item.id ? "bg-forest text-white shadow-sm" : "bg-beige/60 text-ink/70 hover:bg-beige"
+                  onClick={() => setAspect(item.id)}
+                  title={item.hint}
+                  className={`px-2.5 py-1 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                    aspect === item.id
+                      ? "bg-forest text-white shadow-sm"
+                      : "bg-beige/60 text-ink/70 hover:bg-beige"
                   }`}
                 >
                   {item.label}
+                  {item.id === "3.5:1" && <span className="ml-1 text-[9px] opacity-70">★</span>}
                 </button>
               ))}
             </div>
 
             {/* Canvas Viewport */}
             <div
-              className="relative w-full rounded-2xl overflow-hidden border-2 border-dashed border-forest/30 flex items-center justify-center p-4 select-none bg-[linear-gradient(45deg,#f3f4f6_25%,transparent_25%),linear-gradient(-45deg,#f3f4f6_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f3f4f6_75%),linear-gradient(-45deg,transparent_75%,#f3f4f6_75%)] bg-[size:16px_16px]"
+              className="relative w-full rounded-2xl overflow-hidden border-2 border-dashed border-forest/30 flex items-center justify-center p-3 select-none bg-[linear-gradient(45deg,#f3f4f6_25%,transparent_25%),linear-gradient(-45deg,#f3f4f6_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f3f4f6_75%),linear-gradient(-45deg,transparent_75%,#f3f4f6_75%)] bg-[size:16px_16px]"
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
-              style={{ cursor: isDragging ? "grabbing" : "grab", minHeight: "260px" }}
+              onWheel={handleWheel}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{ cursor: isDragging ? "grabbing" : "grab", minHeight: "220px" }}
             >
               <canvas ref={canvasRef} className="rounded-xl shadow-lg border border-black/10 max-w-full" />
+              {/* Canvas size badge */}
               <div className="absolute top-2 right-2 pointer-events-none bg-black/70 text-white text-[10px] font-mono px-2 py-0.5 rounded backdrop-blur">
-                {w} x {h} px
+                {w} × {h} px
               </div>
+              {/* Rotation badge */}
+              {rotation !== 0 && (
+                <div className="absolute top-2 left-2 pointer-events-none bg-forest/80 text-white text-[10px] font-mono px-2 py-0.5 rounded backdrop-blur">
+                  {rotation}°
+                </div>
+              )}
+              {!imageLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="size-8 animate-spin text-forest" />
+                </div>
+              )}
             </div>
 
-            {/* Zoom & Pan Controls */}
-            <div className="w-full bg-beige/40 p-4 rounded-2xl border border-black/5 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-ink">
-                  <ZoomIn className="size-4 text-forest" />
-                  <span>Thu phóng hình ảnh (Zoom Scale):</span>
-                </div>
-                <span className="text-xs font-mono font-extrabold text-forest">{Math.round(zoom * 100)}%</span>
-              </div>
-              <div className="flex items-center gap-3">
+            {/* Toolbar: Rotate, Flip, Reset + Zoom */}
+            <div className="w-full bg-beige/40 p-3.5 rounded-2xl border border-black/5 space-y-3">
+              {/* Rotation & Flip Row */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-black text-ink/60 uppercase tracking-wider mr-auto">Xoay & Lật:</span>
                 <button
                   type="button"
-                  onClick={() => setZoom((z) => Math.max(0.5, z - 0.2))}
-                  className="p-1.5 rounded-lg bg-white border border-black/10 hover:bg-black/5"
-                  title="Thu nhỏ"
+                  onClick={() => setRotation((r) => (r - 90 + 360) % 360)}
+                  className="px-2.5 py-1.5 rounded-xl bg-white border border-black/10 hover:bg-black/5 text-xs font-bold flex items-center gap-1"
+                  title="Xoay trái 90°"
                 >
-                  <ZoomOut className="size-4" />
+                  <RotateCcw className="size-3.5" />
+                  <span>-90°</span>
                 </button>
-                <input
-                  type="range"
-                  min={0.5}
-                  max={4}
-                  step={0.05}
-                  value={zoom}
-                  onChange={(e) => setZoom(parseFloat(e.target.value))}
-                  className="flex-1 accent-forest cursor-pointer"
-                />
                 <button
                   type="button"
-                  onClick={() => setZoom((z) => Math.min(4, z + 0.2))}
-                  className="p-1.5 rounded-lg bg-white border border-black/10 hover:bg-black/5"
-                  title="Phóng to"
+                  onClick={() => setRotation((r) => (r + 90) % 360)}
+                  className="px-2.5 py-1.5 rounded-xl bg-white border border-black/10 hover:bg-black/5 text-xs font-bold flex items-center gap-1"
+                  title="Xoay phải 90°"
                 >
-                  <ZoomIn className="size-4" />
+                  <RotateCw className="size-3.5" />
+                  <span>+90°</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setFlipH((f) => !f)}
+                  className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1 transition ${
+                    flipH ? "bg-forest text-white border-forest" : "bg-white border-black/10 hover:bg-black/5"
+                  }`}
+                  title="Lật ngang"
+                >
+                  <Move className="size-3.5" />
+                  <span>Lật ngang</span>
+                </button>
+                {(rotation !== 0 || flipH) && (
+                  <button
+                    type="button"
+                    onClick={() => { setRotation(0); setFlipH(false); }}
+                    className="px-2.5 py-1.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold hover:bg-red-100 transition"
+                  >
+                    Đặt lại
+                  </button>
+                )}
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-black/5 text-xs">
-                {/* Magic Auto Trim */}
+              {/* Zoom Row */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-ink">
+                    <ZoomIn className="size-4 text-forest" />
+                    <span>Zoom:</span>
+                  </div>
+                  <span className="font-mono font-extrabold text-forest">{Math.round(zoom * 100)}%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setZoom((z) => Math.max(0.3, z - 0.15))}
+                    className="p-1.5 rounded-lg bg-white border border-black/10 hover:bg-black/5"
+                    title="Thu nhỏ"
+                  >
+                    <ZoomOut className="size-4" />
+                  </button>
+                  <input
+                    type="range"
+                    min={0.3}
+                    max={8}
+                    step={0.05}
+                    value={zoom}
+                    onChange={(e) => setZoom(parseFloat(e.target.value))}
+                    className="flex-1 accent-forest cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setZoom((z) => Math.min(8, z + 0.15))}
+                    className="p-1.5 rounded-lg bg-white border border-black/10 hover:bg-black/5"
+                    title="Phóng to"
+                  >
+                    <ZoomIn className="size-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Actions Row */}
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-black/5">
+                {/* Smart Auto Trim */}
                 <button
                   type="button"
                   onClick={handleAutoTrim}
                   disabled={isAutoTrimming}
-                  className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold flex items-center gap-1.5 shadow-sm transition disabled:opacity-50"
-                  title="Tự động phát hiện mép vẽ và cắt bỏ 100% viền trắng/trong suốt"
+                  className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-sm transition disabled:opacity-50"
+                  title="Tự động phát hiện mép vẽ và loại bỏ 100% viền trống/trắng"
                 >
-                  <Sparkles className="size-3.5" />
-                  <span>✨ Tự động cắt sát viền logo</span>
+                  {isAutoTrimming ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+                  <span>✨ Cắt thông minh</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setZoom(1);
-                    setPan({ x: 0, y: 0 });
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-white border border-black/10 text-ink/70 hover:bg-black/5 font-bold flex items-center gap-1"
+                  onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
+                  className="px-3 py-1.5 rounded-xl bg-white border border-black/10 text-ink/70 hover:bg-black/5 font-bold text-xs flex items-center gap-1"
+                  title="Đặt về giữa canvas"
+                >
+                  <RefreshCw className="size-3" />
+                  <span>Căn giữa</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); setRotation(0); setFlipH(false); }}
+                  className="px-3 py-1.5 rounded-xl bg-white border border-black/10 text-ink/70 hover:bg-black/5 font-bold text-xs flex items-center gap-1"
+                  title="Đặt về mặc định hoàn toàn"
                 >
                   <RotateCcw className="size-3" />
-                  <span>Căn giữa</span>
+                  <span>Reset tất cả</span>
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Right: Preview & Save */}
+          {/* Right: Preview & Info & Save */}
           <div className="space-y-4 flex flex-col justify-between">
             <div className="space-y-4">
               <h4 className="text-xs font-black text-ink uppercase tracking-wider flex items-center gap-1.5">
                 <Eye className="size-3.5 text-forest" />
-                Xem trước kết quả cắt thực tế
+                Xem trước kết quả
               </h4>
+
+              {/* Transparent border % indicator */}
+              {transparentPercent !== null && (
+                <div className={`px-3 py-2 rounded-2xl border text-xs flex items-center gap-2 ${trimColorClass}`}>
+                  <div className="w-10 h-2 rounded-full bg-black/10 overflow-hidden shrink-0">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        transparentPercent > 50 ? "bg-red-500" : transparentPercent > 25 ? "bg-amber-500" : "bg-emerald-500"
+                      }`}
+                      style={{ width: `${transparentPercent}%` }}
+                    />
+                  </div>
+                  <span>
+                    <strong>{transparentPercent}%</strong> viền trống
+                    {transparentPercent > 25 ? " — nên cắt sát!" : " — OK!"}
+                  </span>
+                </div>
+              )}
 
               {/* Cropped Output on Checkerboard */}
               <div className="p-3 rounded-2xl bg-white border border-black/10 shadow-sm space-y-1.5">
@@ -4589,54 +4887,58 @@ function ImageCropperModal({
               {/* Website Header Mockup Preview */}
               <div className="p-3 rounded-2xl bg-[#F5F2EB] border border-black/10 shadow-sm space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-forest font-black uppercase tracking-wider">Trên thanh Header Website:</span>
-                  <span className="text-[9px] text-ink/40">Khách xem</span>
+                  <span className="text-[10px] text-forest font-black uppercase tracking-wider">Trên Header thật:</span>
+                  <span className="text-[9px] text-ink/40">khách xem</span>
                 </div>
-                <div className="rounded-xl p-3 bg-white/90 border border-black/5 flex items-center justify-between gap-2 shadow-inner">
-                  <div className="h-10 max-w-[140px] flex items-center overflow-hidden shrink-0">
+                <div className="rounded-xl p-2.5 bg-white/90 border border-black/5 flex items-center justify-between gap-2 shadow-inner">
+                  <div className="h-10 max-w-[160px] flex items-center overflow-hidden shrink-0">
                     {previewDataUrl && (
-                      <img src={previewDataUrl} alt="Header Preview" className="max-h-full w-auto object-contain" />
+                      <img src={previewDataUrl} alt="Header Preview" className="max-h-full w-auto object-contain object-left" />
                     )}
                   </div>
-                  <div className="flex items-center gap-1 text-[9px] font-bold text-ink/60">
+                  <div className="flex items-center gap-1 text-[9px] font-bold text-ink/60 shrink-0">
                     <span className="px-1.5 py-0.5 rounded-full bg-forest text-white">Home</span>
                     <span>Địa điểm</span>
-                    <span>Blog</span>
+                    <span className="hidden sm:block">Blog</span>
                   </div>
                 </div>
               </div>
 
+              {/* Info box */}
               <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 leading-relaxed space-y-1">
                 <p className="font-bold flex items-center gap-1">
                   <CheckCircle2 className="size-3.5 text-emerald-600" />
-                  Sẵn sàng áp dụng
+                  Mẹo cắt logo
                 </p>
-                <p className="text-[11px] text-emerald-800/80">
-                  Ảnh cắt sẽ được xuất với độ nét cao, định dạng PNG bảo toàn nền trong suốt, loại bỏ hoàn toàn hiện tượng logo bị nhỏ.
-                </p>
+                <ul className="text-[11px] text-emerald-800/80 space-y-0.5 list-disc ml-4">
+                  <li>Dùng <strong>Cắt thông minh</strong> để tự loại bỏ viền trống</li>
+                  <li>Chọn <strong>Logo Navbar (3.5:1)</strong> cho tỉ lệ chuẩn nhất</li>
+                  <li>Kéo để định vị, cuộn chuột để zoom chính xác</li>
+                </ul>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="pt-4 border-t border-black/10 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 rounded-xl border border-black/10 text-xs font-bold text-ink/75 hover:bg-beige"
-              >
-                Hủy bỏ
-              </button>
-
+            <div className="pt-4 border-t border-black/10 flex flex-col gap-2">
               <button
                 type="button"
                 onClick={handleSaveCropped}
-                disabled={isSaving}
-                className="px-5 py-2 rounded-xl bg-forest text-white text-xs font-black hover:bg-forest/90 transition shadow-md flex items-center gap-1.5 disabled:opacity-50"
+                disabled={isSaving || !imageLoaded}
+                className="w-full px-5 py-2.5 rounded-xl bg-forest text-white text-xs font-black hover:bg-forest/90 transition shadow-md flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
                 {isSaving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
                 <span>
-                  {target.field === "logo" ? "Cắt & Cập nhật Logo ngay" : "Lưu ảnh đã cắt"}
+                  {target.field === "logo" || target.field === "logoMobile"
+                    ? "✅ Cắt & Cập nhật Logo ngay"
+                    : "💾 Lưu ảnh đã cắt"}
                 </span>
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full px-4 py-2 rounded-xl border border-black/10 text-xs font-bold text-ink/75 hover:bg-beige transition"
+              >
+                Hủy bỏ (Esc)
               </button>
             </div>
           </div>

@@ -118,7 +118,8 @@ export type SiteSettings = {
   heroOverlayOpacity?: number;
 
   // Cấu hình Layer Giữa (Khung Chữ / Middle Card Layer)
-  heroCardStyle?: "frosted" | "radial" | "gradient" | "custom" | "none";
+  heroPosition?: "top" | "center" | "bottom";
+  heroCardStyle?: "crystal" | "frosted" | "radial" | "gradient" | "custom" | "none";
   heroCardColor?: string;
   heroCardOpacity?: number;
   heroCardBlur?: "none" | "sm" | "md" | "lg" | "xl";
@@ -1722,10 +1723,11 @@ export function getSiteSettings(): SiteSettings {
     heroSecondaryBtnText: "Đặt tour",
     heroSecondaryBtnLink: "/book-tour",
     heroOverlayOpacity: 60,
-    heroCardStyle: "frosted",
+    heroPosition: "top",
+    heroCardStyle: "crystal",
     heroCardColor: "#0f382e",
-    heroCardOpacity: 28,
-    heroCardBlur: "lg",
+    heroCardOpacity: 20,
+    heroCardBlur: "md",
     aboutBadge: "Về chúng tôi",
     aboutTitle: "Cầu nối số cho du lịch cộng đồng",
     aboutSubtitle: "Chạm A Lưới là nền tảng du lịch trung gian giúp kết nối du khách với nét đẹp văn hóa bản địa, các chủ nhà homestay ấm áp, đơn vị dịch vụ trách nhiệm và những nghệ nhân vùng cao kiên trì gìn giữ nghề truyền thống.",
