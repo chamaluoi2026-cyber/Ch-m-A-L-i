@@ -49,7 +49,6 @@ export function AdminLoginView({ nextUrl = "/admin" }: AdminLoginViewProps) {
     } else {
       setError(res.error || "Tài khoản hoặc mật khẩu không chính xác.");
       setLoading(false);
-      setLoadingRole(null);
     }
   }
 
@@ -173,13 +172,7 @@ export function AdminLoginView({ nextUrl = "/admin" }: AdminLoginViewProps) {
                 <span>Ghi nhớ đăng nhập 30 ngày</span>
               </label>
 
-              <button
-                type="button"
-                onClick={() => setActiveTab("quick")}
-                className="text-xs font-bold text-forest hover:underline"
-              >
-                Quên mật khẩu? Dùng đăng nhập nhanh →
-              </button>
+              <span className="text-xs text-muted-foreground">Bảo mật 2 lớp SSL/TLS</span>
             </div>
 
             <button

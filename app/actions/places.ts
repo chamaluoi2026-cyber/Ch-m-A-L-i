@@ -1,6 +1,6 @@
 "use server";
 
-import { getAllPlaces, getPlaceBySlug, savePlace, deletePlace } from "@/lib/server-store";
+import { getAllPlaces, getDynamicPlaceBySlug, savePlace, deletePlace } from "@/lib/server-store";
 import type { Place } from "@/data/places";
 import { revalidatePath } from "next/cache";
 
@@ -9,7 +9,7 @@ export async function fetchAllPlacesAction() {
 }
 
 export async function fetchPlaceBySlugAction(slug: string) {
-  return getPlaceBySlug(slug);
+  return getDynamicPlaceBySlug(slug);
 }
 
 export async function savePlaceAction(placeData: Place) {

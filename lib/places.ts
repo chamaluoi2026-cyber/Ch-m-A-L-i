@@ -1,5 +1,5 @@
 import { placeCategories, places as staticPlaces, type PlaceCategory, type Place } from "@/data/places";
-import { getAllPlaces as getStorePlaces, getPlaceBySlug as getStorePlaceBySlug, getActivePlaces as getStoreActivePlaces } from "@/lib/server-store";
+import { getAllPlaces as getStorePlaces, getDynamicPlaceBySlug as getStorePlaceBySlug, getActivePlaces as getStoreActivePlaces } from "@/lib/server-store";
 
 export function getAllPlaces(): Place[] {
   try {
