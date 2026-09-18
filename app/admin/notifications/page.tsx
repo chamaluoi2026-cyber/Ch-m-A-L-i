@@ -23,7 +23,10 @@ import {
   Webhook,
   ArrowRightLeft,
   RefreshCw,
-  Trash2
+  Trash2,
+  CreditCard,
+  QrCode,
+  Building2
 } from "lucide-react";
 import type { SiteSettings } from "@/lib/server-store";
 
@@ -902,6 +905,178 @@ export default function AdminNotificationsPage() {
             <div className="pt-3 border-t border-white/10 text-[11px] text-emerald-200/90 flex items-center gap-2">
               <CheckCircle2 className="size-4 shrink-0 text-emerald-400" />
               <span>Tiện lợi tối đa: Tư vấn cho khách mọi lúc mọi nơi ngay trên điện thoại di động!</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* SECTION 4: CẤU HÌNH TÀI KHOẢN NGÂN HÀNG & MÃ VIETQR                        */}
+      {/* ========================================================================= */}
+      <div className="space-y-4 pt-4 border-t border-forest/10" id="vietqr-settings">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-teal-600 text-white shadow-sm">
+              <QrCode className="size-4" />
+            </span>
+            <div>
+              <h2 className="text-base md:text-lg font-black text-ink">
+                4. Cấu hình Tài Khoản Ngân Hàng & Mã VietQR (Nhận Tiền Đơn Hàng)
+              </h2>
+              <p className="text-[11px] text-ink/60 mt-0.5">
+                Thông tin này được dùng để <b>tự động sinh mã VietQR</b> cho từng đơn đặt tour, homestay và đơn mua đặc sản.
+              </p>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <CheckCircle2 className="size-3 text-emerald-600" />
+            {settings.bankAccountNumber ? `Đang dùng: ${settings.bankId || "VCB"} - ${settings.bankAccountNumber}` : "Chưa cấu hình tài khoản"}
+          </span>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Form cấu hình ngân hàng */}
+          <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 space-y-4">
+            <div className="flex items-center justify-between border-b border-black/5 pb-3">
+              <h3 className="text-sm font-black text-ink flex items-center gap-2">
+                <CreditCard className="size-4 text-forest" />
+                Thông tin tài khoản thụ hưởng
+              </h3>
+              <span className="text-[10px] uppercase font-bold text-forest bg-forest/10 px-2.5 py-0.5 rounded-full">
+                Lưu vào Supabase Cloud
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-ink mb-1.5">Ngân hàng thụ hưởng *</label>
+              <select
+                value={settings.bankId || "VCB"}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  const banks: Record<string, string> = {
+                    VCB: "Vietcombank (VCB)",
+                    BIDV: "BIDV",
+                    ICB: "VietinBank (ICB)",
+                    VBA: "Agribank (VBA)",
+                    MB: "MBBank (MB)",
+                    TCB: "Techcombank (TCB)",
+                    ACB: "ACB",
+                    VPB: "VPBank",
+                    TPB: "TPBank",
+                    STB: "Sacombank",
+                    HDB: "HDBank",
+                    VIB: "VIB",
+                    LPB: "LPBank",
+                    MSB: "MSB",
+                    OCB: "OCB",
+                    SHB: "SHB"
+                  };
+                  setSettings((prev) => ({
+                    ...prev,
+                    bankId: selectedId,
+                    bankName: banks[selectedId] || selectedId
+                  }));
+                }}
+                className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-semibold text-ink focus:border-forest focus:outline-none"
+              >
+                <option value="VCB">Vietcombank (VCB)</option>
+                <option value="MB">MBBank (MB)</option>
+                <option value="TCB">Techcombank (TCB)</option>
+                <option value="BIDV">BIDV</option>
+                <option value="ICB">VietinBank (ICB)</option>
+                <option value="VBA">Agribank (VBA)</option>
+                <option value="ACB">ACB</option>
+                <option value="VPB">VPBank</option>
+                <option value="TPB">TPBank</option>
+                <option value="STB">Sacombank</option>
+                <option value="HDB">HDBank</option>
+                <option value="VIB">VIB</option>
+                <option value="LPB">LPBank</option>
+                <option value="MSB">MSB</option>
+                <option value="OCB">OCB</option>
+                <option value="SHB">SHB</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-ink mb-1.5">Số tài khoản ngân hàng (Hoặc Số điện thoại mở TK) *</label>
+              <input
+                type="text"
+                value={settings.bankAccountNumber || "1028899889"}
+                onChange={(e) => setSettings((prev) => ({ ...prev, bankAccountNumber: e.target.value.replace(/\s+/g, "") }))}
+                placeholder="Nhập số tài khoản hoặc SĐT (Ví dụ: 1028899889 hoặc 0905...)"
+                className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-mono font-bold text-ink focus:border-forest focus:outline-none"
+              />
+              <p className="text-[10px] text-ink/50 mt-1">
+                Nếu bạn dùng số điện thoại đăng ký tài khoản (MBBank, Techcombank...), chỉ cần nhập số điện thoại vào đây.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-ink mb-1.5">Tên chủ tài khoản (In hoa không dấu) *</label>
+              <input
+                type="text"
+                value={settings.bankAccountName || "HTX DU LICH CONG DONG A LUOI"}
+                onChange={(e) => setSettings((prev) => ({ ...prev, bankAccountName: e.target.value.toUpperCase() }))}
+                placeholder="Ví dụ: HTX DU LICH CONG DONG A LUOI hoặc HO VAN HANH"
+                className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-bold text-ink uppercase focus:border-forest focus:outline-none"
+              />
+              <p className="text-[10px] text-ink/50 mt-1">
+                Khớp với tên tài khoản hiển thị khi khách quét mã trên ứng dụng ngân hàng.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-ink mb-1.5">Kiểu hiển thị mã VietQR</label>
+              <select
+                value={settings.qrTemplate || "compact2"}
+                onChange={(e) => setSettings((prev) => ({ ...prev, qrTemplate: e.target.value }))}
+                className="w-full rounded-2xl border border-black/10 bg-[#FBFBFB] px-4 py-2.5 text-xs font-semibold text-ink focus:border-forest focus:outline-none"
+              >
+                <option value="compact2">Chuẩn VietQR Đầy đủ (Logo Napas + Tên Ngân hàng + Số TK)</option>
+                <option value="compact">Chuẩn VietQR Tối giản (Chỉ mã QR và số tiền)</option>
+              </select>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full py-3 rounded-2xl bg-forest text-white text-xs font-bold hover:bg-forest/90 transition shadow flex items-center justify-center gap-2"
+              >
+                {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                {saving ? "Đang lưu..." : "Lưu Thông Tin Ngân Hàng & VietQR"}
+              </button>
+            </div>
+          </div>
+
+          {/* Card xem trước mã QR trực tiếp */}
+          <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 flex flex-col items-center justify-center text-center space-y-4">
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
+              <Eye className="size-3.5 text-emerald-600" />
+              Xem Trước Mã VietQR Thực Tế
+            </div>
+            <h4 className="text-sm font-black text-ink">Quét thử nghiệm bằng ứng dụng Ngân hàng</h4>
+            <p className="text-xs text-ink/70 max-w-xs leading-relaxed">
+              Mã QR dưới đây cập nhật theo thời gian thực theo thông tin bạn vừa nhập. Hãy mở app ngân hàng quét thử để kiểm tra đúng tên thụ hưởng:
+            </p>
+
+            <div className="p-3 bg-white border-2 border-forest/20 rounded-2xl shadow-lg">
+              <img
+                src={`https://img.vietqr.io/image/${settings.bankId || "VCB"}-${settings.bankAccountNumber || "1028899889"}-${settings.qrTemplate || "compact2"}.png?amount=50000&addInfo=TEST%20CHAM%20A%20LUOI&accountName=${encodeURIComponent(settings.bankAccountName || "HTX DU LICH CONG DONG A LUOI")}`}
+                alt="Mã VietQR Demo"
+                className="w-56 h-auto rounded-xl object-contain mx-auto"
+              />
+            </div>
+
+            <div className="text-xs text-ink/80 space-y-1">
+              <p className="font-bold text-forest">{settings.bankName || "Vietcombank (VCB)"}</p>
+              <p className="font-mono text-sm font-black tracking-wider text-ink">{settings.bankAccountNumber || "1028899889"}</p>
+              <p className="font-bold text-xs text-clay uppercase">{settings.bankAccountName || "HTX DU LICH CONG DONG A LUOI"}</p>
+              <p className="text-[11px] text-ink/50 pt-1">
+                Số tiền demo: 50.000đ | Nội dung: TEST CHAM A LUOI
+              </p>
             </div>
           </div>
         </div>
