@@ -50,13 +50,30 @@ export type Place = {
   zaloUrl: string;
   phone: string;
   image: string;
-  gallery: string[];
+  gallery: (string | { url: string; alt?: string; caption?: string })[];
   services: string[];
   highlights: string[];
   activities: string[];
   suitableFor: string[];
   safetyNotes: string[];
-  status: "active" | "temporarily_closed";
+  status: "active" | "temporarily_closed" | "hidden";
+  isDeleted?: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
+  imageAlt?: string;
+  coverImage?: string;
+  ogImage?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string;
+  duration?: string;
+  maxGuests?: string;
+  voucherTerms?: string;
+  priceUnit?: string;
+  directions?: string;
+  faq?: { question: string; answer: string }[];
+  lat?: number;
+  lng?: number;
 };
 
 export const places: Place[] = [
