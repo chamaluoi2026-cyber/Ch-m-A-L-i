@@ -7,8 +7,10 @@ import {
   AlertCircle,
   ArrowLeft,
   Calendar,
+  Car,
   CheckCircle2,
   Clock,
+  Compass,
   Copy,
   CreditCard,
   DollarSign,
@@ -16,6 +18,7 @@ import {
   Edit3,
   ExternalLink,
   History,
+  Home,
   Info,
   Layers,
   Mail,
@@ -37,6 +40,164 @@ import {
   X,
   XCircle
 } from "lucide-react";
+
+export function resolveBookingItinerary(booking: BookingRecord | null) {
+  if (!booking) return null;
+
+  // 1. Nếu có sẵn dữ liệu cấu trúc chi tiết từ AI planner
+  if (booking.itineraryDetails?.days && booking.itineraryDetails.days.length > 0) {
+    return booking.itineraryDetails;
+  }
+  if (booking.metadata?.itinerary?.days && booking.metadata.itinerary.days.length > 0) {
+    return booking.metadata.itinerary;
+  }
+
+  // 2. Tự động tái tạo cấu trúc lịch trình nếu là Tour hoặc gói AI đề xuất
+  const title = (booking.itemTitle || "").toLowerCase();
+  const notes = (booking.customerNote || booking.notes || "").toLowerCase();
+  const isTour = booking.type === "tour" || title.includes("tour") || title.includes("lịch trình") || notes.includes("lịch trình ai");
+
+  if (!isTour) return null;
+
+  const is2Days = title.includes("2 ngày") || title.includes("2n1đ") || notes.includes("2 ngày") || notes.includes("2n1đ");
+  const is3Days = title.includes("3 ngày") || title.includes("3n2đ") || notes.includes("3 ngày") || notes.includes("3n2đ");
+
+  let transport = "Tự túc xe máy / ô tô cá nhân";
+  if (notes.includes("xe riêng") || notes.includes("đưa đón") || notes.includes("car")) {
+    transport = "Xe riêng đưa đón khứ hồi từ TP. Huế";
+  }
+
+  let homestayName = "Homestay bản địa A Lưới (Hương Danh / Anôr House)";
+  const homestayMatch = (booking.customerNote || booking.notes || "").match(/Lưu trú:\s*([^|\n]+)|Homestay[^:]*:\s*([^|\n]+)/i);
+  if (homestayMatch) {
+    homestayName = (homestayMatch[1] || homestayMatch[2]).trim();
+  }
+
+  // Gói 2N1Đ: Liệu Trình Suối Khoáng Nóng A Roàng & Thư Giãn Rừng Già
+  if (title.includes("suối khoáng nóng") || title.includes("a roàng") || is2Days) {
+    return {
+      title: booking.itemTitle || "Tour Liệu Trình Suối Khoáng Nóng A Roàng & Thư Giãn Rừng Già (2N1Đ)",
+      duration: "2 ngày 1 đêm",
+      transport,
+      homestayName,
+      likes: ["Tắm suối khoáng nóng A Roàng", "Thác A Nôr tắm suối", "Dệt Zèng Tà Ôi", "Ẩm thực truyền thống"],
+      days: [
+        {
+          dayNumber: 1,
+          title: "Cung Đèo Mây QL49 & Năng Lượng Rừng Già Trường Sơn",
+          theme: "Khởi hành từ Huế • Check-in Thác A Nôr • Ẩm thực cơm lam cá suối • Ngâm khoáng nóng A Roàng • Lửa trại",
+          stops: [
+            {
+              timeSlot: "07:30 - 09:15",
+              name: "Khởi Hành Từ TP. Huế -> Vượt Cung Đèo QL49 Lên A Lưới (70km)",
+              category: "Di chuyển",
+              summary: "Khởi hành từ trung tâm Huế, vượt đèo A Co hùng vĩ ngắm toàn cảnh thung lũng sông Hương thu nhỏ và núi non trùng điệp.",
+              wisdomTip: "Chạy xe số thấp khi leo dốc đèo A Co, giữ cự ly an toàn 30m."
+            },
+            {
+              timeSlot: "09:30 - 11:45",
+              name: "Check-in Thác A Nôr (Hồng Kim) — Tắm Thác 3 Tầng Giữa Rừng",
+              category: "Suối thác",
+              summary: "Dòng thác 3 tầng kỳ vĩ với hồ nước trong vắt 20°C mát lạnh sảng khoái, vách đá nguyên sinh và cây cầu tre bắc qua suối tuyệt đẹp.",
+              wisdomTip: "Nên mang trang phục bơi thoải mái và dép quai hậu chống trơn trượt khi lội suối."
+            },
+            {
+              timeSlot: "12:00 - 13:30",
+              name: "Bữa Trưa Ẩm Thực Bản Địa Pa Cô — Cơm Lam & Cá Suối Nướng Muối Ớt",
+              category: "Ẩm thực",
+              summary: "Thưởng thức mâm cơm đặc sản vùng cao: cá suối nướng than củi, cơm lam nướng ống nứa, rau dớn rừng xào tỏi và thịt gà bản nướng lá chanh.",
+              wisdomTip: "Thử chấm thịt với muối tiêu rừng bản địa thơm nồng đặc trưng."
+            },
+            {
+              timeSlot: "14:00 - 16:30",
+              name: "Suối Khoáng Nóng Tự Nhiên A Roàng (Mạch Nước Ấm Phục Hồi Thần Thái)",
+              category: "Khoáng nóng",
+              summary: "Mạch khoáng nóng 60-70°C tự nhiên giữa rừng già biên giới A Roàng. Ngâm mình trong bể khoáng ấm giúp lưu thông khí huyết, tan biến mệt mỏi.",
+              wisdomTip: "Nên chuẩn bị khăn tắm riêng và uống đủ nước lọc sau khi ngâm khoáng ấm."
+            },
+            {
+              timeSlot: "17:00 - 18:00",
+              name: `Nhận Phòng Nghỉ Tại ${homestayName}`,
+              category: "Lưu trú",
+              summary: "Check-in nhà sàn truyền thống Pa Cô, tắm nước mát, thưởng thức tách trà vằng ấm và ngắm hoàng hôn buông trên dãy Trường Sơn.",
+              wisdomTip: "Nhiệt độ buổi chiều tối trên cao nguyên hạ nhanh xuống 18-20°C, nên chuẩn bị áo khoác nhẹ."
+            },
+            {
+              timeSlot: "18:30 - 21:00",
+              name: "Bữa Tối Nướng BBQ Cao Nguyên & Đêm Hội Lửa Trại Bên Suối",
+              category: "Lửa trại",
+              summary: "Bữa tối ấm cúng bên ánh than hồng rực rỡ, giao lưu cồng chiêng, múa sạp và nhâm nhi ly rượu Đoác đặc sản bản làng.",
+              wisdomTip: "Rượu Đoác lên men tự nhiên từ cây chà là rừng, vị ngọt thanh dịu êm."
+            }
+          ]
+        },
+        {
+          dayNumber: 2,
+          title: "Hơi Ấm Suối Khoáng, Tinh Hoa Bản Làng & Trở Về Cố Đô",
+          theme: "Săn mây đồi thông • Ăn sáng bánh A Quát • Làng nghề dệt Zèng • Chợ đặc sản OCOP • Về Huế",
+          stops: [
+            {
+              timeSlot: "06:00 - 07:15",
+              name: "Săn Biển Mây Đồi Thông A Lưới — Đón Bình Minh Trên Cao Nguyên",
+              category: "Săn mây",
+              summary: "Thức dậy sớm đón ánh bình minh rọi qua đồi thông xanh mướt, ngắm biển mây bềnh bồng bao phủ toàn bộ thung lũng A Lưới.",
+              wisdomTip: "Khoảnh khắc mây đẹp nhất là từ 06:15 đến 07:00 trước khi mặt trời lên cao."
+            },
+            {
+              timeSlot: "07:30 - 08:30",
+              name: "Điểm Tâm Sáng Chợ A Lưới — Bánh A Quát Sừng Trâu & Cháo Gà Kiến",
+              category: "Ăn sáng",
+              summary: "Thưởng thức bánh A Quát (sừng trâu) nếp than dẻo quánh gói lá đót truyền thống, ăn kèm bát cháo gà kiến nóng sốt ấm bụng.",
+              wisdomTip: "Bánh A Quát ngon nhất khi ăn lúc còn bốc khói nghi ngút sáng sớm."
+            },
+            {
+              timeSlot: "08:45 - 11:15",
+              name: "Làng Nghề Dệt Zèng A Đớt — Trải Nghiệm Dệt Thổ Cẩm Cườm Di Sản Quốc Gia",
+              category: "Văn hóa",
+              summary: "Gặp gỡ các nghệ nhân Tà Ôi, tìm hiểu bí quyết xâu từng hạt cườm chì vào sợi vải và tự tay dệt chiếc vòng tay may mắn làm kỷ niệm.",
+              wisdomTip: "Tấm Zèng cườm là món quà biểu trưng cho lời chúc bình an và gắn kết."
+            },
+            {
+              timeSlot: "11:30 - 13:30",
+              name: "Bữa Trưa & Ghé Chợ Trung Tâm A Lưới Mua Quà OCOP",
+              category: "Mua sắm",
+              summary: "Dùng bữa trưa tại nhà hàng đặc sản bản địa. Ghé chợ mua mật ong rừng nguyên chất có tem OCOP, thịt bò giàng gác bếp và chuối sấy dẻo mang về.",
+              wisdomTip: "Mật ong rừng A Lưới mùa này đặc sánh, thơm nồng mùi hoa tràm và hoa rừng dại."
+            },
+            {
+              timeSlot: "14:00 - 16:30",
+              name: "Khởi Hành Xuống Đèo QL49 Về Lại Trung Tâm TP. Huế (70km)",
+              category: "Di chuyển",
+              summary: "Xuống đèo trước 16:00 dưới ánh nắng chiều khô ráo để tránh sương mù đèo dày đặc. Trở về Huế an toàn, khép lại chuyến đi trọn vẹn.",
+              wisdomTip: "Xuống đèo số thấp, giữ cự ly an toàn. Về đến trung tâm Huế khoảng 16:30."
+            }
+          ]
+        }
+      ]
+    };
+  }
+
+  // Gói 1 ngày
+  return {
+    title: booking.itemTitle || "Tour Trải Nghiệm Khám Phá A Lưới Trong Ngày",
+    duration: "1 ngày",
+    transport,
+    days: [
+      {
+        dayNumber: 1,
+        title: "Một Ngày Chạm Đại Ngàn A Lưới",
+        theme: "Khởi hành từ Huế • Thác A Nôr • Ẩm thực cơm lam cá suối • Làng Zèng A Đớt • Về Huế an toàn",
+        stops: [
+          { timeSlot: "07:30 - 09:15", name: "Xuất phát từ TP. Huế lên A Lưới qua đèo QL49", category: "Di chuyển", summary: "Vượt đèo A Co săn mây, ngắm rừng nguyên sinh Trường Sơn hùng vĩ." },
+          { timeSlot: "09:30 - 11:45", name: "Tham quan và tắm suối mát Thác A Nôr (Hồng Kim)", category: "Suối thác", summary: "Tắm thác nước 3 tầng mát lạnh, chụp ảnh bên suối nguyên sinh." },
+          { timeSlot: "12:00 - 13:30", name: "Bữa trưa đặc sản cơm lam, cá suối nướng, rau rừng", category: "Ẩm thực", summary: "Thưởng thức ẩm thực Pa Cô truyền thống ấm cúng tại nhà sàn." },
+          { timeSlot: "14:00 - 15:45", name: "Trải nghiệm dệt Zèng hoặc Suối khoáng nóng A Roàng", category: "Trải nghiệm", summary: "Ghé thăm nghệ nhân dệt thổ cẩm cườm hoặc ngâm khoáng nóng thư giãn." },
+          { timeSlot: "16:00 - 18:00", name: "Xuống đèo QL49 trở về lại TP. Huế an toàn", category: "Di chuyển", summary: "Về lại Huế trước khi trời tối và sương mù buông." }
+        ]
+      }
+    ]
+  };
+}
 
 const VIETNAMESE_BANKS: { id: string; name: string; shortName: string }[] = [
   { id: "MB", name: "MBBank - Ngân hàng Quân Đội", shortName: "MBBank" },
@@ -73,6 +234,7 @@ export function BookingDetailView({
   onBookingUpdated
 }: BookingDetailViewProps) {
   const [booking, setBooking] = useState<BookingRecord | null>(initialBooking || null);
+  const resolvedItinerary = resolveBookingItinerary(booking);
   const [loading, setLoading] = useState(!initialBooking);
   const [isPending, startTransition] = useTransition();
 
@@ -101,7 +263,7 @@ export function BookingDetailView({
 
   // Zalo Confirmation Modal states (Phương án A)
   const [showZaloModal, setShowZaloModal] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<"confirmed" | "payment" | "guide">("confirmed");
+  const [selectedTemplate, setSelectedTemplate] = useState<"confirmed" | "payment" | "guide" | "itinerary_consult">("itinerary_consult");
   const [customMessage, setCustomMessage] = useState("");
   const [copiedMessage, setCopiedMessage] = useState(false);
   const [statusUpdatedSuccess, setStatusUpdatedSuccess] = useState(false);
@@ -178,7 +340,7 @@ export function BookingDetailView({
       });
   }, [bookingId, initialBooking]);
 
-  function generateZaloTemplate(type: "confirmed" | "payment" | "guide") {
+  function generateZaloTemplate(type: "confirmed" | "payment" | "guide" | "itinerary_consult") {
     if (!booking) return "";
     const name = booking.customerName || "Quý khách";
     const service = booking.itemTitle || "Dịch vụ du lịch A Lưới";
@@ -193,6 +355,31 @@ export function BookingDetailView({
     const accName = (bankAccountName.trim() || "HOANG MINH QUAN").toUpperCase();
     const memo = ("BK " + booking.id + " " + (booking.phone || "").replace(/[^0-9]/g, "")).trim();
     const depositAmount = Math.round((Number(booking.finalAmount) || 0) * 0.3).toLocaleString("vi-VN");
+
+    if (type === "itinerary_consult") {
+      const resolved = resolveBookingItinerary(booking);
+      let schedule = "";
+      if (resolved && resolved.days && resolved.days.length > 0) {
+        schedule = resolved.days.map((d: any) => {
+          const stops = (d.stops || []).map((s: any) => `   • ${s.timeSlot}: ${s.name}`).join("\n");
+          return `👉 Ngày ${d.dayNumber} - ${d.title}:\n${stops}`;
+        }).join("\n\n");
+      }
+
+      return `Chào Anh/Chị ${name},
+
+Em là tư vấn viên từ HTX Du lịch Cộng đồng Chạm A Lưới 🌿
+Em nhận được thông tin Anh/Chị vừa đặt tour: ${service} (Mã đơn: ${booking.id}) cho ${qty} ${qtyUnit}.
+
+📋 LỊCH TRÌNH DỰ KIẾN CỦA ĐOÀN MÌNH:
+${schedule || "• Ngày 1: TP. Huế -> Đèo QL49 -> Thác A Nôr -> Suối khoáng nóng A Roàng -> Check-in Homestay bản địa & Lửa trại\n• Ngày 2: Săn mây đồi thông -> Điểm tâm bánh A Quát -> Trải nghiệm dệt Zèng Tà Ôi -> Đặc sản chợ A Lưới -> Về lại Huế"}
+
+🚗 Phương tiện: ${resolved?.transport || "Tự túc xe máy / ô tô cá nhân"}
+🏡 Điểm lưu trú: ${resolved?.homestayName || "Homestay bản địa A Lưới"}
+💰 Tổng chi phí dự kiến: ${total} đ
+
+Dạ em liên hệ qua Zalo để gửi chi tiết lịch trình, tư vấn thêm về trang phục đi suối/thác, và hỏi xem đoàn mình có cần điều chỉnh điểm đến nào hoặc đặt trước các món ăn đặc sản (gà nướng, cá suối, cơm lam) không ạ? Anh/Chị xem qua có cần thêm bớt điểm nào không nhé!`;
+    }
 
     if (type === "confirmed") {
       return `Chào ${name},
@@ -243,8 +430,9 @@ Sau khi chuyển khoản thành công, Anh/Chị gửi lại ảnh chụp giao d
     return "";
   }
 
-  function handleOpenZaloModal(templateType?: "confirmed" | "payment" | "guide") {
-    const t = templateType || selectedTemplate;
+  function handleOpenZaloModal(templateType?: "confirmed" | "payment" | "guide" | "itinerary_consult") {
+    const isTour = booking?.type === "tour" || (booking?.itemTitle || "").toLowerCase().includes("tour") || (booking?.itemTitle || "").toLowerCase().includes("lịch trình");
+    const t = templateType || (isTour ? "itinerary_consult" : selectedTemplate);
     setSelectedTemplate(t);
     setCustomMessage(generateZaloTemplate(t));
     setShowZaloModal(true);
@@ -605,6 +793,130 @@ Sau khi chuyển khoản thành công, Anh/Chị gửi lại ảnh chụp giao d
               )}
             </div>
           </div>
+
+          {/* Lịch trình chi tiết chuyến đi của khách */}
+          {resolvedItinerary ? (
+            <div className="rounded-3xl bg-white p-6 shadow-card border border-emerald-500/20 bg-gradient-to-br from-white via-emerald-50/20 to-amber-50/20 space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/5 pb-4">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-forest/10 text-[11px] font-bold text-forest">
+                    <Sparkles className="size-3 text-amber-500" /> Lịch trình đề xuất AI / Tour riêng
+                  </div>
+                  <h2 className="text-base font-extrabold text-ink mt-1 flex items-center gap-2">
+                    <Compass className="size-4 text-forest" /> {resolvedItinerary.title}
+                  </h2>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleOpenZaloModal("itinerary_consult")}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0068FF] hover:bg-[#0055d4] px-4 py-2 text-xs font-bold text-white shadow-sm transition shrink-0"
+                >
+                  <MessageCircle className="size-3.5" />
+                  <span>Tư vấn lịch trình này qua Zalo</span>
+                </button>
+              </div>
+
+              {/* Thông số nhanh của Tour */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                <div className="rounded-2xl bg-white/80 border border-black/5 p-3 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-ink/45 block">Thời lượng</span>
+                  <p className="font-extrabold text-forest">{resolvedItinerary.duration || "2 ngày 1 đêm"}</p>
+                </div>
+                <div className="rounded-2xl bg-white/80 border border-black/5 p-3 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-ink/45 block">Phương tiện</span>
+                  <p className="font-extrabold text-ink truncate" title={resolvedItinerary.transport}>
+                    {resolvedItinerary.transport || "Tự túc xe cá nhân"}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white/80 border border-black/5 p-3 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-ink/45 block">Lưu trú / Nghỉ đêm</span>
+                  <p className="font-extrabold text-ink truncate" title={resolvedItinerary.homestayName}>
+                    {resolvedItinerary.homestayName || "Homestay bản địa"}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white/80 border border-black/5 p-3 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-ink/45 block">Quy mô đoàn</span>
+                  <p className="font-extrabold text-clay">
+                    {booking.numberOfPeople || booking.quantity || 2} người
+                  </p>
+                </div>
+              </div>
+
+              {/* Danh sách sở thích / Tag của khách */}
+              {resolvedItinerary.likes && resolvedItinerary.likes.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[11px] font-bold text-ink/60 mr-1">Sở thích trải nghiệm:</span>
+                  {resolvedItinerary.likes.map((like: string, idx: number) => (
+                    <span key={idx} className="px-2.5 py-0.5 rounded-lg bg-forest/5 border border-forest/15 text-[11px] font-semibold text-forest">
+                      ✓ {like}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Chi tiết từng Ngày & Từng Điểm Dừng */}
+              <div className="space-y-4 pt-2">
+                {resolvedItinerary.days?.map((day: any) => (
+                  <div key={day.dayNumber} className="rounded-2xl bg-white border border-black/10 overflow-hidden shadow-xs">
+                    <div className="bg-forest/5 px-4 py-3 border-b border-black/5 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      <div>
+                        <span className="text-[10px] font-extrabold uppercase text-forest bg-white px-2 py-0.5 rounded border border-forest/20">
+                          Ngày {day.dayNumber}
+                        </span>
+                        <h3 className="text-xs sm:text-sm font-extrabold text-ink mt-1">
+                          {day.title}
+                        </h3>
+                      </div>
+                      {day.theme && (
+                        <p className="text-[11px] text-ink/60 italic max-w-md">
+                          {day.theme}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="p-4 space-y-4">
+                      {day.stops?.map((stop: any, sIdx: number) => (
+                        <div key={sIdx} className="flex items-start gap-3 relative">
+                          {/* Đường kẻ timeline nối các điểm */}
+                          {sIdx < day.stops.length - 1 && (
+                            <div className="absolute left-[39px] top-6 bottom-[-16px] w-0.5 bg-black/10 -z-0" />
+                          )}
+
+                          <div className="shrink-0 w-20 text-right">
+                            <span className="inline-block px-1.5 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-[10px] font-bold text-amber-900 font-mono">
+                              {stop.timeSlot}
+                            </span>
+                          </div>
+
+                          <div className="size-2 rounded-full bg-forest mt-1.5 shrink-0 ring-4 ring-forest/15 relative z-10" />
+
+                          <div className="flex-1 space-y-1 text-xs">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="font-extrabold text-ink">{stop.name}</span>
+                              {stop.category && (
+                                <span className="px-1.5 py-0.2 rounded bg-black/5 text-[9px] font-bold text-ink/60 uppercase">
+                                  {stop.category}
+                                </span>
+                              )}
+                            </div>
+                            {stop.summary && (
+                              <p className="text-ink/75 leading-relaxed text-[11px]">{stop.summary}</p>
+                            )}
+                            {stop.wisdomTip && (
+                              <p className="text-[10px] text-forest/90 font-medium italic flex items-center gap-1">
+                                💡 Mẹo: {stop.wisdomTip}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           {/* Pricing & Financial Split */}
           <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5">
@@ -1102,7 +1414,25 @@ Sau khi chuyển khoản thành công, Anh/Chị gửi lại ảnh chụp giao d
             {/* Template Selector */}
             <div className="mt-4 space-y-2">
               <label className="text-xs font-bold text-ink block">Chọn mẫu tin nhắn chuẩn:</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedTemplate("itinerary_consult");
+                    setCustomMessage(generateZaloTemplate("itinerary_consult"));
+                  }}
+                  className={`p-2.5 rounded-xl border text-left text-xs transition ${
+                    selectedTemplate === "itinerary_consult"
+                      ? "border-emerald-600 bg-emerald-50/80 text-emerald-950 font-bold shadow-sm ring-1 ring-emerald-600/30"
+                      : "border-black/10 bg-white text-ink/70 hover:bg-black/5 font-medium"
+                  }`}
+                >
+                  <p className="font-bold flex items-center gap-1">
+                    <Sparkles className="size-3 text-amber-500" /> 1. Tư vấn lịch trình
+                  </p>
+                  <p className="text-[10px] text-ink/50 mt-0.5">Lộ trình Ngày 1, 2 & dịch vụ</p>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -1115,7 +1445,7 @@ Sau khi chuyển khoản thành công, Anh/Chị gửi lại ảnh chụp giao d
                       : "border-black/10 bg-white text-ink/70 hover:bg-black/5 font-medium"
                   }`}
                 >
-                  <p className="font-bold">1. Xác nhận thành công</p>
+                  <p className="font-bold">2. Xác nhận đơn</p>
                   <p className="text-[10px] text-ink/50 mt-0.5">Đã duyệt giữ chỗ 100%</p>
                 </button>
 
@@ -1131,7 +1461,7 @@ Sau khi chuyển khoản thành công, Anh/Chị gửi lại ảnh chụp giao d
                       : "border-black/10 bg-white text-ink/70 hover:bg-black/5 font-medium"
                   }`}
                 >
-                  <p className="font-bold">2. Nhắc cọc VietQR</p>
+                  <p className="font-bold">3. Nhắc cọc QR</p>
                   <p className="text-[10px] text-ink/50 mt-0.5">Kèm STK & Cú pháp CK</p>
                 </button>
 
@@ -1147,7 +1477,7 @@ Sau khi chuyển khoản thành công, Anh/Chị gửi lại ảnh chụp giao d
                       : "border-black/10 bg-white text-ink/70 hover:bg-black/5 font-medium"
                   }`}
                 >
-                  <p className="font-bold">3. Dặn dò lịch trình</p>
+                  <p className="font-bold">4. Dặn dò lưu ý</p>
                   <p className="text-[10px] text-ink/50 mt-0.5">Trang phục, thời tiết, đón</p>
                 </button>
               </div>
