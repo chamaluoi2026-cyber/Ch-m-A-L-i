@@ -202,16 +202,37 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1N
 
 async function getCloudBookings(): Promise<BookingRecord[]> {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/system_store?id=eq.bookings_store&select=data`, {
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-      cache: "no-store"
-    });
-    if (res.ok) {
-      const rows = await res.json();
-      if (Array.isArray(rows[0]?.data)) {
-        return rows[0].data as BookingRecord[];
-      }
+    const [resB, resMain] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/system_store?id=eq.bookings_store&select=data`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        cache: "no-store"
+      }),
+      fetch(`${SUPABASE_URL}/rest/v1/system_store?id=eq.main&select=data`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        cache: "no-store"
+      })
+    ]);
+
+    let listB: BookingRecord[] = [];
+    if (resB.ok) {
+      const rows = await resB.json();
+      if (Array.isArray(rows[0]?.data)) listB = rows[0].data as BookingRecord[];
     }
+
+    let listMain: BookingRecord[] = [];
+    if (resMain.ok) {
+      const rows = await resMain.json();
+      if (Array.isArray(rows[0]?.data?.bookings)) listMain = rows[0].data.bookings as BookingRecord[];
+    }
+
+    const map = new Map<string, BookingRecord>();
+    for (const b of [...listB, ...listMain]) {
+      if (b.id && !map.has(b.id)) map.set(b.id, b);
+    }
+    const merged = Array.from(map.values()).sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+    if (merged.length > 0) return merged;
   } catch (e) {
     console.error("[CLOUD_BOOKINGS_FETCH_ERR]", e);
   }
