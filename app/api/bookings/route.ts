@@ -236,7 +236,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, bookingStatus, paymentStatus, businessNote } = body;
+    const { id, bookingStatus, paymentStatus, businessNote, paymentReceiptUrl, paymentProofUploadedAt, bankRefCode } = body;
     if (!id) {
       return NextResponse.json({ success: false, error: "Thiếu mã đơn đặt (id)." }, { status: 400 });
     }
@@ -253,9 +253,19 @@ export async function PATCH(req: NextRequest) {
     }
     if (paymentStatus) {
       booking.paymentStatus = paymentStatus;
+      if (paymentStatus === "paid" && !booking.paidAt) {
+        booking.paidAt = new Date().toISOString();
+      }
     }
     if (businessNote !== undefined) {
       booking.businessNote = businessNote;
+    }
+    if (paymentReceiptUrl !== undefined) {
+      booking.paymentReceiptUrl = paymentReceiptUrl;
+      booking.paymentProofUploadedAt = paymentProofUploadedAt || new Date().toISOString();
+    }
+    if (bankRefCode !== undefined) {
+      booking.bankRefCode = bankRefCode;
     }
     booking.updatedAt = new Date().toISOString();
 

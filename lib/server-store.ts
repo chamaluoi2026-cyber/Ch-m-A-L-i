@@ -332,6 +332,9 @@ export type BookingRecord = {
   paidAt?: string;
   refundedAt?: string;
   refundAmount?: number;
+  paymentReceiptUrl?: string; // Ảnh chụp màn hình / Biên lai chuyển khoản của khách
+  paymentProofUploadedAt?: string; // Thời gian khách tải biên lai
+  bankRefCode?: string; // Mã giao dịch ngân hàng / Ref No
 
   bookingStatus: BookingStatus; // CHỜ XÁC NHẬN, ĐÃ XÁC NHẬN, ĐÃ HOÀN THÀNH, ĐÃ HỦY
   status: BookingStatus;
@@ -564,6 +567,8 @@ export type PaymentRecord = {
   status: "PENDING" | "PROCESSING" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED" | "PARTIALLY_REFUNDED";
   provider: string; // "vietqr" | "bank_transfer" | "cod" | "gateway" | "momo" | "vnpay"
   providerTransactionId?: string;
+  paymentReceiptUrl?: string; // Ảnh biên lai chụp màn hình
+  paymentProofUploadedAt?: string;
   paidAt?: string;
   refundedAt?: string;
   refundAmount?: number;

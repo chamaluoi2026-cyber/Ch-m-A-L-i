@@ -35,10 +35,13 @@ import {
   Sliders,
   Sparkles,
   Ticket,
+  Upload,
   User,
   Users,
   X,
-  XCircle
+  XCircle,
+  Camera,
+  FileCheck
 } from "lucide-react";
 
 export function resolveBookingItinerary(booking: BookingRecord | null) {
@@ -267,6 +270,10 @@ export function BookingDetailView({
   const [customMessage, setCustomMessage] = useState("");
   const [copiedMessage, setCopiedMessage] = useState(false);
   const [statusUpdatedSuccess, setStatusUpdatedSuccess] = useState(false);
+
+  // Receipt Proof state
+  const [adminUploadingReceipt, setAdminUploadingReceipt] = useState(false);
+  const [previewReceiptZoom, setPreviewReceiptZoom] = useState(false);
 
   // 1. Tải cấu hình ngân hàng mặc định của hệ thống
   useEffect(() => {
@@ -546,6 +553,67 @@ Sau khi chuyển khoản thành công, Anh/Chị gửi lại ảnh chụp giao d
       console.error("Lỗi lưu tài khoản ngân hàng:", e);
     } finally {
       setSavingGlobalBank(false);
+    }
+  }
+
+  async function handleConfirmPaymentFromReceipt() {
+    if (!booking) return;
+    startTransition(async () => {
+      try {
+        const res = await fetch("/api/bookings", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: booking.id,
+            paymentStatus: "paid",
+            bookingStatus: "confirmed"
+          })
+        });
+        const data = await res.json();
+        if (data.success && data.booking) {
+          applyBookingData(data.booking);
+          setStatusUpdatedSuccess(true);
+          setTimeout(() => setStatusUpdatedSuccess(false), 3500);
+        }
+      } catch (e) {
+        console.error("Lỗi xác nhận thanh toán:", e);
+      }
+    });
+  }
+
+  async function handleAdminUploadReceipt(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !booking) return;
+    setAdminUploadingReceipt(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "receipts");
+      const upRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      });
+      const upData = await upRes.json();
+      if (upData.success && upData.url) {
+        const receiptUrl = upData.url;
+        const res = await fetch("/api/bookings", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: booking.id,
+            paymentReceiptUrl: receiptUrl,
+            paymentProofUploadedAt: new Date().toISOString()
+          })
+        });
+        const data = await res.json();
+        if (data.success && data.booking) {
+          applyBookingData(data.booking);
+        }
+      }
+    } catch (err) {
+      console.error("Admin upload receipt failed:", err);
+    } finally {
+      setAdminUploadingReceipt(false);
     }
   }
 
@@ -1000,6 +1068,95 @@ Sau khi chuyển khoản thành công, Anh/Chị gửi lại ảnh chụp giao d
 
         {/* Right Column: Status Management & VietQR */}
         <div className="space-y-6">
+          {/* Proof of Payment / Biên lai chuyển khoản */}
+          <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 space-y-4">
+            <div className="flex items-center justify-between border-b border-black/5 pb-3">
+              <h2 className="text-base font-extrabold text-ink flex items-center gap-2">
+                <FileCheck className="size-4 text-forest" /> Biên lai Chuyển khoản (Bill đối soát)
+              </h2>
+              {booking.paymentReceiptUrl ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-extrabold text-emerald-700 border border-emerald-200">
+                  <CheckCircle2 className="size-3" /> Đã có ảnh bill
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-800 border border-amber-200">
+                  <Clock className="size-3" /> Chưa tải bill
+                </span>
+              )}
+            </div>
+
+            {booking.paymentReceiptUrl ? (
+              <div className="space-y-3">
+                <div
+                  className="relative group overflow-hidden rounded-2xl border border-black/10 bg-slate-50 cursor-pointer text-center"
+                  onClick={() => setPreviewReceiptZoom(true)}
+                >
+                  <img
+                    src={booking.paymentReceiptUrl}
+                    alt="Biên lai thanh toán"
+                    className="w-full max-h-64 object-contain rounded-xl transition duration-200 group-hover:scale-[1.02]"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white font-bold text-xs gap-1.5 backdrop-blur-[2px]">
+                    <ExternalLink className="size-4" /> Bấm để phóng to xem rõ số tiền
+                  </div>
+                </div>
+
+                <div className="text-xs space-y-1 rounded-xl bg-slate-50 p-3 border border-black/5">
+                  {booking.bankRefCode && (
+                    <div className="flex justify-between">
+                      <span className="text-ink/60">Mã giao dịch / Mã tham chiếu:</span>
+                      <span className="font-mono font-bold text-ink">{booking.bankRefCode}</span>
+                    </div>
+                  )}
+                  {booking.paymentProofUploadedAt && (
+                    <div className="flex justify-between">
+                      <span className="text-ink/60">Thời gian tải bill:</span>
+                      <span className="font-mono text-ink/80">{new Date(booking.paymentProofUploadedAt).toLocaleString("vi-VN")}</span>
+                    </div>
+                  )}
+                </div>
+
+                {curPaymentSt !== "paid" && (
+                  <button
+                    type="button"
+                    onClick={handleConfirmPaymentFromReceipt}
+                    disabled={isPending}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-xs font-extrabold text-white shadow-md hover:bg-emerald-700 transition active:scale-[0.99] disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="size-4" /> Xác nhận tiền đã vào TK (Duyệt ĐÃ THANH TOÁN)
+                  </button>
+                )}
+
+                <div className="flex items-center justify-between pt-1">
+                  <a
+                    href={booking.paymentReceiptUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] font-bold text-forest hover:underline inline-flex items-center gap-1"
+                  >
+                    <ExternalLink className="size-3" /> Mở ảnh gốc
+                  </a>
+                  <label className="text-[11px] font-bold text-ink/60 hover:text-ink cursor-pointer inline-flex items-center gap-1">
+                    <Upload className="size-3" /> {adminUploadingReceipt ? "Đang tải ảnh..." : "Tải ảnh khác"}
+                    <input type="file" accept="image/*" className="hidden" onChange={handleAdminUploadReceipt} disabled={adminUploadingReceipt} />
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="rounded-2xl border-2 border-dashed border-black/10 bg-slate-50/50 p-5 text-center">
+                  <Camera className="mx-auto size-8 text-ink/30 mb-2" />
+                  <p className="text-xs font-bold text-ink">Khách hàng chưa gửi ảnh biên lai</p>
+                  <p className="text-[11px] text-ink/60 mt-0.5">Nếu khách đã gửi bill qua Zalo hoặc tin nhắn, Admin có thể tải ảnh lên đây để lưu trữ đối soát.</p>
+                  <label className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-forest/10 hover:bg-forest hover:text-white text-forest px-3.5 py-1.5 text-xs font-bold transition cursor-pointer">
+                    <Upload className="size-3.5" /> {adminUploadingReceipt ? "Đang tải ảnh..." : "Tải ảnh bill khách gửi lên"}
+                    <input type="file" accept="image/*" className="hidden" onChange={handleAdminUploadReceipt} disabled={adminUploadingReceipt} />
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Status & Lifecycle Management */}
           <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 space-y-5">
             <h2 className="text-base font-extrabold text-ink flex items-center gap-2 border-b border-black/5 pb-4">
@@ -1539,6 +1696,45 @@ Sau khi chuyển khoản thành công, Anh/Chị gửi lại ảnh chụp giao d
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Zoom Modal for Payment Receipt */}
+      {previewReceiptZoom && booking.paymentReceiptUrl && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm transition-all"
+          onClick={() => setPreviewReceiptZoom(false)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+              <a
+                href={booking.paymentReceiptUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="size-9 rounded-full bg-black/60 text-white hover:bg-black/90 flex items-center justify-center transition shadow-lg"
+                title="Mở tab mới"
+              >
+                <ExternalLink className="size-4" />
+              </a>
+              <button
+                type="button"
+                onClick={() => setPreviewReceiptZoom(false)}
+                className="size-9 rounded-full bg-black/60 text-white hover:bg-black/90 flex items-center justify-center transition shadow-lg"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+            <img
+              src={booking.paymentReceiptUrl}
+              alt="Ảnh biên lai chuyển khoản phóng to"
+              className="max-h-[85vh] max-w-full rounded-2xl object-contain shadow-2xl"
+            />
+            {booking.bankRefCode && (
+              <p className="mt-2 text-xs font-mono text-white/80 bg-black/50 px-3 py-1 rounded-full">
+                Mã GD tham chiếu: {booking.bankRefCode}
+              </p>
+            )}
           </div>
         </div>
       )}
