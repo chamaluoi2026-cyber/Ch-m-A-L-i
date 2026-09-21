@@ -270,13 +270,13 @@ export function MobileAdminNav({
                 Giao diện Đối tác Cơ sở
               </Link>
               <a
-                href="http://localhost:3000"
+                href="https://chamaluoi.vercel.app"
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-white/70 hover:text-white transition"
               >
                 <Home className="size-4 shrink-0" />
-                Xem web khách (Port 3000)
+                Xem web khách
               </a>
             </div>
           </div>

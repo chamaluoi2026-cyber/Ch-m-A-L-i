@@ -884,11 +884,11 @@ function AdminBlogManagementPageContent() {
                             </button>
 
                             <a
-                              href={`http://localhost:3000/blog/${post.slug}`}
+                              href={`https://chamaluoi.vercel.app/blog/${post.slug}`}
                               target="_blank"
                               rel="noreferrer"
                               className="p-1.5 rounded-xl bg-beige hover:bg-forest/10 text-forest transition"
-                              title="Xem trực tiếp trên trang khách (Port 3000)"
+                              title="Xem trực tiếp trên trang khách"
                             >
                               <ExternalLink className="size-3.5" />
                             </a>
@@ -2148,7 +2148,7 @@ function AdminBlogManagementPageContent() {
               <div className="flex items-center gap-3">
                 <span className="size-3 rounded-full bg-emerald-500 animate-pulse" />
                 <h3 className="text-sm font-black text-ink">Xem Trước Bài Viết (Live Customer Preview)</h3>
-                <span className="text-xs text-ink/50">Mô phỏng 100% trang web khách: port 3000/blog/{currentPost.slug}</span>
+                <span className="text-xs text-ink/50">Mô phỏng 100% trang web khách: chamaluoi.vercel.app/blog/{currentPost.slug}</span>
               </div>
 
               <div className="flex items-center gap-3">
@@ -2176,11 +2176,11 @@ function AdminBlogManagementPageContent() {
 
 
                 <a
-                  href={`http://localhost:3000/blog/${currentPost.slug}?preview=true`}
+                  href={`https://chamaluoi.vercel.app/blog/${currentPost.slug}?preview=true`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-forest text-white text-xs font-bold shadow-sm hover:bg-forest/90 transition"
-                  title="Mở bài viết trực tiếp trên giao diện website khách hàng port 3000"
+                  title="Mở bài viết trực tiếp trên giao diện website khách hàng"
                 >
                   <ExternalLink className="size-3.5" />
                   <span>Mở trên Web khách (Tab mới)</span>

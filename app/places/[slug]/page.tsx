@@ -76,13 +76,13 @@ export default async function AdminPlaceDetailPage({
             Chỉnh sửa CMS
           </Link>
           <a
-            href={`http://localhost:3000/places/${place.slug}`}
+            href={`https://chamaluoi.vercel.app/places/${place.slug}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition shadow-sm"
           >
             <ExternalLink className="size-3.5" />
-            Mở trên Web khách (Port 3000)
+            Mở trên Web khách
           </a>
         </div>
       </header>

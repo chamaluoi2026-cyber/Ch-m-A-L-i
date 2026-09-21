@@ -41,7 +41,9 @@ import {
   Minus,
   Type,
   MessageSquare,
-  Camera
+  Camera,
+  Video,
+  Film
 } from "lucide-react";
 import {
   getPlaceBySlugAction,
@@ -52,6 +54,29 @@ import {
   type PlaceRecord
 } from "@/app/actions/upload";
 import { placeCategories } from "@/data/places";
+
+// URL thật của website khách hàng (Customer Web trên Vercel)
+const CUSTOMER_URL = "https://chamaluoi.vercel.app";
+
+// ─── Video helpers ─────────────────────────────────────────────────────────────
+function parseYouTubeId(url: string): string | null {
+  if (!url) return null;
+  const clean = url.trim();
+  const shortMatch = clean.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (shortMatch) return shortMatch[1];
+  const watchMatch = clean.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (watchMatch) return watchMatch[1];
+  const embedMatch = clean.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/);
+  if (embedMatch) return embedMatch[1];
+  const shortsMatch = clean.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+  if (shortsMatch) return shortsMatch[1];
+  return null;
+}
+function parseVimeoId(url: string): string | null {
+  if (!url) return null;
+  const match = url.match(/vimeo\.com\/(\d+)/);
+  return match ? match[1] : null;
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function generateSlug(text: string): string {
@@ -91,7 +116,8 @@ type ContentBlock =
   | { id: string; type: "gallery"; images: { id: string; url: string; caption?: string }[] }
   | { id: string; type: "quote"; content: string; author?: string }
   | { id: string; type: "divider" }
-  | { id: string; type: "list"; style: "bullet" | "number"; items: string[] };
+  | { id: string; type: "list"; style: "bullet" | "number"; items: string[] }
+  | { id: string; type: "video"; url: string; caption?: string; aspectRatio?: "16/9" | "9/16" };
 
 function blocksToText(blocks: ContentBlock[]): string {
   return blocks.map(b => {
@@ -99,17 +125,30 @@ function blocksToText(blocks: ContentBlock[]): string {
     if (b.type === "heading") return b.content;
     if (b.type === "quote") return b.content;
     if (b.type === "list") return b.items.join("\n");
+    if (b.type === "video") return b.url;
+    if (b.type === "image") return b.url;
     return "";
   }).filter(Boolean).join("\n\n");
 }
 
 function textToBlocks(text: string): ContentBlock[] {
   if (!text?.trim()) return [];
-  return text.split(/\n\n+/).filter(Boolean).map((para, i) => ({
-    id: `b-${i}-${Date.now()}`,
-    type: "paragraph" as const,
-    content: para.trim()
-  }));
+  return text.split(/\n\n+/).filter(Boolean).map((para, i) => {
+    const trimmed = para.trim();
+    if (parseYouTubeId(trimmed) || parseVimeoId(trimmed) || /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(trimmed)) {
+      return {
+        id: `b-${i}-${Date.now()}`,
+        type: "video" as const,
+        url: trimmed,
+        aspectRatio: "16/9"
+      };
+    }
+    return {
+      id: `b-${i}-${Date.now()}`,
+      type: "paragraph" as const,
+      content: trimmed
+    };
+  });
 }
 
 let _blockId = 0;
@@ -398,11 +437,61 @@ function BlockEditor({ block, idx, total, onUpdate, onRemove, onMove, onPicker }
                   className="absolute top-1 right-1 bg-white/90 rounded-full p-1 opacity-0 group-hover/img:opacity-100 transition"><X size={12} className="text-red-500" /></button>
               </div>
             ))}
-            <button type="button" onClick={() => onPicker(urls => onUpdate({ images: [...block.images, ...urls.map(url=>({id:newId(),url,caption:""}))] }), true)}
+              <button type="button" onClick={() => onPicker(urls => onUpdate({ images: [...block.images, ...urls.map(url=>({id:newId(),url,caption:""}))] }), true)}
               className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-forest hover:text-forest transition">
               <Plus size={24} /><span className="text-xs mt-1">Thêm ảnh</span>
             </button>
           </div>
+        </div>
+      )}
+
+      {block.type === "video" && (
+        <div className="border border-rose-200 rounded-xl bg-rose-50/40 p-4 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Video size={15} className="text-rose-600" />
+            <span className="text-xs font-semibold text-rose-800 uppercase tracking-wide">Khối Video</span>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 font-medium block mb-1">Đường dẫn video (URL):</label>
+            <input type="text" value={block.url} onChange={e => onUpdate({ url: e.target.value })}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-rose-400 bg-white"
+              placeholder="https://youtube.com/watch?v=... hoặc https://youtu.be/..." />
+            <p className="text-[11px] text-gray-400 mt-0.5">Hỗ trợ YouTube (kể cả Shorts), Vimeo, MP4 trực tiếp</p>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 font-medium block mb-1">Chú thích video (Tùy chọn):</label>
+            <input type="text" value={block.caption || ""} onChange={e => onUpdate({ caption: e.target.value })}
+              className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-rose-400 bg-white" placeholder="Mô tả ngắn về video..." />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500 font-medium">Tỉ lệ:</span>
+            {(["16/9", "9/16"] as const).map(ar => (
+              <button key={ar} type="button" onClick={() => onUpdate({ aspectRatio: ar })}
+                className={`px-2.5 py-1 rounded text-xs font-bold border transition ${block.aspectRatio === ar || (!block.aspectRatio && ar === "16/9") ? "border-rose-500 bg-rose-500 text-white" : "border-gray-200 text-gray-500 hover:border-rose-400"}`}>
+                {ar === "16/9" ? "16:9 Ngang" : "9:16 Dọc"}
+              </button>
+            ))}
+          </div>
+          {block.url && (
+            <div className={`relative overflow-hidden rounded-xl bg-black border border-black/10 ${block.aspectRatio === "9/16" || block.url.includes("/shorts/") ? "max-w-[200px] mx-auto aspect-[9/16]" : "w-full aspect-video"}`}>
+              {parseYouTubeId(block.url) ? (
+                <iframe src={`https://www.youtube-nocookie.com/embed/${parseYouTubeId(block.url)}?rel=0`}
+                  title={block.caption || "Video"} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen className="absolute inset-0 h-full w-full border-0" />
+              ) : parseVimeoId(block.url) ? (
+                <iframe src={`https://player.vimeo.com/video/${parseVimeoId(block.url)}?dnt=1`}
+                  title={block.caption || "Video"} allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen className="absolute inset-0 h-full w-full border-0" />
+              ) : /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(block.url) ? (
+                <video src={block.url} controls playsInline className="h-full w-full object-contain" />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-white p-3 text-center">
+                  <Film size={24} className="text-rose-400" />
+                  <a href={block.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-rose-300 underline break-all">{block.url}</a>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -429,6 +518,7 @@ function RichEditor({ blocks, onChange, onPicker }: {
     else if (type === "divider") nb = { id, type };
     else if (type === "image") nb = { id, type, url: "", caption: "" };
     else if (type === "gallery") nb = { id, type, images: [] };
+    else if (type === "video") nb = { id, type, url: "", caption: "", aspectRatio: "16/9" };
     else nb = { id, type: "paragraph", content: "" };
     onChange([...blocks, nb]);
   }
@@ -455,10 +545,11 @@ function RichEditor({ blocks, onChange, onPicker }: {
           { type: "gallery", icon: Camera, label: "Bộ sưu tập" },
           { type: "quote", icon: Quote, label: "Trích dẫn" },
           { type: "list", icon: List, label: "Danh sách" },
-          { type: "divider", icon: Minus, label: "Phân cách" }
+          { type: "divider", icon: Minus, label: "Phân cách" },
+          { type: "video", icon: Video, label: "Video" }
         ].map(({ type, icon: Icon, label }) => (
           <button key={type} type="button" onClick={() => add(type as ContentBlock["type"])}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-gray-200 text-gray-600 hover:border-forest hover:text-forest hover:bg-forest/5 transition">
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition ${type === "video" ? "border-rose-300 text-rose-700 hover:border-rose-500 hover:bg-rose-50" : "border-gray-200 text-gray-600 hover:border-forest hover:text-forest hover:bg-forest/5"}`}>
             <Icon size={13} />{label}
           </button>
         ))}
@@ -585,13 +676,13 @@ function PlaceEditPageContent() {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {place.slug && place.status === "active" && (
-              <a href={`http://localhost:3000/places/${place.slug}`} target="_blank" rel="noopener noreferrer"
+              <a href={`${CUSTOMER_URL}/places/${place.slug}`} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-3 py-2 text-xs rounded-lg border border-gray-200 text-gray-600 hover:border-forest hover:text-forest transition">
                 <ExternalLink size={13} /><span className="hidden sm:inline">Xem trang</span>
               </a>
             )}
             {place.slug && (
-              <a href={`http://localhost:3000/places/${place.slug}?preview=true`} target="_blank" rel="noopener noreferrer"
+              <a href={`${CUSTOMER_URL}/places/${place.slug}?preview=true`} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-3 py-2 text-xs rounded-lg border border-gray-200 text-gray-600 hover:border-forest hover:text-forest transition">
                 <Eye size={13} /><span className="hidden sm:inline">Xem trước</span>
               </a>
@@ -786,6 +877,32 @@ function PlaceEditPageContent() {
                     <Plus size={24} /><span className="text-xs mt-1">Thêm ảnh</span>
                   </button>
                 </div>
+              </div>
+              {/* Video giới thiệu địa điểm */}
+              <div>
+                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
+                  <Video size={14} className="text-rose-600" />
+                  Video giới thiệu địa điểm <span className="font-normal text-gray-400">(Tùy chọn)</span>
+                </label>
+                <input
+                  type="text"
+                  value={place.videoUrl || ""}
+                  onChange={e => upd({ videoUrl: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-rose-400 transition"
+                  placeholder="https://youtube.com/watch?v=... hoặc https://youtu.be/..."
+                />
+                <p className="text-xs text-gray-400 mt-1.5">Hỗ trợ YouTube (kể cả Shorts), Vimeo, và file MP4 trực tiếp. Video sẽ hiển thị nổi bật trên trang chi tiết địa điểm.</p>
+                {place.videoUrl && parseYouTubeId(place.videoUrl) && (
+                  <div className="mt-3 aspect-video rounded-xl overflow-hidden bg-black border border-black/10 max-w-md">
+                    <iframe
+                      src={`https://www.youtube-nocookie.com/embed/${parseYouTubeId(place.videoUrl)}?rel=0`}
+                      title="Xem trước video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="h-full w-full border-0"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -1049,7 +1166,7 @@ function PlaceEditPageContent() {
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}Lưu nháp
             </button>
             {place.slug && (
-              <a href={`http://localhost:3000/places/${place.slug}?preview=true`} target="_blank" rel="noopener noreferrer"
+              <a href={`${CUSTOMER_URL}/places/${place.slug}?preview=true`} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition">
                 <Eye size={14} />Xem trước
               </a>

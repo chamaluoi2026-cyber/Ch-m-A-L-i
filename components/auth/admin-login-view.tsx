@@ -189,7 +189,7 @@ export function AdminLoginView({ nextUrl = "/admin" }: AdminLoginViewProps) {
         <div className="pt-3 border-t border-black/5 text-center">
           <p className="text-xs text-ink/50">
             Bạn là Khách du lịch?{" "}
-            <a href="http://localhost:3000/login" className="font-bold text-forest hover:underline">
+            <a href="https://chamaluoi.vercel.app/login" className="font-bold text-forest hover:underline">
               Chuyển sang Cổng Khách Hàng Chạm A Lưới →
             </a>
           </p>

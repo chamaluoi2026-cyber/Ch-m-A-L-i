@@ -66,13 +66,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             Xem giao diện Cơ sở
           </Link>
           <a
-            href="http://localhost:3000"
+            href="https://chamaluoi.vercel.app"
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-white/70 hover:text-white transition"
           >
             <Home className="size-4" />
-            Xem web khách (Port 3000)
+            Xem web khách
           </a>
         </div>
       </aside>

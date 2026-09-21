@@ -222,6 +222,7 @@ export type PlaceRecord = {
   coverImage?: string;
   imageAlt?: string;
   gallery: (string | PlaceGalleryItem)[];
+  videoUrl?: string; // Video giới thiệu địa điểm (YouTube/Vimeo/MP4)
 
   // Pricing & Services
   priceLabel: string;

@@ -51,6 +51,7 @@ export type Place = {
   phone: string;
   image: string;
   gallery: (string | { url: string; alt?: string; caption?: string })[];
+  videoUrl?: string; // Video giới thiệu địa điểm (YouTube/Vimeo/MP4)
   services: string[];
   highlights: string[];
   activities: string[];

@@ -2673,7 +2673,7 @@ export default function AdminMediaPage() {
             </div>
             <div className="flex items-center gap-2">
               <a
-                href="http://localhost:3000#footer"
+                href="https://chamaluoi.vercel.app#footer"
                 target="_blank"
                 rel="noreferrer"
                 className="px-4 py-2.5 rounded-2xl border border-black/10 text-xs font-bold text-ink hover:bg-beige transition flex items-center gap-1.5"
@@ -3055,7 +3055,7 @@ export default function AdminMediaPage() {
             </div>
             <div className="flex items-center gap-2">
               <a
-                href="http://localhost:3000/about"
+                href="https://chamaluoi.vercel.app/about"
                 target="_blank"
                 rel="noreferrer"
                 className="px-4 py-2 rounded-xl bg-beige text-xs font-bold text-ink/80 hover:text-ink hover:bg-beige/80 transition flex items-center gap-1.5 border border-black/5"
