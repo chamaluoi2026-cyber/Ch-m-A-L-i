@@ -42,7 +42,10 @@ import {
   FileText,
   Clock,
   Globe,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Video,
+  Film,
+  Play
 } from "lucide-react";
 import { AppImage } from "@/components/ui/app-image";
 import {
@@ -66,11 +69,31 @@ function slugify(text: string): string {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
+    .replace(/[đĐ]/g, "d")
     .replace(/[^a-z0-9\s-]/g, "")
     .trim()
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
+}
+
+function parseYouTubeId(url: string): string | null {
+  if (!url) return null;
+  const clean = url.trim();
+  const shortMatch = clean.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (shortMatch) return shortMatch[1];
+  const watchMatch = clean.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (watchMatch) return watchMatch[1];
+  const embedMatch = clean.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/);
+  if (embedMatch) return embedMatch[1];
+  const shortsMatch = clean.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
+  if (shortsMatch) return shortsMatch[1];
+  return null;
+}
+
+function parseVimeoId(url: string): string | null {
+  if (!url) return null;
+  const match = url.match(/vimeo\.com\/(\d+)/);
+  return match ? match[1] : null;
 }
 
 // Tự động tính thời gian đọc dựa trên số từ
@@ -83,6 +106,7 @@ function calculateReadingTime(blocks: BlogContentBlock[]): string {
     else if (b.type === "list") wordCount += b.items.join(" ").split(/\s+/).filter(Boolean).length;
     else if (b.type === "image") wordCount += 15;
     else if (b.type === "gallery") wordCount += b.images.length * 15;
+    else if (b.type === "video") wordCount += 30;
   }
   const minutes = Math.max(1, Math.ceil(wordCount / 180));
   return `${minutes} phút đọc`;
@@ -323,6 +347,16 @@ function AdminBlogManagementPageContent() {
         break;
       case "code":
         newBlock = { id: newId, type: "code", code: "// Ghi chú hoặc thông tin bổ sung\nLịch trình: 08:00 - 17:00" };
+        break;
+      case "video":
+        newBlock = {
+          id: newId,
+          type: "video",
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          caption: "Video trải nghiệm thực tế tại A Lưới",
+          provider: "youtube",
+          aspectRatio: "16/9"
+        };
         break;
     }
 
@@ -1054,6 +1088,15 @@ function AdminBlogManagementPageContent() {
 
                   <button
                     type="button"
+                    onClick={() => addBlock("video")}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-100 hover:bg-rose-600 hover:text-white text-xs font-bold text-rose-900 transition shadow-sm"
+                  >
+                    <Video className="size-3.5" />
+                    + Chèn Video
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => addBlock("quote")}
                     className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-beige hover:bg-forest/10 hover:text-forest text-xs font-bold text-ink/80 transition"
                   >
@@ -1581,6 +1624,131 @@ function AdminBlogManagementPageContent() {
                       </div>
                     )}
 
+                    {/* 9. Video Block */}
+                    {block.type === "video" && (
+                      <div className="space-y-4 rounded-2xl bg-rose-50/50 p-4 border border-rose-200/70">
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rose-200/50 pb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="size-8 rounded-xl bg-rose-600 text-white grid place-items-center shadow-sm">
+                              <Video className="size-4" />
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-black text-rose-950 uppercase tracking-wider">Khối Video Trực Quan</h4>
+                              <p className="text-[11px] text-rose-800/70">Hỗ trợ YouTube, YouTube Shorts, TikTok, Vimeo hoặc link file MP4</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-rose-200">
+                            <button
+                              type="button"
+                              onClick={() => updateBlock(block.id, { aspectRatio: "16/9" })}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                                (block.aspectRatio || "16/9") === "16/9"
+                                  ? "bg-rose-600 text-white shadow-sm"
+                                  : "text-rose-900 hover:bg-rose-50"
+                              }`}
+                            >
+                              16:9 Chuẩn ngang
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => updateBlock(block.id, { aspectRatio: "9/16" })}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                                block.aspectRatio === "9/16"
+                                  ? "bg-rose-600 text-white shadow-sm"
+                                  : "text-rose-900 hover:bg-rose-50"
+                              }`}
+                            >
+                              9:16 Dọc (Shorts/TikTok)
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-bold text-ink/70 block mb-1">
+                            Đường dẫn Video (URL) <span className="text-rose-600">*</span>:
+                          </label>
+                          <input
+                            type="text"
+                            value={block.url}
+                            onChange={(e) => updateBlock(block.id, { url: e.target.value })}
+                            placeholder="https://www.youtube.com/watch?v=... hoặc https://youtu.be/... hoặc https://youtube.com/shorts/..."
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white text-xs font-mono text-ink focus:outline-none focus:ring-2 focus:ring-rose-500 border border-black/5"
+                          />
+                          <p className="text-[10px] text-ink/50 mt-1">
+                            💡 Mẹo: Dán bất kỳ link YouTube (kể cả Shorts), Vimeo hoặc liên kết MP4 trực tiếp.
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-bold text-ink/70 block mb-1">
+                            Chú thích video (Hiển thị dưới video):
+                          </label>
+                          <input
+                            type="text"
+                            value={block.caption || ""}
+                            onChange={(e) => updateBlock(block.id, { caption: e.target.value })}
+                            placeholder="Ví dụ: Video trải nghiệm khám phá bản làng A Lưới mùa lễ hội..."
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white text-xs text-ink focus:outline-none focus:ring-2 focus:ring-rose-500 border border-black/5"
+                          />
+                        </div>
+
+                        {/* Live Preview Inside Canvas */}
+                        {block.url && (
+                          <div className="pt-2">
+                            <label className="text-[11px] font-bold text-ink/70 block mb-1.5">
+                              Xem trước hiển thị (Live Preview):
+                            </label>
+                            <div
+                              className={`relative overflow-hidden rounded-2xl bg-black border border-black/10 shadow-inner ${
+                                block.aspectRatio === "9/16" || block.url.includes("/shorts/")
+                                  ? "max-w-[260px] mx-auto aspect-[9/16]"
+                                  : "w-full aspect-video"
+                              }`}
+                            >
+                              {parseYouTubeId(block.url) ? (
+                                <iframe
+                                  src={`https://www.youtube-nocookie.com/embed/${parseYouTubeId(block.url)}?rel=0`}
+                                  title={block.caption || "Preview Video"}
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  className="absolute inset-0 h-full w-full border-0"
+                                />
+                              ) : parseVimeoId(block.url) ? (
+                                <iframe
+                                  src={`https://player.vimeo.com/video/${parseVimeoId(block.url)}?dnt=1`}
+                                  title={block.caption || "Preview Video"}
+                                  allow="autoplay; fullscreen; picture-in-picture"
+                                  allowFullScreen
+                                  className="absolute inset-0 h-full w-full border-0"
+                                />
+                              ) : /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(block.url) ? (
+                                <video
+                                  src={block.url}
+                                  controls
+                                  playsInline
+                                  className="h-full w-full object-contain"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-white p-4 text-center">
+                                  <Film className="size-8 text-rose-400" />
+                                  <p className="text-xs font-bold text-white/90">Video từ liên kết nguồn ngoài</p>
+                                  <a
+                                    href={block.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[11px] text-rose-300 underline break-all max-w-full"
+                                  >
+                                    {block.url}
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Add block right beneath this block */}
                     <div className="mt-3 pt-3 border-t border-black/5 flex items-center justify-between text-[11px] text-ink/40">
                       <span>Khối #{index + 1}</span>
@@ -1599,6 +1767,13 @@ function AdminBlogManagementPageContent() {
                           className="px-2 py-0.5 rounded bg-forest/10 hover:bg-forest hover:text-white text-forest font-bold text-[10px]"
                         >
                           + Ảnh
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => addBlock("video", index)}
+                          className="px-2 py-0.5 rounded bg-rose-100 hover:bg-rose-600 hover:text-white text-rose-900 font-bold text-[10px]"
+                        >
+                          + Video
                         </button>
                         <button
                           type="button"
@@ -1650,6 +1825,14 @@ function AdminBlogManagementPageContent() {
                   >
                     <Layers className="size-3.5" />
                     + Bộ Sưu Tập Gallery
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => addBlock("video")}
+                    className="px-4 py-2 rounded-2xl bg-rose-600 text-white shadow-sm text-xs font-black hover:bg-rose-700 transition flex items-center gap-1.5"
+                  >
+                    <Video className="size-3.5" />
+                    + Chèn Video
                   </button>
                   <button
                     type="button"
@@ -1744,6 +1927,26 @@ function AdminBlogManagementPageContent() {
                     placeholder="https://... hoặc /images/..."
                     className="w-full px-3 py-2 rounded-xl bg-beige/60 font-mono text-xs text-ink focus:outline-none focus:ring-2 focus:ring-forest"
                   />
+                </div>
+
+                <div className="pt-2 border-t border-black/5">
+                  <label className="text-[11px] font-bold text-ink/70 block mb-1 flex items-center gap-1.5">
+                    <Video className="size-3.5 text-rose-600" />
+                    Video tiêu điểm bài viết (Tùy chọn - YouTube/MP4):
+                  </label>
+                  <input
+                    type="text"
+                    value={currentPost.videoUrl || ""}
+                    onChange={(e) => {
+                      setCurrentPost({ ...currentPost, videoUrl: e.target.value });
+                      setHasUnsavedChanges(true);
+                    }}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    className="w-full px-3 py-2 rounded-xl bg-beige/60 font-mono text-xs text-ink focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  />
+                  <p className="text-[10px] text-ink/50 mt-1">
+                    Nếu có, video này sẽ xuất hiện ở đầu bài viết (thay thế hoặc mở rộng cho ảnh bìa).
+                  </p>
                 </div>
               </div>
 
@@ -2015,10 +2218,36 @@ function AdminBlogManagementPageContent() {
                     </p>
                   </header>
 
-                  {/* Cover Image */}
-                  <figure className="relative aspect-[16/9] rounded-3xl overflow-hidden shadow-card border border-black/5">
-                    <AppImage src={currentPost.image} alt={currentPost.title} fill priority className="object-cover" />
-                  </figure>
+                  {/* Hero Video or Cover Image */}
+                  {currentPost.videoUrl ? (
+                    <div className="space-y-2">
+                      <div className="relative aspect-video rounded-3xl overflow-hidden shadow-card border border-black/5 bg-black">
+                        {parseYouTubeId(currentPost.videoUrl) ? (
+                          <iframe
+                            src={`https://www.youtube-nocookie.com/embed/${parseYouTubeId(currentPost.videoUrl)}?rel=0`}
+                            title={currentPost.title}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            className="absolute inset-0 h-full w-full border-0"
+                          />
+                        ) : parseVimeoId(currentPost.videoUrl) ? (
+                          <iframe
+                            src={`https://player.vimeo.com/video/${parseVimeoId(currentPost.videoUrl)}?dnt=1`}
+                            title={currentPost.title}
+                            allow="autoplay; fullscreen; picture-in-picture"
+                            allowFullScreen
+                            className="absolute inset-0 h-full w-full border-0"
+                          />
+                        ) : (
+                          <video src={currentPost.videoUrl} controls playsInline className="h-full w-full object-contain" />
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <figure className="relative aspect-[16/9] rounded-3xl overflow-hidden shadow-card border border-black/5">
+                      <AppImage src={currentPost.image} alt={currentPost.title} fill priority className="object-cover" />
+                    </figure>
+                  )}
 
                   {/* Excerpt */}
                   {currentPost.excerpt && (
@@ -2129,6 +2358,43 @@ function AdminBlogManagementPageContent() {
                           <pre className="my-6 p-4 rounded-2xl bg-neutral-900 text-emerald-300 font-mono text-xs overflow-x-auto">
                             {b.code}
                           </pre>
+                        )}
+
+                        {b.type === "video" && (
+                          <figure className="my-8">
+                            <div
+                              className={`relative overflow-hidden rounded-2xl sm:rounded-3xl border border-black/10 bg-black shadow-card ${
+                                b.aspectRatio === "9/16" || b.url.includes("/shorts/")
+                                  ? "max-w-xs mx-auto aspect-[9/16]"
+                                  : "aspect-video"
+                              }`}
+                            >
+                              {parseYouTubeId(b.url) ? (
+                                <iframe
+                                  src={`https://www.youtube-nocookie.com/embed/${parseYouTubeId(b.url)}?rel=0`}
+                                  title={b.caption || "Video bài viết"}
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  className="absolute inset-0 h-full w-full border-0"
+                                />
+                              ) : parseVimeoId(b.url) ? (
+                                <iframe
+                                  src={`https://player.vimeo.com/video/${parseVimeoId(b.url)}?dnt=1`}
+                                  title={b.caption || "Video bài viết"}
+                                  allow="autoplay; fullscreen; picture-in-picture"
+                                  allowFullScreen
+                                  className="absolute inset-0 h-full w-full border-0"
+                                />
+                              ) : (
+                                <video src={b.url} controls playsInline className="h-full w-full object-contain" />
+                              )}
+                            </div>
+                            {b.caption && (
+                              <figcaption className="mt-2 text-center text-xs italic text-ink/65">
+                                🎥 {b.caption}
+                              </figcaption>
+                            )}
+                          </figure>
                         )}
                       </div>
                     ))}

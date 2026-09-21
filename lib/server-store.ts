@@ -165,7 +165,8 @@ export type BlogContentBlock =
   | { id: string; type: "quote"; content: string; author?: string }
   | { id: string; type: "divider" }
   | { id: string; type: "list"; style: "bullet" | "number"; items: string[] }
-  | { id: string; type: "code"; code: string; language?: string };
+  | { id: string; type: "code"; code: string; language?: string }
+  | { id: string; type: "video"; url: string; caption?: string; provider?: "youtube" | "tiktok" | "facebook" | "vimeo" | "direct"; aspectRatio?: "16/9" | "9/16" };
 
 export type BlogPostRecord = {
   id: string;
@@ -179,6 +180,7 @@ export type BlogPostRecord = {
   date: string;
   readingTime: string;
   image: string;
+  videoUrl?: string; // Video giới thiệu / tiêu điểm bài viết
   seoTitle?: string;
   seoDescription?: string;
   blocks: BlogContentBlock[];
