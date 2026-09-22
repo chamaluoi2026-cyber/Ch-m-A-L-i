@@ -1029,15 +1029,28 @@ function PlaceEditPageContent() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Google Maps Embed URL</label>
-                <input type="url" value={place.mapEmbedUrl} onChange={e => upd({ mapEmbedUrl: e.target.value })}
+                <input type="text" value={place.mapEmbedUrl}
+                  onChange={e => {
+                    let val = e.target.value.trim();
+                    // Tự động trích xuất URL nếu user paste cả thẻ <iframe src="...">
+                    const srcMatch = val.match(/src=["']([^"']+)["']/);
+                    if (srcMatch) val = srcMatch[1];
+                    upd({ mapEmbedUrl: val });
+                  }}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-mono focus:outline-none focus:border-forest transition" placeholder="https://www.google.com/maps/embed?pb=..." />
-                <p className="text-xs text-gray-400 mt-1">Google Maps → Chia sẻ → Nhúng bản đồ → Sao chép link src</p>
+                <div className="flex items-start gap-2 mt-1.5 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                  <span className="text-blue-500 text-base leading-tight">💡</span>
+                  <div className="text-xs text-blue-700">
+                    <strong>Cách lấy link:</strong> Google Maps → tìm địa điểm → nhấn <strong>Chia sẻ</strong> → tab <strong>Nhúng bản đồ</strong> → nhấn <strong>Sao chép HTML</strong> và dán vào đây (hệ thống tự tách URL).
+                  </div>
+                </div>
               </div>
-              {place.mapEmbedUrl && (
+              {place.mapEmbedUrl && place.mapEmbedUrl.startsWith("https://") && (
                 <div className="rounded-xl overflow-hidden border border-gray-200 h-64">
                   <iframe src={place.mapEmbedUrl} width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
                 </div>
               )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Hướng dẫn đường đi</label>
                 <textarea value={place.directions || ""} onChange={e => upd({ directions: e.target.value })} rows={3}
