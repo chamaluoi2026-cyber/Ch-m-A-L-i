@@ -930,19 +930,8 @@ function pushStoreToSupabaseCloud(data: StoreData) {
       })
     }).catch(() => {});
 
-    // 2. Nếu có danh sách places, chỉ đồng bộ sang places_store khi có danh sách đầy đủ (ít nhất 10 địa điểm)
-    // Tránh tình trạng một mảng cục bộ thiếu sót ghi đè làm mất các địa điểm khác
-    if (Array.isArray(data.places) && data.places.length >= 10) {
-      fetch(`${url}/rest/v1/system_store`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          id: "places_store",
-          data: data.places,
-          updated_at: timestamp
-        })
-      }).catch(() => {});
-    }
+    // Lưu ý: places_store được quản lý độc lập 100% bởi cloud-store.ts,
+    // server-store.ts tuyệt đối không được tự ý ghi đè places_store.
 
     // 3. Nếu có danh sách blogs, đồng bộ sang blogs_store
     if (Array.isArray(data.blogs) && data.blogs.length > 0) {

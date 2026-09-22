@@ -129,6 +129,17 @@ export async function getPlacesFromCloudAsync(): Promise<PlaceRecord[]> {
       }
     } catch {}
 
+    // Đảm bảo an toàn: Nếu danh sách từ cloud bị thiếu (< 10 địa điểm),
+    // tự động bổ sung các địa điểm tĩnh còn thiếu để không bao giờ bị mất địa điểm
+    if (placesList.length > 0 && placesList.length < staticPlaces.length) {
+      const existingSlugs = new Set(placesList.map(p => p.slug));
+      for (const sp of staticPlaces) {
+        if (!existingSlugs.has(sp.slug)) {
+          placesList.push(mapStaticToRecord(sp));
+        }
+      }
+    }
+
     if (placesList.length > 0) {
       cachedPlaces = placesList;
       lastPlacesFetch = now;
@@ -146,7 +157,21 @@ export async function getPlacesFromCloudAsync(): Promise<PlaceRecord[]> {
 }
 
 export async function savePlacesToCloudAsync(places: PlaceRecord[]): Promise<boolean> {
-  cachedPlaces = places;
+  // Rào chắn bảo vệ an toàn tuyệt đối:
+  // Nếu mảng truyền vào bị thiếu (< 10 địa điểm), tự động bù đắp các địa điểm chuẩn
+  // để TUYỆT ĐỐI KHÔNG BAO GIỜ bị ghi đè thành 1 địa điểm!
+  let safePlaces = [...places];
+  if (safePlaces.length < staticPlaces.length) {
+    const existingSlugs = new Set(safePlaces.map(p => p.slug));
+    for (const sp of staticPlaces) {
+      if (!existingSlugs.has(sp.slug)) {
+        safePlaces.push(mapStaticToRecord(sp));
+      }
+    }
+    console.log(`[DATA_GUARD] Auto-supplemented missing places. New total: ${safePlaces.length}`);
+  }
+
+  cachedPlaces = safePlaces;
   lastPlacesFetch = Date.now();
 
   try {
@@ -163,7 +188,7 @@ export async function savePlacesToCloudAsync(places: PlaceRecord[]): Promise<boo
       },
       body: JSON.stringify({
         id: "places_store",
-        data: places,
+        data: safePlaces,
         updated_at: timestamp
       })
     });
