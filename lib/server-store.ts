@@ -930,8 +930,9 @@ function pushStoreToSupabaseCloud(data: StoreData) {
       })
     }).catch(() => {});
 
-    // 2. Nếu có danh sách places, đồng bộ sang places_store
-    if (Array.isArray(data.places) && data.places.length > 0) {
+    // 2. Nếu có danh sách places, chỉ đồng bộ sang places_store khi có danh sách đầy đủ (ít nhất 10 địa điểm)
+    // Tránh tình trạng một mảng cục bộ thiếu sót ghi đè làm mất các địa điểm khác
+    if (Array.isArray(data.places) && data.places.length >= 10) {
       fetch(`${url}/rest/v1/system_store`, {
         method: "POST",
         headers,
@@ -2181,7 +2182,10 @@ export function getPlaceById(id: string): PlaceRecord | undefined {
 
 export function savePlace(place: Place | PlaceRecord): PlaceRecord {
   const store = loadStore();
-  if (!store.places) store.places = [];
+  if (!store.places || store.places.length === 0) {
+    // Luôn nạp đầy đủ danh sách địa điểm trước, tránh mảng rỗng làm mất các địa điểm khác
+    getPlaces(true);
+  }
 
   const now = new Date().toISOString();
   const existingIdx = store.places.findIndex((p) => p.id === (place as PlaceRecord).id || p.slug === place.slug);
