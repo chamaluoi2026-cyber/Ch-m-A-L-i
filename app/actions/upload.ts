@@ -473,32 +473,50 @@ export async function savePlaceAction(place: PlaceRecord): Promise<{
 }> {
   try {
     await requireRole(["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"]);
-    const saved = savePlace(place);
 
-    // Đồng bộ Supabase Cloud places_store
+    const now = new Date().toISOString();
+    const savedRecord: PlaceRecord = {
+      ...place,
+      id: place.id || place.slug,
+      updatedAt: now,
+      createdAt: place.createdAt || now
+    };
+
+    // Ưu tiên: Lưu trực tiếp lên Supabase Cloud places_store (nguồn dữ liệu thực)
+    // Không dựa vào savePlace() / inMemoryStore vì Vercel RAM bị xóa mỗi request
+    let cloudSyncSuccess = false;
     try {
       const currentPlaces = await getPlacesFromCloudAsync();
-      const existingIdx = currentPlaces.findIndex((p) => p.id === place.id || p.slug === place.slug);
+      const existingIdx = currentPlaces.findIndex((p) => p.id === savedRecord.id || p.slug === savedRecord.slug);
       let updated: PlaceRecord[];
       if (existingIdx >= 0) {
         updated = [...currentPlaces];
-        updated[existingIdx] = { ...updated[existingIdx], ...saved };
+        // Merge: giữ lại các field từ cloud (như createdAt, audit...) và override bằng data mới từ form
+        updated[existingIdx] = { ...updated[existingIdx], ...savedRecord };
       } else {
-        updated = [saved, ...currentPlaces];
+        // Địa điểm mới
+        updated = [savedRecord, ...currentPlaces];
       }
-      await savePlacesToCloudAsync(updated);
+      cloudSyncSuccess = await savePlacesToCloudAsync(updated);
+      console.log("[ADMIN_UPLOAD] Cloud sync places_store:", cloudSyncSuccess ? "OK" : "FAILED");
     } catch (cloudErr) {
       console.error("[ADMIN_UPLOAD] Error syncing place to cloud:", cloudErr);
     }
 
+    // Cũng cập nhật inMemoryStore (best-effort, không quan trọng trên Vercel)
+    try {
+      savePlace(savedRecord);
+    } catch { /* ignore on Vercel read-only fs */ }
+
     revalidatePath("/admin/places");
     revalidatePath("/places");
-    if (saved.slug) revalidatePath(`/places/${saved.slug}`);
-    return { success: true, place: saved };
+    if (savedRecord.slug) revalidatePath(`/places/${savedRecord.slug}`);
+    return { success: true, place: savedRecord };
   } catch (err) {
     return { success: false, error: sanitizeErrorMessage(err, "Không thể lưu địa điểm.") };
   }
 }
+
 
 export async function deletePlaceAction(id: string): Promise<{
   success: boolean;
