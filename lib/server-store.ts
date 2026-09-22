@@ -910,21 +910,51 @@ function pushStoreToSupabaseCloud(data: StoreData) {
 
   if (!url || !key) return;
 
+  const timestamp = new Date().toISOString();
+  const headers = {
+    "apikey": key,
+    "Authorization": `Bearer ${key}`,
+    "Content-Type": "application/json",
+    "Prefer": "resolution=merge-duplicates"
+  };
+
   try {
+    // 1. Luôn lưu vào kho tổng main
     fetch(`${url}/rest/v1/system_store`, {
       method: "POST",
-      headers: {
-        "apikey": key,
-        "Authorization": `Bearer ${key}`,
-        "Content-Type": "application/json",
-        "Prefer": "resolution=merge-duplicates"
-      },
+      headers,
       body: JSON.stringify({
         id: "main",
         data: data,
-        updated_at: new Date().toISOString()
+        updated_at: timestamp
       })
     }).catch(() => {});
+
+    // 2. Nếu có danh sách places, đồng bộ sang places_store
+    if (Array.isArray(data.places) && data.places.length > 0) {
+      fetch(`${url}/rest/v1/system_store`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          id: "places_store",
+          data: data.places,
+          updated_at: timestamp
+        })
+      }).catch(() => {});
+    }
+
+    // 3. Nếu có danh sách blogs, đồng bộ sang blogs_store
+    if (Array.isArray(data.blogs) && data.blogs.length > 0) {
+      fetch(`${url}/rest/v1/system_store`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          id: "blogs_store",
+          data: data.blogs,
+          updated_at: timestamp
+        })
+      }).catch(() => {});
+    }
   } catch {}
 }
 

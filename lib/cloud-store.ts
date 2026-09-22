@@ -150,6 +150,9 @@ export async function savePlacesToCloudAsync(places: PlaceRecord[]): Promise<boo
   lastPlacesFetch = Date.now();
 
   try {
+    const timestamp = new Date().toISOString();
+
+    // 1. Lưu vào places_store (kho chuyên dụng)
     const res = await fetch(`${SUPABASE_URL}/rest/v1/system_store`, {
       method: "POST",
       headers: {
@@ -161,9 +164,40 @@ export async function savePlacesToCloudAsync(places: PlaceRecord[]): Promise<boo
       body: JSON.stringify({
         id: "places_store",
         data: places,
-        updated_at: new Date().toISOString()
+        updated_at: timestamp
       })
     });
+
+    // 2. Đồng thời cập nhật vào kho main (data.places) để tương thích 100%
+    try {
+      const mainRes = await fetch(`${SUPABASE_URL}/rest/v1/system_store?id=eq.main&select=data`, {
+        method: "GET",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        cache: "no-store"
+      });
+      if (mainRes.ok) {
+        const rows = await mainRes.json();
+        const mainData = rows[0]?.data || {};
+        mainData.places = places;
+        await fetch(`${SUPABASE_URL}/rest/v1/system_store`, {
+          method: "POST",
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "resolution=merge-duplicates"
+          },
+          body: JSON.stringify({
+            id: "main",
+            data: mainData,
+            updated_at: timestamp
+          })
+        });
+      }
+    } catch (mainErr) {
+      console.warn("[CLOUD_STORE] Could not update main.places:", mainErr);
+    }
+
     return res.ok;
   } catch (err) {
     console.error("[CLOUD_STORE] Error saving places to cloud:", err);
