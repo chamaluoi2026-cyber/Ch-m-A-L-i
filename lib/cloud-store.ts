@@ -81,39 +81,58 @@ export async function getPlacesFromCloudAsync(): Promise<PlaceRecord[]> {
   }
 
   try {
+    // 1. Lấy dữ liệu từ places_store (danh sách chuẩn)
+    let placesList: PlaceRecord[] = [];
     const res = await fetch(`${SUPABASE_URL}/rest/v1/system_store?id=eq.places_store&select=data`, {
-      method: "GET",
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
-      },
-      cache: "no-store"
-    });
-
-    if (res.ok) {
-      const rows = await res.json();
-      if (Array.isArray(rows) && rows[0]?.data && Array.isArray(rows[0].data) && rows[0].data.length > 0) {
-        cachedPlaces = rows[0].data as PlaceRecord[];
-        lastPlacesFetch = now;
-        return cachedPlaces;
-      }
-    }
-
-    // Kiểm tra main
-    const mainRes = await fetch(`${SUPABASE_URL}/rest/v1/system_store?id=eq.main&select=data`, {
       method: "GET",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
       cache: "no-store"
     });
-    if (mainRes.ok) {
-      const mainRows = await mainRes.json();
-      const mainPlaces = mainRows[0]?.data?.places;
-      if (Array.isArray(mainPlaces) && mainPlaces.length > 0) {
-        cachedPlaces = mainPlaces as PlaceRecord[];
-        lastPlacesFetch = now;
-        savePlacesToCloudAsync(cachedPlaces).catch(() => {});
-        return cachedPlaces;
+    if (res.ok) {
+      const rows = await res.json();
+      if (Array.isArray(rows) && rows[0]?.data && Array.isArray(rows[0].data)) {
+        placesList = rows[0].data as PlaceRecord[];
       }
+    }
+
+    // 2. Kiểm tra thêm system_store id=eq.main (nơi saveStore ghi vào)
+    try {
+      const mainRes = await fetch(`${SUPABASE_URL}/rest/v1/system_store?id=eq.main&select=data`, {
+        method: "GET",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        cache: "no-store"
+      });
+      if (mainRes.ok) {
+        const mainRows = await mainRes.json();
+        const mainPlaces = mainRows[0]?.data?.places as PlaceRecord[] | undefined;
+        if (Array.isArray(mainPlaces) && mainPlaces.length > 0) {
+          let hasChange = false;
+          for (const mp of mainPlaces) {
+            const idx = placesList.findIndex(p => p.slug === mp.slug || p.id === mp.id);
+            if (idx >= 0) {
+              const current = placesList[idx];
+              const mainTime = new Date(mp.updatedAt || 0).getTime();
+              const storeTime = new Date(current.updatedAt || 0).getTime();
+              if (mainTime >= storeTime || !current.gallery?.length) {
+                placesList[idx] = { ...current, ...mp };
+                hasChange = true;
+              }
+            } else {
+              placesList.unshift(mp);
+              hasChange = true;
+            }
+          }
+          if (hasChange) {
+            savePlacesToCloudAsync(placesList).catch(() => {});
+          }
+        }
+      }
+    } catch {}
+
+    if (placesList.length > 0) {
+      cachedPlaces = placesList;
+      lastPlacesFetch = now;
+      return placesList;
     }
   } catch (err) {
     console.error("[CLOUD_STORE] Error fetching places from cloud:", err);
