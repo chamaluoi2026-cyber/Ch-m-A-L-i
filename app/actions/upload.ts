@@ -29,6 +29,12 @@ import {
   type CoreValueItem
 } from "@/lib/server-store";
 import { getSession, requireRole, sanitizeErrorMessage } from "@/lib/auth/roles";
+import {
+  getBlogsFromCloudAsync,
+  saveBlogsToCloudAsync,
+  getPlacesFromCloudAsync,
+  savePlacesToCloudAsync
+} from "@/lib/cloud-store";
 
 export type { SystemAssetRecord, SiteSettings, BlogPostRecord, BlogContentBlock, PlaceRecord, PlaceFAQItem, TeamMemberItem, CoreValueItem };
 
@@ -346,10 +352,22 @@ export async function deleteImageAction(fileName: string): Promise<{
 // =========================================================================
 
 export async function getBlogPostsAction(): Promise<BlogPostRecord[]> {
+  try {
+    const cloudBlogs = await getBlogsFromCloudAsync();
+    const active = cloudBlogs.filter((b) => !b.isDeleted);
+    if (active.length > 0) return active;
+  } catch (err) {
+    console.error("[ADMIN_UPLOAD] Error getting blogs from cloud:", err);
+  }
   return getBlogPosts();
 }
 
 export async function getBlogPostBySlugAction(slug: string): Promise<BlogPostRecord | null> {
+  try {
+    const cloudBlogs = await getBlogsFromCloudAsync();
+    const found = cloudBlogs.find((b) => (b.slug === slug || b.id === slug) && !b.isDeleted);
+    if (found) return found;
+  } catch {}
   const post = getBlogPostBySlug(slug);
   return post || null;
 }
@@ -362,6 +380,23 @@ export async function saveBlogPostAction(post: BlogPostRecord): Promise<{
   try {
     await requireRole(["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"]);
     const saved = saveBlogPost(post);
+
+    // Đồng bộ lập tức lên Supabase Cloud blogs_store
+    try {
+      const currentBlogs = await getBlogsFromCloudAsync();
+      const existingIdx = currentBlogs.findIndex((b) => b.id === post.id || b.slug === post.slug);
+      let updated: BlogPostRecord[];
+      if (existingIdx >= 0) {
+        updated = [...currentBlogs];
+        updated[existingIdx] = { ...updated[existingIdx], ...saved };
+      } else {
+        updated = [saved, ...currentBlogs];
+      }
+      await saveBlogsToCloudAsync(updated);
+    } catch (cloudErr) {
+      console.error("[ADMIN_UPLOAD] Error syncing blog to cloud:", cloudErr);
+    }
+
     revalidatePath("/admin/blogs");
     revalidatePath("/blog");
     if (saved.slug) revalidatePath(`/blog/${saved.slug}`);
@@ -378,6 +413,21 @@ export async function deleteBlogPostAction(id: string): Promise<{
   try {
     await requireRole(["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"]);
     const deleted = deleteBlogPost(id);
+
+    // Đồng bộ xóa lên Supabase Cloud
+    try {
+      const currentBlogs = await getBlogsFromCloudAsync();
+      const updated = currentBlogs.map((b) => {
+        if (b.id === id || b.slug === id) {
+          return { ...b, isDeleted: true, deletedAt: new Date().toISOString() };
+        }
+        return b;
+      });
+      await saveBlogsToCloudAsync(updated);
+    } catch (cloudErr) {
+      console.error("[ADMIN_UPLOAD] Error syncing delete blog to cloud:", cloudErr);
+    }
+
     revalidatePath("/admin/blogs");
     revalidatePath("/blog");
     return { success: deleted, error: deleted ? undefined : "Không thể xóa bài viết." };
@@ -396,10 +446,22 @@ export async function uploadBlogMediaAction(formData: FormData): Promise<{
 }
 
 export async function getPlacesAction(): Promise<PlaceRecord[]> {
+  try {
+    const cloudPlaces = await getPlacesFromCloudAsync();
+    const active = cloudPlaces.filter((p) => !p.isDeleted);
+    if (active.length > 0) return active;
+  } catch (err) {
+    console.error("[ADMIN_UPLOAD] Error getting places from cloud:", err);
+  }
   return getPlaces();
 }
 
 export async function getPlaceBySlugAction(slug: string): Promise<PlaceRecord | null> {
+  try {
+    const cloudPlaces = await getPlacesFromCloudAsync();
+    const found = cloudPlaces.find((p) => (p.slug === slug || p.id === slug) && !p.isDeleted);
+    if (found) return found;
+  } catch {}
   const place = getPlaceBySlug(slug);
   return place || null;
 }
@@ -412,6 +474,23 @@ export async function savePlaceAction(place: PlaceRecord): Promise<{
   try {
     await requireRole(["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"]);
     const saved = savePlace(place);
+
+    // Đồng bộ Supabase Cloud places_store
+    try {
+      const currentPlaces = await getPlacesFromCloudAsync();
+      const existingIdx = currentPlaces.findIndex((p) => p.id === place.id || p.slug === place.slug);
+      let updated: PlaceRecord[];
+      if (existingIdx >= 0) {
+        updated = [...currentPlaces];
+        updated[existingIdx] = { ...updated[existingIdx], ...saved };
+      } else {
+        updated = [saved, ...currentPlaces];
+      }
+      await savePlacesToCloudAsync(updated);
+    } catch (cloudErr) {
+      console.error("[ADMIN_UPLOAD] Error syncing place to cloud:", cloudErr);
+    }
+
     revalidatePath("/admin/places");
     revalidatePath("/places");
     if (saved.slug) revalidatePath(`/places/${saved.slug}`);
@@ -428,6 +507,21 @@ export async function deletePlaceAction(id: string): Promise<{
   try {
     await requireRole(["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"]);
     const deleted = deletePlace(id);
+
+    // Đồng bộ xóa lên Supabase Cloud
+    try {
+      const currentPlaces = await getPlacesFromCloudAsync();
+      const updated = currentPlaces.map((p) => {
+        if (p.id === id || p.slug === id) {
+          return { ...p, isDeleted: true, deletedAt: new Date().toISOString() };
+        }
+        return p;
+      });
+      await savePlacesToCloudAsync(updated);
+    } catch (cloudErr) {
+      console.error("[ADMIN_UPLOAD] Error syncing delete place to cloud:", cloudErr);
+    }
+
     revalidatePath("/admin/places");
     revalidatePath("/places");
     return { success: deleted, error: deleted ? undefined : "Không thể xóa địa điểm." };
