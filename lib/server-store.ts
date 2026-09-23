@@ -2409,7 +2409,18 @@ export function createBooking(payload: {
   const bookingPlace = payload.itemSlug 
     ? allPlacesForBooking.find((p: any) => p.slug === payload.itemSlug || p.id === payload.itemSlug) 
     : (payload.placeId ? allPlacesForBooking.find((p: any) => p.id === payload.placeId || p.slug === payload.placeId) : undefined);
-  const rate = payload.commissionRate ?? (bookingPlace?.commissionRate || 10);
+  
+  const effectiveBusinessId = payload.businessId || (bookingPlace as any)?.businessId;
+  const biz = effectiveBusinessId ? (store.businesses || []).find((b) => b.id === effectiveBusinessId) : undefined;
+  const effectiveBusinessName = payload.businessName || biz?.name || (bookingPlace as any)?.businessName || "Chạm A Lưới";
+
+  const rateInfo = resolveCommissionRate({
+    serviceId: payload.serviceOrTourId || payload.itemId,
+    placeId: payload.placeId || (bookingPlace as any)?.id,
+    placeSlug: payload.itemSlug || (bookingPlace as any)?.slug,
+    businessId: effectiveBusinessId
+  });
+  const rate = payload.commissionRate ?? rateInfo.rate;
   const commAmount = Math.round((finalAmount * rate) / 100);
   const effectiveDate = payload.experienceDate || payload.startDate || now.split("T")[0];
   const effectiveGuests = payload.numberOfPeople || payload.quantity || qty;
@@ -2437,8 +2448,8 @@ export function createBooking(payload: {
     itemId: payload.itemId,
     itemSlug: payload.itemSlug,
     type: payload.type,
-    businessId: payload.businessId,
-    businessName: payload.businessName || "Chạm A Lưới",
+    businessId: effectiveBusinessId,
+    businessName: effectiveBusinessName,
 
     customerName: payload.customerName,
     phone: payload.phone,

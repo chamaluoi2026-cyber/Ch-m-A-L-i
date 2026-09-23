@@ -1,5 +1,7 @@
 import { places as staticPlaces, type Place } from "@/data/places";
 import { defaultBlogPosts, type BlogPostRecord, type PlaceRecord } from "@/lib/server-store";
+import { defaultProducts } from "@/data/products";
+import type { ProductRecord } from "@/data/products";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://hcunfovtwbzfatudejfs.supabase.co";
 const SUPABASE_KEY =
@@ -255,3 +257,94 @@ export async function saveBlogsToCloudAsync(blogs: BlogPostRecord[]): Promise<bo
     return false;
   }
 }
+
+// ==========================================
+// KHO ĐẶC SẢN & SẢN PHẨM (products_store)
+// ==========================================
+
+let cachedProducts: ProductRecord[] | null = null;
+let lastProductsFetch = 0;
+
+export async function getProductsFromCloudAsync(): Promise<ProductRecord[]> {
+  const now = Date.now();
+  if (cachedProducts && now - lastProductsFetch < CACHE_TTL_MS) {
+    return cachedProducts;
+  }
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/system_store?id=eq.products_store&select=data`, {
+      method: "GET",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`
+      },
+      cache: "no-store"
+    });
+
+    if (res.ok) {
+      const rows = await res.json();
+      if (Array.isArray(rows) && rows[0]?.data && Array.isArray(rows[0].data) && rows[0].data.length > 0) {
+        let productsList = rows[0].data as ProductRecord[];
+
+        // Data guard: Nếu danh sách từ cloud bị thiếu sản phẩm chuẩn, tự động bổ sung
+        if (productsList.length < defaultProducts.length) {
+          const existingSlugs = new Set(productsList.map(p => p.slug));
+          for (const dp of defaultProducts) {
+            if (!existingSlugs.has(dp.slug)) {
+              productsList.push(dp);
+            }
+          }
+        }
+
+        cachedProducts = productsList;
+        lastProductsFetch = now;
+        return productsList;
+      }
+    }
+  } catch (err) {
+    console.error("[CLOUD_STORE] Error fetching products from cloud:", err);
+  }
+
+  cachedProducts = defaultProducts;
+  lastProductsFetch = now;
+  saveProductsToCloudAsync(defaultProducts).catch(() => {});
+  return defaultProducts;
+}
+
+export async function saveProductsToCloudAsync(products: ProductRecord[]): Promise<boolean> {
+  // Rào chắn bảo vệ an toàn: đảm bảo không bao giờ bị ghi đè danh sách rỗng
+  let safeProducts = [...products];
+  if (safeProducts.length < defaultProducts.length) {
+    const existingSlugs = new Set(safeProducts.map(p => p.slug));
+    for (const dp of defaultProducts) {
+      if (!existingSlugs.has(dp.slug)) {
+        safeProducts.push(dp);
+      }
+    }
+  }
+
+  cachedProducts = safeProducts;
+  lastProductsFetch = Date.now();
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/system_store`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates"
+      },
+      body: JSON.stringify({
+        id: "products_store",
+        data: safeProducts,
+        updated_at: new Date().toISOString()
+      })
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("[CLOUD_STORE] Error saving products to cloud:", err);
+    return false;
+  }
+}
+
