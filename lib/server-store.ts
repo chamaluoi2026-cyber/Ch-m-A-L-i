@@ -2175,6 +2175,9 @@ export function savePlace(place: Place | PlaceRecord): PlaceRecord {
     // Luôn nạp đầy đủ danh sách địa điểm trước, tránh mảng rỗng làm mất các địa điểm khác
     getPlaces(true);
   }
+  if (!store.places) {
+    store.places = [];
+  }
 
   const now = new Date().toISOString();
   const existingIdx = store.places.findIndex((p) => p.id === (place as PlaceRecord).id || p.slug === place.slug);

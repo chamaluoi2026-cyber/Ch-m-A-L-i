@@ -12,7 +12,6 @@ export type PlaceCategory =
   | "community-tourism"
   | "visit"
   | "culture"
-  | "specialty"
   | "service";
 
 export const placeCategories: { id: PlaceCategory; label: string; description: string }[] = [
@@ -27,7 +26,6 @@ export const placeCategories: { id: PlaceCategory; label: string; description: s
   { id: "community-tourism", label: "Khu du lịch cộng đồng", description: "Mô hình hợp tác xã làng du lịch A Nôr, Hồng Hạ, A Roàng gắn kết người dân." },
   { id: "visit", label: "Tham quan", description: "Cầu treo Pi Lung, đèo Pê Ke, đồi A Bia, cảnh quan thiên nhiên kỳ vĩ." },
   { id: "culture", label: "Văn hóa", description: "Nghề dệt Zèng di sản quốc gia, nhà sàn truyền thống và câu chuyện bản địa." },
-  { id: "specialty", label: "Đặc sản", description: "Mật ong rừng già, trà núi thảo mộc, thịt bò gác bếp và quà tặng vùng cao." },
   { id: "service", label: "Dịch vụ khác", description: "Xe ô tô đưa đón 2 chiều Huế - A Lưới, hướng dẫn viên bản địa am hiểu địa bàn." }
 ];
 
@@ -428,100 +426,6 @@ export const places: Place[] = [
     activities: ["Nghỉ chân ngắm toàn cảnh đèo Tà Lương", "Được tài xế tư vấn các điểm ăn ngon rẻ tại A Lưới"],
     suitableFor: ["Du khách không tự lái xe máy đường đèo", "Gia đình có người lớn tuổi và trẻ nhỏ", "Đoàn công tác và du lịch nhóm"],
     safetyNotes: ["Hành khách luôn thắt dây an toàn trong suốt hành trình vượt đèo"],
-    status: "active"
-  },
-  {
-    slug: "mat-ong-rung-a-luoi",
-    name: "Mật ong rừng A Lưới nguyên chất",
-    category: "specialty",
-    businessName: "Hợp tác xã Nông Sản Rừng Sạch A Lưới",
-    businessId: "biz-nongsan",
-    summary: "Mật ong khoái khai thác tự nhiên từ các vách đá và ngọn cây cao trong rừng già Trường Sơn, vị ngọt thanh sánh đặc.",
-    description:
-      "Mật ong rừng già A Lưới được bà con người Pa Cô lặn lội tìm kiếm vào độ tháng 3 đến tháng 6 âm lịch - thời điểm hoa rừng nở rộ ngát hương. Mật có màu vàng óng ánh ngả cánh gián, đặc sánh, vị ngọt dịu thanh tao không gắt cổ và chứa dồi dào khoáng chất bồi bổ sức khỏe.",
-    address: "Chợ trung tâm A Lưới, thị trấn A Lưới, Thừa Thiên Huế",
-    mapEmbedUrl: "https://www.google.com/maps?q=Ch%E1%BB%A3%20A%20L%C6%B0%E1%BB%9Bi&output=embed",
-    priceLabel: "240.000đ/chai 500ml - 450.000đ/lít",
-    commissionRate: 10,
-    rating: 4.9,
-    reviewCount: 189,
-    openingHours: "07:30 - 20:00 hằng ngày (có giao hàng tận nơi)",
-    voucherOffer: "Giảm 10% khi mua từ 2 chai mật ong trở lên",
-    zaloUrl: "https://zalo.me/0955000118",
-    phone: "0955 000 118",
-    image: "/images/products/forest-honey.png",
-    gallery: [
-      "/images/products/forest-honey.png",
-      "/images/aluoi/ho-sinh-thai-a-luoi.jpg"
-    ],
-    services: ["Thử mật trực tiếp trước khi mua", "Đóng chai thủy tinh đóng seal vệ sinh", "Hộp quà biếu sang trọng", "Ship hàng COD toàn quốc"],
-    highlights: ["Cam kết 100% mật rừng tự nhiên nói không với mật nuôi đường", "Có tem truy xuất nguồn gốc hợp tác xã", "Món quà quý giá cho sức khỏe"],
-    activities: ["Thử mật bằng cọng hành tươi hoặc giọt nước", "Nghe câu chuyện nghề săn mật mạo hiểm của người đi rừng"],
-    suitableFor: ["Mua làm quà biếu ông bà, cha mẹ", "Người chăm sóc sức khỏe, thanh lọc cơ thể"],
-    safetyNotes: ["Bảo quản nơi khô ráo thoáng mát, không để trong tủ lạnh làm kết tinh đường tự nhiên"],
-    status: "active"
-  },
-  {
-    slug: "tra-nui-thao-moc-a-luoi",
-    name: "Trà núi thảo mộc A Lưới (Trà dây & Sâm cau)",
-    category: "specialty",
-    businessName: "Tổ Sản xuất Dược liệu Vùng cao A Lưới",
-    businessId: "biz-tra-nui",
-    summary: "Thức uống thảo dược quý hái từ đỉnh núi cao gồm trà dây rừng thanh nhiệt dạ dày và sâm cau bồi bổ sinh lực.",
-    description:
-      "Vùng núi cao A Lưới quanh năm sương phủ là cái nôi của nhiều cây thuốc nam quý. Sản phẩm trà núi thảo mộc được chế biến thủ công từ búp trà dây rừng hoang dã kết hợp cùng sâm cau đỏ, chè vằng và cỏ ngọt. Nước trà có vị đắng nhẹ ban đầu rồi ngọt hậu lắng sâu, giúp an thần, ngủ ngon và hỗ trợ tiêu hóa tuyệt vời.",
-    address: "Xã A Ngo, huyện A Lưới, Thừa Thiên Huế",
-    mapEmbedUrl: "https://www.google.com/maps?q=A%20Ngo%20A%20L%C6%B0%E1%BB%9Bi&output=embed",
-    priceLabel: "140.000đ/gói 300g",
-    commissionRate: 10,
-    rating: 4.8,
-    reviewCount: 112,
-    openingHours: "08:00 - 19:00 hằng ngày",
-    voucherOffer: "Mua 3 gói trà tặng ngay 1 gói trà thảo mộc túi lọc mini",
-    zaloUrl: "https://zalo.me/0935000118",
-    phone: "0935 000 118",
-    image: "/images/products/mountain-tea.png",
-    gallery: [
-      "/images/products/mountain-tea.png",
-      "/images/aluoi/homestay-relax.jpg"
-    ],
-    services: ["Pha trà tiếp khách dùng thử miễn phí", "Đóng gói hút chân không bảo quản lâu dài", "Tư vấn công dụng thảo dược"],
-    highlights: ["Nguyên liệu thảo mộc thu hái tự nhiên sạch 100%", "Giúp ngủ sâu giấc và giảm ợ chua dạ dày", "Giá cả mộc mạc đúng giá bản địa"],
-    activities: ["Thưởng trà ấm giữa tiết trời se lạnh", "Học cách hãm trà dây giữ trọn hương vị núi rừng"],
-    suitableFor: ["Người lớn tuổi khó ngủ", "Nhân viên văn phòng thường xuyên căng thẳng", "Làm quà tặng thanh nhã"],
-    safetyNotes: ["Không uống trà quá đặc khi bụng đang đói cồn cào"],
-    status: "active"
-  },
-  {
-    slug: "dac-san-thit-bo-ruou-can-a-luoi",
-    name: "Đặc sản thịt bò gác bếp & Rượu cần A Lưới",
-    category: "specialty",
-    businessName: "Cơ sở Sản xuất Đặc sản Cội Nguồn A Lưới",
-    businessId: "biz-thit-bo",
-    summary: "Thịt bò vàng thảo nguyên gác bếp than củi đượm khói thơm lừng cùng ghè rượu cần ủ men lá cổ truyền đậm đà men say.",
-    description:
-      "Thịt bò gác bếp A Lưới được làm từ bắp thịt của giống bò cỏ chăn thả tự nhiên trên sườn đồi. Thịt được tẩm ướp tiêu rừng, gừng núi, ớt hiểm rồi treo trên giàn bếp lửa đun củi suốt nhiều tuần lễ. Khi ăn, xé từng thớ thịt đỏ hồng chấm cùng muối kiến vàng hoặc chẩm chéo, nhấp thêm ngụm rượu cần men lá nồng nàn, cảm nhận trọn vẹn hồn cốt của núi rừng miền Tây xứ Huế.",
-    address: "Thị trấn A Lưới, huyện A Lưới, Thừa Thiên Huế",
-    mapEmbedUrl: "https://www.google.com/maps?q=Th%E1%BB%8B%20tr%E1%BA%A5n%20A%20L%C6%B0%E1%BB%9Bi&output=embed",
-    priceLabel: "Thịt bò gác bếp từ 420.000đ/500g, Rượu cần từ 220.000đ/ghè",
-    commissionRate: 10,
-    rating: 4.9,
-    reviewCount: 205,
-    openingHours: "07:30 - 21:00 hằng ngày",
-    voucherOffer: "Giảm 10% cho đơn combo từ 1kg thịt bò + 1 ghè rượu cần",
-    zaloUrl: "https://zalo.me/0988000118",
-    phone: "0988 000 118",
-    image: "/images/aluoi/am-thuc-nha-san.jpg",
-    gallery: [
-      "/images/aluoi/am-thuc-nha-san.jpg",
-      "/images/aluoi/checkin-nong-trai.jpg",
-      "/images/aluoi/nha-san-truyen-thong.jpg"
-    ],
-    services: ["Đóng gói hút chân không tiêu chuẩn", "Cung cấp cần trúc uống rượu cần", "Giao hàng nhanh toàn quốc"],
-    highlights: ["Hương vị hun khói củi rừng tự nhiên độc đáo", "Thịt bò mềm dai ngọt bùi càng nhai càng thơm", "Rượu cần men lá ủ truyền thống không đau đầu"],
-    activities: ["Thử thịt bò nướng qua than hồng tại quán", "Học cách châm nước suối vào ghè rượu cần đúng phong tục"],
-    suitableFor: ["Tiệc sum họp gia đình, bạn bè", "Làm quà biếu đặc sản cao cấp ngày lễ tết"],
-    safetyNotes: ["Bảo quản ngăn đông tủ lạnh để giữ độ mềm và hương vị thịt ngon nhất"],
     status: "active"
   }
 ];
