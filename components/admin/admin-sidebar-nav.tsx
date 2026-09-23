@@ -19,6 +19,7 @@ import {
   MessageSquare,
   Package,
   ShieldAlert,
+  ShoppingBag,
   Star,
   Ticket,
   Users
@@ -51,6 +52,7 @@ export const navItems: NavItem[] = [
   { href: "/admin/blogs", label: "Quản lý Blog", icon: FileText },
   { href: "/admin/businesses", label: "Doanh nghiệp & Cơ sở", icon: Building2 },
   { href: "/admin/places", label: "Quản lý Địa điểm", icon: MapPin },
+  { href: "/admin/products", label: "Quản lý Đặc sản", icon: ShoppingBag },
   {
     href: "/admin/leads",
     label: "Quản lý Leads",

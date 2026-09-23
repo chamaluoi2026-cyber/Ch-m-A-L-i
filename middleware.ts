@@ -16,6 +16,7 @@ const ROUTE_PERMISSIONS: Array<{
   { prefix: "/admin/blogs", allowedRoles: ["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"] },
   { prefix: "/admin/media", allowedRoles: ["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"] },
   { prefix: "/admin/places", allowedRoles: ["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"] },
+  { prefix: "/admin/products", allowedRoles: ["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"] },
 
   // Sales & Support
   { prefix: "/admin/leads", allowedRoles: ["SUPER_ADMIN", "ADMIN", "SALES", "SUPPORT"] },
