@@ -127,11 +127,11 @@ export const places: Place[] = [
     voucherOffer: "Giảm 50.000đ cho đoàn từ 5 khách",
     zaloUrl: "https://zalo.me/0966000118",
     phone: "0966 000 118",
-    image: "/images/aluoi/ho-sinh-thai-a-luoi.jpg",
+    image: "/images/aluoi/homestay-relax.jpg",
     gallery: [
-      "/images/aluoi/ho-sinh-thai-a-luoi.jpg",
-      "/images/aluoi/homestay-swing.jpg",
-      "/images/aluoi/homestay-relax.jpg"
+      "/images/aluoi/homestay-relax.jpg",
+      "/images/aluoi/homestay-bungalow.jpg",
+      "/images/aluoi/homestay-swing.jpg"
     ],
     services: ["Chòi dừng chân", "Bếp than & dụng cụ nướng", "Tắm suối sinh thái", "Hỗ trợ xe đưa đón"],
     highlights: ["Lòng suối nông và nhiều phiến đá rộng", "Không gian tĩnh mịch hoang sơ", "Rất thích hợp cho dã ngoại gia đình"],

@@ -611,13 +611,27 @@ function PlaceEditPageContent() {
     setPickerCb({ cb, multi });
   }
 
-  async function handleSave(publish: boolean) {
+  async function handleSave(publish?: boolean) {
     setSaving(true);
     try {
+      // Tôn trọng trạng thái người dùng đã chọn trong form:
+      // - Nếu người dùng bấm "Lưu nháp" (publish === false): lưu "hidden"
+      // - Nếu bấm "Cập nhật / Xuất bản" (publish === true):
+      //   + Nếu người dùng đã chọn "temporarily_closed" (Tạm đóng) -> lưu "temporarily_closed"
+      //   + Nếu người dùng đã chọn "hidden" (Ẩn) -> lưu "hidden"
+      //   + Nếu đang tạo mới và chưa chọn gì hoặc đang là hidden mà bấm Xuất bản -> lưu "active"
+      //   + Còn lại -> lưu đúng place.status
+      let targetStatus: PlaceRecord["status"] = place.status || "active";
+      if (publish === false) {
+        targetStatus = "hidden";
+      } else if (publish === true && isNew && (!place.status || place.status === "hidden")) {
+        targetStatus = "active";
+      }
+
       const toSave: PlaceRecord = {
         ...place,
         description: blocksToText(contentBlocks),
-        status: publish ? "active" : (place.status === "active" ? "active" : "hidden"),
+        status: targetStatus,
         id: place.id || place.slug,
         seoTitle: place.seoTitle || place.name,
         seoDescription: place.seoDescription || place.summary
@@ -625,7 +639,13 @@ function PlaceEditPageContent() {
       const res = await savePlaceAction(toSave);
       if (res.success && res.place) {
         setPlace(res.place);
-        showToast("success", publish ? "Đã xuất bản địa điểm!" : "Đã lưu bản nháp!");
+        const statusMsg =
+          targetStatus === "active"
+            ? "Đã lưu & Đang hoạt động trên web!"
+            : targetStatus === "temporarily_closed"
+            ? "Đã lưu trạng thái: Tạm ngưng đón khách!"
+            : "Đã lưu bản nháp (Đang ẩn khỏi web)!";
+        showToast("success", statusMsg);
         if (isNew && res.place.slug) router.replace(`/admin/places/${res.place.slug}/edit`);
       } else {
         showToast("error", res.error || "Không thể lưu.");
@@ -695,7 +715,7 @@ function PlaceEditPageContent() {
             <button onClick={() => handleSave(true)} disabled={saving}
               className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-forest text-white hover:bg-forest/90 transition font-medium disabled:opacity-60">
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}
-              {place.status === "active" ? "Cập nhật" : "Xuất bản"}
+              {isNew ? "Xuất bản" : "Cập nhật"}
             </button>
           </div>
         </div>
@@ -1187,7 +1207,7 @@ function PlaceEditPageContent() {
             <button type="button" onClick={() => handleSave(true)} disabled={saving || !place.name.trim() || !place.slug.trim()}
               className="flex items-center gap-1.5 px-5 py-2 text-sm rounded-lg bg-forest text-white font-medium hover:bg-forest/90 transition disabled:opacity-50">
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Globe size={14} />}
-              {place.status === "active" ? "Cập nhật" : "Xuất bản"}
+              {isNew ? "Xuất bản" : "Cập nhật"}
             </button>
           </div>
         </div>

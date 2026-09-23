@@ -71,7 +71,7 @@ export async function savePlaceAction(placeData: Place) {
         category: placeData.category,
         summary: placeData.summary,
         description: placeData.description,
-        status: (placeData.status === "temporarily_closed" ? "temporarily_closed" : "active") as any,
+        status: (placeData.status === "hidden" ? "hidden" : placeData.status === "temporarily_closed" ? "temporarily_closed" : "active") as any,
         image: placeData.image,
         coverImage: placeData.image,
         imageAlt: placeData.name,

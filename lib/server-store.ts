@@ -1514,16 +1514,72 @@ export function reconcileTransaction(transactionId: string): boolean {
 }
 
 // Businesses API
-export function getAllBusinesses(): BusinessRecord[] {
-  return loadStore().businesses;
+export function getAllBusinesses(includeDeleted = false): BusinessRecord[] {
+  const list = loadStore().businesses || [];
+  return includeDeleted ? list : list.filter((b) => !b.isDeleted);
 }
 
 export function getBusinessById(id: string): BusinessRecord | undefined {
-  return loadStore().businesses.find((b) => b.id === id);
+  return (loadStore().businesses || []).find((b) => b.id === id && !b.isDeleted);
+}
+
+export function createBusiness(
+  data: Omit<BusinessRecord, "id" | "joinedDate"> & { id?: string },
+  actor?: { id: string; name: string; role: string }
+): BusinessRecord {
+  const store = loadStore();
+  if (!store.businesses) store.businesses = [];
+
+  let id = data.id?.trim();
+  if (!id) {
+    const slugPart = (data.name || "biz")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 24);
+    id = `biz-${slugPart || Date.now().toString(36)}`;
+  }
+
+  let uniqueId = id;
+  let counter = 1;
+  while (store.businesses.some((b) => b.id === uniqueId)) {
+    uniqueId = `${id}-${counter++}`;
+  }
+
+  const newBiz: BusinessRecord = {
+    id: uniqueId,
+    name: data.name.trim(),
+    ownerName: data.ownerName?.trim() || "",
+    phone: data.phone?.trim() || "",
+    email: data.email?.trim() || "",
+    zaloUrl: data.zaloUrl?.trim() || (data.phone ? `https://zalo.me/${data.phone.replace(/\D/g, "")}` : ""),
+    address: data.address?.trim() || "Huyện A Lưới, Thừa Thiên Huế",
+    commissionRate: typeof data.commissionRate === "number" ? data.commissionRate : 10,
+    status: data.status || "active",
+    joinedDate: new Date().toISOString().split("T")[0],
+    isDeleted: false
+  };
+
+  store.businesses.unshift(newBiz);
+
+  try {
+    addAuditLogDirect(store, {
+      action: "business.create",
+      actor: actor || { id: "usr-admin-1", name: "Ban Quản Trị", role: "admin" },
+      target: { type: "business", id: newBiz.id, title: newBiz.name },
+      summary: `Thêm mới cơ sở đối tác: ${newBiz.name} (Mã: ${newBiz.id})`
+    });
+  } catch {}
+
+  saveStore(store);
+  return newBiz;
 }
 
 export function updateBusinessProfile(id: string, updates: Partial<BusinessRecord>): BusinessRecord | null {
   const store = loadStore();
+  if (!store.businesses) store.businesses = [];
   const idx = store.businesses.findIndex((b) => b.id === id);
   if (idx === -1) return null;
 
