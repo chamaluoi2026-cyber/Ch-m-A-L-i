@@ -81,7 +81,7 @@ export async function getPlacesFromCloudAsync(): Promise<PlaceRecord[]> {
   }
 
   try {
-    // 1. Lấy dữ liệu từ places_store (danh sách chuẩn)
+    // 1. Lấy dữ liệu từ places_store (kho chuyên dụng duy nhất cho địa điểm)
     let placesList: PlaceRecord[] = [];
     const res = await fetch(`${SUPABASE_URL}/rest/v1/system_store?id=eq.places_store&select=data`, {
       method: "GET",
@@ -95,41 +95,7 @@ export async function getPlacesFromCloudAsync(): Promise<PlaceRecord[]> {
       }
     }
 
-    // 2. Kiểm tra thêm system_store id=eq.main (nơi saveStore ghi vào)
-    try {
-      const mainRes = await fetch(`${SUPABASE_URL}/rest/v1/system_store?id=eq.main&select=data`, {
-        method: "GET",
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-        cache: "no-store"
-      });
-      if (mainRes.ok) {
-        const mainRows = await mainRes.json();
-        const mainPlaces = mainRows[0]?.data?.places as PlaceRecord[] | undefined;
-        if (Array.isArray(mainPlaces) && mainPlaces.length > 0) {
-          let hasChange = false;
-          for (const mp of mainPlaces) {
-            const idx = placesList.findIndex(p => p.slug === mp.slug || p.id === mp.id);
-            if (idx >= 0) {
-              const current = placesList[idx];
-              const mainTime = new Date(mp.updatedAt || 0).getTime();
-              const storeTime = new Date(current.updatedAt || 0).getTime();
-              if (mainTime >= storeTime || !current.gallery?.length) {
-                placesList[idx] = { ...current, ...mp };
-                hasChange = true;
-              }
-            } else {
-              placesList.unshift(mp);
-              hasChange = true;
-            }
-          }
-          if (hasChange) {
-            savePlacesToCloudAsync(placesList).catch(() => {});
-          }
-        }
-      }
-    } catch {}
-
-    // Đảm bảo an toàn: Nếu danh sách từ cloud bị thiếu (< 10 địa điểm),
+    // Đảm bảo an toàn: Nếu danh sách từ cloud bị thiếu (< staticPlaces.length),
     // tự động bổ sung các địa điểm tĩnh còn thiếu để không bao giờ bị mất địa điểm
     if (placesList.length > 0 && placesList.length < staticPlaces.length) {
       const existingSlugs = new Set(placesList.map(p => p.slug));

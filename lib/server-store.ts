@@ -919,13 +919,14 @@ function pushStoreToSupabaseCloud(data: StoreData) {
   };
 
   try {
-    // 1. Luôn lưu vào kho tổng main
+    // 1. Luôn lưu vào kho tổng main (loại bỏ places để không xung đột với places_store)
+    const { places: _ignoredPlaces, ...cleanMainData } = (data || {}) as any;
     fetch(`${url}/rest/v1/system_store`, {
       method: "POST",
       headers,
       body: JSON.stringify({
         id: "main",
-        data: data,
+        data: cleanMainData,
         updated_at: timestamp
       })
     }).catch(() => {});
