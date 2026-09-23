@@ -25,6 +25,15 @@ export type ProductRecord = {
   zaloUrl?: string;
   isOcop?: boolean;
   ocopStars?: number;
+  weight?: string;
+  expiryDate?: string;
+  storageGuide?: string;
+  origin?: string;
+  stock?: number;
+  discountPercent?: number;
+  variations?: Array<{ name: string; price: number; originalPrice?: number; stock?: number }>;
+  seoTitle?: string;
+  seoDescription?: string;
   rating?: number;
   reviewCount?: number;
   createdAt: string;

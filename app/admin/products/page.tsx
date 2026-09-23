@@ -35,7 +35,8 @@ import {
   fetchProductsAction,
   saveProductAction,
   deleteProductAction,
-  toggleProductStatusAction
+  toggleProductStatusAction,
+  quickUpdatePriceAction
 } from "@/app/actions/products";
 import { getUploadedImagesAction, type UploadedImageItem } from "@/app/actions/upload";
 
@@ -109,6 +110,16 @@ export default function AdminProductsPage() {
   const [deleteConfirmSlug, setDeleteConfirmSlug] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  // Quick price edit modal
+  const [quickPriceModal, setQuickPriceModal] = useState<{
+    slug: string;
+    name: string;
+    price: number;
+    originalPrice?: number;
+    unit: string;
+  } | null>(null);
+  const [quickPriceSaving, setQuickPriceSaving] = useState(false);
+
   // Media picker modal
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<UploadedImageItem[]>([]);
@@ -117,6 +128,44 @@ export default function AdminProductsPage() {
   function showToast(type: "success" | "error", msg: string) {
     setToast({ type, msg });
     setTimeout(() => setToast(null), 4000);
+  }
+
+  async function handleSaveQuickPrice(e: React.FormEvent) {
+    e.preventDefault();
+    if (!quickPriceModal) return;
+    setQuickPriceSaving(true);
+    try {
+      const res = await quickUpdatePriceAction(
+        quickPriceModal.slug,
+        Number(quickPriceModal.price),
+        quickPriceModal.originalPrice ? Number(quickPriceModal.originalPrice) : undefined,
+        quickPriceModal.unit
+      );
+      if (res.success) {
+        setProducts((prev) =>
+          prev.map((p) =>
+            p.slug === quickPriceModal.slug
+              ? {
+                  ...p,
+                  price: Number(quickPriceModal.price),
+                  originalPrice: quickPriceModal.originalPrice
+                    ? Number(quickPriceModal.originalPrice)
+                    : undefined,
+                  unit: quickPriceModal.unit
+                }
+              : p
+          )
+        );
+        showToast("success", `Đã cập nhật giá mới cho: ${quickPriceModal.name}!`);
+        setQuickPriceModal(null);
+      } else {
+        showToast("error", res.error || "Không thể cập nhật giá.");
+      }
+    } catch {
+      showToast("error", "Lỗi xảy ra khi cập nhật giá.");
+    } finally {
+      setQuickPriceSaving(false);
+    }
   }
 
   async function loadData() {
@@ -323,14 +372,14 @@ export default function AdminProductsPage() {
             Xem web khách
           </a>
 
-          <button
-            type="button"
-            onClick={handleOpenCreate}
+          <Link
+            href="/admin/products/new/edit"
+            target="_blank"
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-forest text-white hover:bg-forest/90 transition shadow-md shadow-forest/20"
           >
             <Plus size={15} />
-            Thêm đặc sản mới
-          </button>
+            Thêm đặc sản mới (Tab mới)
+          </Link>
         </div>
       </div>
 
@@ -484,19 +533,40 @@ export default function AdminProductsPage() {
                         )}
                       </td>
 
-                      {/* Cột Giá */}
+                      {/* Cột Giá & Nút Sửa Giá Nhanh */}
                       <td className="py-3 px-4">
-                        <p className="font-extrabold text-forest text-sm">
-                          {Number(p.price).toLocaleString("vi-VN")} đ
-                        </p>
-                        <p className="text-[11px] text-ink/40 font-normal">
-                          / {p.unit || "sản phẩm"}
-                          {p.originalPrice && p.originalPrice > p.price && (
-                            <span className="ml-1 line-through text-red-400">
-                              {Number(p.originalPrice).toLocaleString("vi-VN")}đ
-                            </span>
-                          )}
-                        </p>
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <p className="font-extrabold text-forest text-sm">
+                              {Number(p.price).toLocaleString("vi-VN")} đ
+                            </p>
+                            <p className="text-[11px] text-ink/40 font-normal">
+                              / {p.unit || "sản phẩm"}
+                              {p.originalPrice && p.originalPrice > p.price && (
+                                <span className="ml-1 line-through text-red-400">
+                                  {Number(p.originalPrice).toLocaleString("vi-VN")}đ
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setQuickPriceModal({
+                                slug: p.slug,
+                                name: p.name,
+                                price: p.price,
+                                originalPrice: p.originalPrice,
+                                unit: p.unit || "sản phẩm"
+                              })
+                            }
+                            className="px-2 py-1 rounded-lg border border-forest/30 bg-forest/5 text-forest hover:bg-forest hover:text-white transition text-[11px] font-bold shrink-0 flex items-center gap-1 shadow-xs"
+                            title="Sửa giá bán & giá niêm yết ngay"
+                          >
+                            <DollarSign size={12} />
+                            Sửa giá
+                          </button>
+                        </div>
                       </td>
 
                       {/* Cột Đơn vị */}
@@ -564,14 +634,15 @@ export default function AdminProductsPage() {
                             <Eye size={15} />
                           </a>
 
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEdit(p)}
-                            className="p-2 rounded-xl text-ink/50 hover:text-forest hover:bg-forest/5 transition"
-                            title="Chỉnh sửa chi tiết"
+                          <Link
+                            href={`/admin/products/${p.slug}/edit`}
+                            target="_blank"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-forest/10 text-forest hover:bg-forest hover:text-white transition font-bold text-xs"
+                            title="Mở tab mới chỉnh sửa chi tiết (Shopee style)"
                           >
-                            <Edit3 size={15} />
-                          </button>
+                            <Edit3 size={13} />
+                            <span>Sửa chi tiết</span>
+                          </Link>
 
                           <button
                             type="button"
@@ -1046,6 +1117,145 @@ export default function AdminProductsPage() {
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Price Edit Modal */}
+      {quickPriceModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-black/5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-black/5">
+              <div className="flex items-center gap-2">
+                <div className="size-8 rounded-xl bg-forest/10 text-forest grid place-items-center">
+                  <DollarSign size={16} />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-ink text-sm">Chỉnh sửa giá nhanh</h3>
+                  <p className="text-[11px] text-ink/50 truncate max-w-[240px] font-medium">
+                    {quickPriceModal.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuickPriceModal(null)}
+                className="p-1 rounded-xl text-ink/40 hover:text-ink"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveQuickPrice} className="space-y-4 text-xs">
+              <div>
+                <label className="text-[11px] font-bold text-ink uppercase tracking-wider block mb-1">
+                  Giá bán chính thức (VNĐ) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={0}
+                    step={1000}
+                    required
+                    value={quickPriceModal.price}
+                    onChange={(e) =>
+                      setQuickPriceModal({ ...quickPriceModal, price: Number(e.target.value) })
+                    }
+                    className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-black/10 focus:border-forest focus:outline-none bg-beige/10 font-black text-forest text-base"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-ink/40">₫</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-ink uppercase tracking-wider block mb-1">
+                  Giá gốc niêm yết (Gạch ngang so sánh)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={0}
+                    step={1000}
+                    value={quickPriceModal.originalPrice || ""}
+                    onChange={(e) =>
+                      setQuickPriceModal({
+                        ...quickPriceModal,
+                        originalPrice: e.target.value ? Number(e.target.value) : undefined
+                      })
+                    }
+                    placeholder="Không bắt buộc"
+                    className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border border-black/10 focus:border-forest focus:outline-none bg-beige/10 font-bold text-ink/60 text-sm"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-ink/40">₫</span>
+                </div>
+              </div>
+
+              {quickPriceModal.originalPrice && quickPriceModal.originalPrice > quickPriceModal.price && (
+                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 font-bold text-xs flex items-center justify-between">
+                  <span>Mức giảm giá tự động:</span>
+                  <span className="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[11px] font-black">
+                    -
+                    {Math.round(
+                      ((quickPriceModal.originalPrice - quickPriceModal.price) /
+                        quickPriceModal.originalPrice) *
+                        100
+                    )}
+                    %
+                  </span>
+                </div>
+              )}
+
+              <div>
+                <label className="text-[11px] font-bold text-ink uppercase tracking-wider block mb-1">
+                  Đơn vị tính / Quy cách
+                </label>
+                <input
+                  type="text"
+                  value={quickPriceModal.unit}
+                  onChange={(e) =>
+                    setQuickPriceModal({ ...quickPriceModal, unit: e.target.value })
+                  }
+                  placeholder="chai 500ml, hũ, kg, tấm..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-black/10 focus:border-forest focus:outline-none bg-beige/10 font-medium text-ink text-xs"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-black/5">
+                <Link
+                  href={`/admin/products/${quickPriceModal.slug}/edit`}
+                  target="_blank"
+                  className="text-xs font-bold text-forest hover:underline flex items-center gap-1"
+                >
+                  <ExternalLink size={12} /> Sửa chi tiết hơn (Tab mới)
+                </Link>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuickPriceModal(null)}
+                    disabled={quickPriceSaving}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold text-ink/60 hover:bg-beige/60 transition"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={quickPriceSaving}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-forest text-white hover:bg-forest/90 transition shadow-md shadow-forest/20 disabled:opacity-50"
+                  >
+                    {quickPriceSaving ? (
+                      <>
+                        <Loader2 size={13} className="animate-spin" /> Đang lưu...
+                      </>
+                    ) : (
+                      <>
+                        <Check size={13} /> Lưu giá ngay
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       )}

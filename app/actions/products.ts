@@ -57,6 +57,18 @@ export async function saveProductAction(product: ProductRecord): Promise<{
       zaloUrl: product.zaloUrl || "https://zalo.me/0905000118",
       isOcop: !!product.isOcop,
       ocopStars: product.ocopStars || 3,
+      weight: product.weight || "",
+      expiryDate: product.expiryDate || "",
+      storageGuide: product.storageGuide || "",
+      origin: product.origin || "Huyện A Lưới, Thừa Thiên Huế",
+      stock: product.stock !== undefined ? Number(product.stock) : 99,
+      discountPercent:
+        product.originalPrice && product.originalPrice > product.price
+          ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+          : undefined,
+      variations: product.variations || [],
+      seoTitle: product.seoTitle || `${product.name} | Đặc sản A Lưới`,
+      seoDescription: product.seoDescription || product.description,
       rating: product.rating || 4.9,
       reviewCount: product.reviewCount || 1,
       createdAt: product.createdAt || now,
@@ -152,3 +164,46 @@ export async function toggleProductStatusAction(
     return { success: false, error: err.message || "Lỗi khi đổi trạng thái." };
   }
 }
+
+export async function quickUpdatePriceAction(
+  slug: string,
+  price: number,
+  originalPrice?: number,
+  unit?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const currentList = await getProductsFromCloudAsync();
+    const updatedList = currentList.map((p) => {
+      if (p.slug === slug || p.id === slug) {
+        const numPrice = Number(price) || 0;
+        const numOrig = originalPrice ? Number(originalPrice) : undefined;
+        return {
+          ...p,
+          price: numPrice,
+          originalPrice: numOrig,
+          unit: unit || p.unit || "sản phẩm",
+          discountPercent:
+            numOrig && numOrig > numPrice ? Math.round(((numOrig - numPrice) / numOrig) * 100) : undefined,
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return p;
+    });
+
+    const ok = await saveProductsToCloudAsync(updatedList);
+    if (!ok) {
+      return { success: false, error: "Không thể cập nhật giá." };
+    }
+
+    revalidatePath("/admin/products");
+    revalidatePath("/products");
+    revalidatePath(`/products/${slug}`);
+    revalidatePath("/");
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("[ACTIONS] Error quick updating price:", err);
+    return { success: false, error: err.message || "Lỗi cập nhật giá." };
+  }
+}
+
