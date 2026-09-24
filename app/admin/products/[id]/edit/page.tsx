@@ -42,6 +42,8 @@ import {
   fetchProductBySlugAction,
   saveProductAction
 } from "@/app/actions/products";
+import { generateProductAiAction } from "@/app/actions/ai-writer";
+import type { AiWritingTone } from "@/lib/ai/product-content-generator";
 import { getUploadedImagesAction, type UploadedImageItem } from "@/app/actions/upload";
 
 const CUSTOMER_URL = "https://chamaluoi.vercel.app";
@@ -139,9 +141,57 @@ function ProductEditContent() {
   const [uploadedImages, setUploadedImages] = useState<UploadedImageItem[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
 
+  // AI Writer
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiTone, setAiTone] = useState<AiWritingTone>("shopee");
+  const [aiKeywords, setAiKeywords] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
+
   function showToast(type: "success" | "error", msg: string) {
     setToast({ type, msg });
     setTimeout(() => setToast(null), 4000);
+  }
+
+  async function handleGenerateAi() {
+    if (!product.name.trim()) {
+      showToast("error", "Vui lòng nhập tên đặc sản trước để AI hiểu sản phẩm cần viết.");
+      return;
+    }
+    setAiGenerating(true);
+    try {
+      const res = await generateProductAiAction({
+        name: product.name,
+        category: product.category,
+        origin: product.origin,
+        tone: aiTone,
+        keywords: aiKeywords,
+        existingSpecs: specsInput ? specsInput.split("\n").map((s) => s.trim()).filter(Boolean) : undefined,
+      });
+
+      if (res.success && res.data) {
+        const d = res.data;
+        upd({
+          description: d.description,
+          weight: d.weight || product.weight,
+          expiryDate: d.expiryDate || product.expiryDate,
+          storageGuide: d.storageGuide || product.storageGuide,
+          origin: d.origin || product.origin,
+          seoTitle: d.seoTitle || product.seoTitle,
+          seoDescription: d.seoDescription || product.seoDescription,
+        });
+        if (d.specs && d.specs.length > 0) {
+          setSpecsInput(d.specs.join("\n"));
+        }
+        showToast("success", "✨ AI đã soạn thảo nội dung thành công!");
+        setAiModalOpen(false);
+      } else {
+        showToast("error", res.error || "Không thể tạo nội dung AI.");
+      }
+    } catch {
+      showToast("error", "Lỗi xảy ra trong quá trình gọi AI.");
+    } finally {
+      setAiGenerating(false);
+    }
   }
 
   useEffect(() => {
@@ -416,7 +466,14 @@ function ProductEditContent() {
                 <Tag size={16} className="text-forest" />
                 <h2 className="font-extrabold text-ink text-sm">1. Thông tin cơ bản</h2>
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-ink/40">Bắt buộc</span>
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-600 text-white text-xs font-bold shadow-sm hover:opacity-95 hover:shadow-md transition active:scale-95"
+              >
+                <Sparkles size={14} className="text-amber-200 animate-pulse" />
+                <span>✨ AI Viết bài Shopee</span>
+              </button>
             </div>
 
             <div>
@@ -743,6 +800,14 @@ function ProductEditContent() {
                 <Layers size={16} className="text-forest" />
                 <h2 className="font-extrabold text-ink text-sm">4. Mô tả chi tiết & Thông số kỹ thuật</h2>
               </div>
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-forest/30 bg-forest/5 text-forest hover:bg-forest hover:text-white transition font-bold text-xs"
+              >
+                <Sparkles size={13} />
+                <span>AI Soạn mô tả & thông số</span>
+              </button>
             </div>
 
             <div>
@@ -1034,6 +1099,131 @@ function ProductEditContent() {
                   </button>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Writer Assistant Modal */}
+      {aiModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-black/5">
+              <div className="flex items-center gap-2.5">
+                <div className="size-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-amber-500 text-white grid place-items-center shadow-md">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h3 className="font-black text-ink text-base">Trợ lý AI Soạn Thảo Thông Minh</h3>
+                  <p className="text-[11px] text-ink/50">Tự động viết mô tả, gạch đầu dòng thông số, bảo quản & SEO</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(false)}
+                disabled={aiGenerating}
+                className="p-1.5 rounded-xl text-ink/40 hover:text-ink hover:bg-black/5 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="font-bold text-ink block mb-1">
+                  Sản phẩm đang soạn:
+                </label>
+                <div className="px-3.5 py-2.5 rounded-xl bg-forest/5 border border-forest/20 font-bold text-forest text-sm flex items-center justify-between">
+                  <span>{product.name || "(Chưa nhập tên sản phẩm)"}</span>
+                  <span className="text-[11px] font-semibold text-ink/50">{product.category}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-ink block mb-1.5">
+                  Chọn phong cách bài viết (Tone giọng):
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {[
+                    {
+                      id: "shopee",
+                      title: "🚀 Bán hàng Shopee",
+                      desc: "Kích thích mua, cam kết chất lượng, hashtag OCOP"
+                    },
+                    {
+                      id: "culture",
+                      title: "🌿 Văn hóa Bản địa",
+                      desc: "Kể chuyện đồng bào Pa Cô - Tà Ôi, tự nhiên núi rừng"
+                    },
+                    {
+                      id: "concise",
+                      title: "⚡ Ngắn gọn & Súc tích",
+                      desc: "Tập trung công dụng, thông số, bảo quản nhanh"
+                    }
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setAiTone(t.id as AiWritingTone)}
+                      className={`p-3 rounded-2xl border text-left transition ${
+                        aiTone === t.id
+                          ? "border-forest bg-forest/5 ring-2 ring-forest/20 shadow-sm"
+                          : "border-black/10 hover:border-black/20 bg-white"
+                      }`}
+                    >
+                      <p className="font-bold text-ink text-xs">{t.title}</p>
+                      <p className="text-[10px] text-ink/50 mt-1 leading-snug">{t.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-ink block mb-1">
+                  Từ khóa gợi ý thêm cho AI (Tùy chọn):
+                </label>
+                <input
+                  type="text"
+                  value={aiKeywords}
+                  onChange={(e) => setAiKeywords(e.target.value)}
+                  placeholder="VD: Không chất bảo quản, lên men tự nhiên, thủ công 100%, freeship..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-black/10 focus:border-forest focus:outline-none bg-beige/10 font-medium text-xs text-ink"
+                />
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/60 text-[11px] text-amber-900 leading-relaxed">
+                💡 <strong>AI sẽ tự động điền:</strong> Mô tả chi tiết, Danh sách thông số kỹ thuật, Khối lượng tiêu chuẩn, Hướng dẫn bảo quản, và Tiêu đề/Mô tả chuẩn SEO Google.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-black/5">
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(false)}
+                disabled={aiGenerating}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-ink/60 hover:bg-black/5 transition"
+              >
+                Đóng
+              </button>
+
+              <button
+                type="button"
+                onClick={handleGenerateAi}
+                disabled={aiGenerating || !product.name.trim()}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-forest text-white font-bold text-xs hover:bg-forest/90 transition shadow-md shadow-forest/20 disabled:opacity-50"
+              >
+                {aiGenerating ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>AI đang phân tích & viết bài...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={14} />
+                    <span>Tạo nội dung với AI ngay</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

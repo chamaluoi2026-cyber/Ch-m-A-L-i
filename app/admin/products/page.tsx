@@ -26,7 +26,8 @@ import {
   Building2,
   Flame,
   Check,
-  Globe
+  Globe,
+  Sparkles
 } from "lucide-react";
 import { AppImage } from "@/components/ui/app-image";
 import type { ProductRecord, ProductStatus } from "@/data/products";
@@ -38,6 +39,7 @@ import {
   toggleProductStatusAction,
   quickUpdatePriceAction
 } from "@/app/actions/products";
+import { generateProductAiAction } from "@/app/actions/ai-writer";
 import { getUploadedImagesAction, type UploadedImageItem } from "@/app/actions/upload";
 
 const CUSTOMER_URL = "https://chamaluoi.vercel.app";
@@ -124,10 +126,46 @@ export default function AdminProductsPage() {
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<UploadedImageItem[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   function showToast(type: "success" | "error", msg: string) {
     setToast({ type, msg });
     setTimeout(() => setToast(null), 4000);
+  }
+
+  async function handleQuickAiWrite() {
+    if (!editingProduct?.name?.trim()) {
+      showToast("error", "Vui lòng nhập tên đặc sản trước khi gọi AI.");
+      return;
+    }
+    setAiGenerating(true);
+    try {
+      const res = await generateProductAiAction({
+        name: editingProduct.name,
+        category: editingProduct.category,
+        origin: editingProduct.businessName || "Huyện A Lưới, Thừa Thiên Huế",
+        tone: "shopee"
+      });
+      if (res.success && res.data) {
+        setEditingProduct({
+          ...editingProduct,
+          description: res.data.description,
+          weight: res.data.weight || editingProduct.weight,
+          expiryDate: res.data.expiryDate || editingProduct.expiryDate,
+          storageGuide: res.data.storageGuide || editingProduct.storageGuide
+        });
+        if (res.data.specs && res.data.specs.length > 0) {
+          setSpecsInput(res.data.specs.join("\n"));
+        }
+        showToast("success", "✨ AI đã viết xong mô tả & thông số!");
+      } else {
+        showToast("error", res.error || "Không thể sinh nội dung AI.");
+      }
+    } catch {
+      showToast("error", "Lỗi xảy ra khi gọi AI.");
+    } finally {
+      setAiGenerating(false);
+    }
   }
 
   async function handleSaveQuickPrice(e: React.FormEvent) {
@@ -966,9 +1004,29 @@ export default function AdminProductsPage() {
 
               {/* Mô tả ngắn */}
               <div>
-                <label className="text-[11px] font-bold text-ink uppercase tracking-wider block mb-1">
-                  Mô tả sản phẩm
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-bold text-ink uppercase tracking-wider">
+                    Mô tả sản phẩm
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleQuickAiWrite}
+                    disabled={aiGenerating || !editingProduct.name.trim()}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-emerald-600 to-amber-600 text-white font-bold text-[10px] shadow-sm hover:opacity-90 disabled:opacity-50 transition"
+                  >
+                    {aiGenerating ? (
+                      <>
+                        <Loader2 size={11} className="animate-spin" />
+                        <span>AI đang viết...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={11} />
+                        <span>✨ AI Viết nhanh</span>
+                      </>
+                    )}
+                  </button>
+                </div>
                 <textarea
                   rows={3}
                   value={editingProduct.description}
