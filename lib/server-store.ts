@@ -81,6 +81,16 @@ export type CoreValueItem = {
   text: string;
 };
 
+export type HomeGalleryItem = {
+  id: string;
+  title: string;
+  enTitle?: string;
+  caption: string;
+  enCaption?: string;
+  image: string;
+  className?: string;
+};
+
 export type SiteSettings = {
   logo?: string;
   logoDark?: string;
@@ -99,6 +109,12 @@ export type SiteSettings = {
   zaloUrl?: string;
   footerDescription?: string;
   announcement?: string;
+
+  // Cấu hình Khung ảnh A Lưới (Gallery Trang Chủ)
+  galleryEyebrow?: string;
+  galleryTitle?: string;
+  galleryDesc?: string;
+  homeGallery?: HomeGalleryItem[];
 
   // Cấu hình Banner Hero Trang Chủ (Homepage Hero)
   heroBadge?: string;
@@ -1801,6 +1817,47 @@ export function getSiteSettings(): SiteSettings {
     zaloUrl: "https://zalo.me/0905000118",
     footerDescription: "Nền tảng du lịch cộng đồng kết nối du khách với các homestay, làng nghề truyền thống, ẩm thực bản địa và những điểm đến sinh thái nguyên sơ tại A Lưới, Thừa Thiên Huế.",
     announcement: "Chào mừng quý khách đến với du lịch cộng đồng Chạm A Lưới!",
+    galleryEyebrow: "Khung ảnh A Lưới",
+    galleryTitle: "Xem A Lưới qua những khung hình rộng mở",
+    galleryDesc: "Một góc thị giác dành riêng cho núi rừng, thác nước, bình minh và bản làng trước khi du khách chọn hành trình.",
+    homeGallery: [
+      {
+        id: "gallery-1",
+        title: "Núi rừng A Lưới",
+        enTitle: "A Luoi Mountain Passes",
+        caption: "Những cung đường xanh mở ra nhịp đi chậm và sâu.",
+        enCaption: "Pristine mountain passes opening up a deep, mindful travel rhythm.",
+        image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
+        className: "md:col-span-2 md:row-span-2"
+      },
+      {
+        id: "gallery-2",
+        title: "Thác A Nôr",
+        enTitle: "A Nor Waterfall",
+        caption: "Không gian mát lành cho hành trình cộng đồng.",
+        enCaption: "Crystal mountain waters creating an idyllic sanctuary for travelers.",
+        image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80",
+        className: ""
+      },
+      {
+        id: "gallery-3",
+        title: "Bình minh vùng cao",
+        enTitle: "Highland Sunrise",
+        caption: "Ánh sáng mềm trên núi và bản làng.",
+        enCaption: "Soft morning light cascading over limestone crests and stilt houses.",
+        image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80",
+        className: ""
+      },
+      {
+        id: "gallery-4",
+        title: "Văn hóa bản địa",
+        enTitle: "Indigenous Living Heritage",
+        caption: "Chạm vào đời sống, nghề thủ công và sự đón tiếp ấm áp.",
+        enCaption: "Immersion into tribal crafts, stilt architecture, and sincere smiles.",
+        image: "/images/aluoi/van-hoa-cong-dong.jpg",
+        className: "md:col-span-2"
+      }
+    ],
     heroBadge: "Du lịch cộng đồng tại Huế",
     heroTitleLine1: "Chạm A Lưới",
     heroTitleLine2: "Du lịch cộng đồng",

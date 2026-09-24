@@ -158,6 +158,47 @@ export default function AdminMediaPage() {
     zaloUrl: "https://zalo.me/0905000118",
     footerDescription: "Nền tảng du lịch cộng đồng kết nối du khách với các homestay, làng nghề truyền thống, ẩm thực bản địa và những điểm đến sinh thái nguyên sơ tại A Lưới, Thừa Thiên Huế.",
     announcement: "Chào mừng quý khách đến với du lịch cộng đồng Chạm A Lưới!",
+    galleryEyebrow: "Khung ảnh A Lưới",
+    galleryTitle: "Xem A Lưới qua những khung hình rộng mở",
+    galleryDesc: "Một góc thị giác dành riêng cho núi rừng, thác nước, bình minh và bản làng trước khi du khách chọn hành trình.",
+    homeGallery: [
+      {
+        id: "gallery-1",
+        title: "Núi rừng A Lưới",
+        enTitle: "A Luoi Mountain Passes",
+        caption: "Những cung đường xanh mở ra nhịp đi chậm và sâu.",
+        enCaption: "Pristine mountain passes opening up a deep, mindful travel rhythm.",
+        image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
+        className: "md:col-span-2 md:row-span-2"
+      },
+      {
+        id: "gallery-2",
+        title: "Thác A Nôr",
+        enTitle: "A Nor Waterfall",
+        caption: "Không gian mát lành cho hành trình cộng đồng.",
+        enCaption: "Crystal mountain waters creating an idyllic sanctuary for travelers.",
+        image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80",
+        className: ""
+      },
+      {
+        id: "gallery-3",
+        title: "Bình minh vùng cao",
+        enTitle: "Highland Sunrise",
+        caption: "Ánh sáng mềm trên núi và bản làng.",
+        enCaption: "Soft morning light cascading over limestone crests and stilt houses.",
+        image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80",
+        className: ""
+      },
+      {
+        id: "gallery-4",
+        title: "Văn hóa bản địa",
+        enTitle: "Indigenous Living Heritage",
+        caption: "Chạm vào đời sống, nghề thủ công và sự đón tiếp ấm áp.",
+        enCaption: "Immersion into tribal crafts, stilt architecture, and sincere smiles.",
+        image: "/images/aluoi/van-hoa-cong-dong.jpg",
+        className: "md:col-span-2"
+      }
+    ],
     heroBadge: "Du lịch cộng đồng tại Huế",
     heroBadgeEn: "Community Tourism in Hue",
     heroTitleLine1: "Chạm A Lưới",
@@ -288,6 +329,34 @@ export default function AdminMediaPage() {
   const faviconInputRef = useRef<HTMLInputElement | null>(null);
   const heroInputRef = useRef<HTMLInputElement | null>(null);
   const aboutInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadingGalleryIndex, setUploadingGalleryIndex] = useState<number | null>(null);
+
+  async function handleGalleryImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || uploadingGalleryIndex === null) return;
+    try {
+      showToast("info", "Đang tải ảnh khung hình lên...");
+      const res = await uploadImageClient(file, { category: "gallery" });
+      if (res.success && res.url) {
+        setSiteSettings((prev) => {
+          const list = [...(prev.homeGallery || [])];
+          if (list[uploadingGalleryIndex]) {
+            list[uploadingGalleryIndex] = { ...list[uploadingGalleryIndex], image: res.url || "" };
+          }
+          return { ...prev, homeGallery: list };
+        });
+        showToast("success", "Đã tải ảnh lên! Hãy bấm 'Lưu Khung Ảnh Trang Chủ' để cập nhật website.");
+      } else {
+        showToast("error", res.error || "Tải ảnh thất bại.");
+      }
+    } catch (err: any) {
+      showToast("error", err?.message || "Lỗi khi tải ảnh.");
+    } finally {
+      if (e.target) e.target.value = "";
+      setUploadingGalleryIndex(null);
+    }
+  }
 
   useEffect(() => {
     loadAllData();
@@ -2609,6 +2678,153 @@ export default function AdminMediaPage() {
               </div>
             </div>
           </div>
+
+            {/* Cấu hình Khung Ảnh A Lưới (Gallery Trang Chủ) */}
+            <input
+              type="file"
+              ref={galleryFileInputRef}
+              onChange={handleGalleryImageUpload}
+              accept="image/*"
+              className="hidden"
+            />
+            <div className="p-6 rounded-3xl bg-white border border-black/5 shadow-card space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-black/5 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-2xl bg-forest/10 text-forest">
+                    <MapPin className="size-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-ink">Khung ảnh A Lưới (Gallery Trang Chủ)</h3>
+                    <p className="text-xs text-ink/60 mt-0.5">
+                      Chỉnh sửa tiêu đề, mô tả và 4 bức ảnh phong cảnh / văn hóa xuất hiện trên trang chủ
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSaveSingleSetting("homeGallery", "Khung Ảnh Trang Chủ")}
+                  disabled={isSavingSettings}
+                  className="rounded-2xl bg-forest px-5 py-2.5 text-xs font-bold text-white hover:bg-forest/90 transition shadow flex items-center gap-2 active:scale-95"
+                >
+                  <Save className="size-4" />
+                  Lưu Khung Ảnh Trang Chủ
+                </button>
+              </div>
+
+              {/* Tiêu đề & Mô tả chung */}
+              <div className="grid gap-4 md:grid-cols-3 bg-beige/30 p-4 rounded-2xl border border-black/5">
+                <div>
+                  <label className="text-[11px] font-bold text-ink uppercase tracking-wider">Tiêu đề phụ (Eyebrow)</label>
+                  <input
+                    type="text"
+                    value={siteSettings.galleryEyebrow || "Khung ảnh A Lưới"}
+                    onChange={(e) => setSiteSettings({ ...siteSettings, galleryEyebrow: e.target.value })}
+                    className="w-full mt-1 px-3 py-2 rounded-xl text-xs border border-black/10 focus:border-forest focus:outline-none bg-white font-semibold"
+                    placeholder="KHUNG ẢNH A LƯỚI"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-ink uppercase tracking-wider">Tiêu đề chính (Title)</label>
+                  <input
+                    type="text"
+                    value={siteSettings.galleryTitle || "Xem A Lưới qua những khung hình rộng mở"}
+                    onChange={(e) => setSiteSettings({ ...siteSettings, galleryTitle: e.target.value })}
+                    className="w-full mt-1 px-3 py-2 rounded-xl text-xs border border-black/10 focus:border-forest focus:outline-none bg-white font-bold text-ink"
+                    placeholder="Xem A Lưới qua những khung hình rộng mở"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-ink uppercase tracking-wider">Mô tả ngắn</label>
+                  <textarea
+                    rows={2}
+                    value={siteSettings.galleryDesc || "Một góc thị giác dành riêng cho núi rừng, thác nước, bình minh và bản làng trước khi du khách chọn hành trình."}
+                    onChange={(e) => setSiteSettings({ ...siteSettings, galleryDesc: e.target.value })}
+                    className="w-full mt-1 px-3 py-1.5 rounded-xl text-xs border border-black/10 focus:border-forest focus:outline-none bg-white font-medium"
+                    placeholder="Mô tả góc nhìn thị giác..."
+                  />
+                </div>
+              </div>
+
+              {/* 4 Khung hình Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(siteSettings.homeGallery || []).map((item, idx) => (
+                  <div key={item.id || idx} className="rounded-2xl border border-black/10 bg-white overflow-hidden shadow-sm p-4 flex flex-col justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="relative size-28 rounded-xl overflow-hidden bg-black/10 shrink-0 border border-black/5 shadow-inner">
+                        <AppImage
+                          src={item.image}
+                          alt={item.title}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-forest/10 text-forest">
+                            Khung hình #{idx + 1}
+                          </span>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-ink/70">Tiêu đề ảnh</label>
+                          <input
+                            type="text"
+                            value={item.title || ""}
+                            onChange={(e) => {
+                              const list = [...(siteSettings.homeGallery || [])];
+                              list[idx] = { ...list[idx], title: e.target.value };
+                              setSiteSettings({ ...siteSettings, homeGallery: list });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg text-xs border border-black/10 focus:border-forest focus:outline-none bg-beige/20 font-bold"
+                            placeholder="Tên khung hình..."
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-ink/70">Chú thích (Caption)</label>
+                          <textarea
+                            rows={2}
+                            value={item.caption || ""}
+                            onChange={(e) => {
+                              const list = [...(siteSettings.homeGallery || [])];
+                              list[idx] = { ...list[idx], caption: e.target.value };
+                              setSiteSettings({ ...siteSettings, homeGallery: list });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg text-xs border border-black/10 focus:border-forest focus:outline-none bg-beige/20 text-ink/80"
+                            placeholder="Mô tả cảm xúc bức ảnh..."
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-black/5">
+                      <div className="flex-1 min-w-[180px]">
+                        <input
+                          type="text"
+                          value={item.image || ""}
+                          onChange={(e) => {
+                            const list = [...(siteSettings.homeGallery || [])];
+                            list[idx] = { ...list[idx], image: e.target.value };
+                            setSiteSettings({ ...siteSettings, homeGallery: list });
+                          }}
+                          className="w-full px-2.5 py-1.5 rounded-lg text-[11px] font-mono border border-black/10 focus:border-forest focus:outline-none bg-beige/20"
+                          placeholder="Dán link ảnh hoặc tải ảnh từ máy..."
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUploadingGalleryIndex(idx);
+                          galleryFileInputRef.current?.click();
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-forest text-white text-xs font-bold hover:bg-forest/90 transition flex items-center gap-1 shadow-sm shrink-0"
+                      >
+                        <Upload className="size-3.5" />
+                        Tải ảnh mới
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {/* Quick Card pointing to Contact settings */}
             <div className="p-6 rounded-3xl bg-white border border-black/5 shadow-card flex flex-col md:flex-row md:items-center justify-between gap-4">
