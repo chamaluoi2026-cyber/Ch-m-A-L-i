@@ -2042,7 +2042,7 @@ export const defaultBlogPosts: BlogPostRecord[] = [
     status: "published",
     date: "2026-05-02",
     readingTime: "5 phút đọc",
-    image: "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?auto=format&fit=crop&w=1200&q=80",
+    image: "/images/aluoi/det-zeng-artisan.jpg",
     excerpt: "Zèng truyền thống lưu giữ ký ức, bản sắc và sự kiên nhẫn của nghệ nhân Tà Ôi.",
     content: "Mỗi hoa văn không chỉ là trang trí. Đó là ngôn ngữ thị giác được tạo nên từ đời sống miền núi, ký ức gia đình và niềm tự hào gìn giữ nghề qua nhiều thế hệ của đồng bào Tà Ôi.",
     blocks: [
@@ -2054,7 +2054,7 @@ export const defaultBlogPosts: BlogPostRecord[] = [
       {
         id: "b-2",
         type: "image",
-        url: "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?auto=format&fit=crop&w=1200&q=80",
+        url: "/images/aluoi/det-zeng-loom.jpg",
         caption: "Nghệ nhân Tà Ôi cẩn trọng luồn từng hạt cườm vào khung dệt Zèng truyền thống",
         alt: "Khung cửi dệt Zèng truyền thống",
         width: "lg",
@@ -2087,7 +2087,7 @@ export const defaultBlogPosts: BlogPostRecord[] = [
     status: "published",
     date: "2026-05-22",
     readingTime: "4 phút đọc",
-    image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+    image: "/images/aluoi/am-thuc-nha-san.jpg",
     excerpt: "Món nướng thơm khói, rau rừng, xôi nếp và sự hiếu khách ấm áp của bản làng.",
     content: "Bữa ăn ở A Lưới hào sảng và đậm hồn bản địa. Bạn sẽ gặp rau núi, món nướng, xôi nếp, trà thảo mộc và những câu chuyện được chia sẻ quanh mâm cơm.",
     blocks: [
@@ -2099,7 +2099,7 @@ export const defaultBlogPosts: BlogPostRecord[] = [
       {
         id: "b-2",
         type: "image",
-        url: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+        url: "/images/aluoi/am-thuc-nha-san.jpg",
         caption: "Mâm cơm truyền thống ấm cúng bên bếp lửa nhà sàn",
         alt: "Ẩm thực A Lưới",
         width: "lg",

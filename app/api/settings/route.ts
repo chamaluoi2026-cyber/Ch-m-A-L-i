@@ -55,7 +55,17 @@ async function fetchFromSupabaseDirect(): Promise<SiteSettings | null> {
 
 export async function GET() {
   const cloudSettings = await fetchFromSupabaseDirect();
-  const currentSettings = cloudSettings || getSiteSettings();
+  const defaults = getSiteSettings();
+  const currentSettings: SiteSettings = cloudSettings
+    ? {
+        ...defaults,
+        ...cloudSettings,
+        homeGallery:
+          cloudSettings.homeGallery && cloudSettings.homeGallery.length > 0
+            ? cloudSettings.homeGallery
+            : defaults.homeGallery
+      }
+    : defaults;
   return NextResponse.json({ success: true, settings: currentSettings, data: currentSettings });
 }
 
