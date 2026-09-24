@@ -24,11 +24,14 @@ export function AppImage({
 }: AppImageProps) {
   const normalizedSrc = normalizeImageUrl(src);
   const [currentSrc, setCurrentSrc] = useState<string>(normalizedSrc);
+  const [prevSrc, setPrevSrc] = useState<string>(normalizedSrc);
   const [hasError, setHasError] = useState(false);
 
-  // Nếu props.src thay đổi, cập nhật lại state
-  if (normalizedSrc !== currentSrc && !hasError) {
+  // Nếu props.src thay đổi, cập nhật lại state và reset lỗi
+  if (normalizedSrc !== prevSrc) {
+    setPrevSrc(normalizedSrc);
     setCurrentSrc(normalizedSrc);
+    setHasError(false);
   }
 
   function handleError() {

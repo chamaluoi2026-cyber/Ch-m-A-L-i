@@ -823,6 +823,9 @@ export default function AdminMediaPage() {
       const res = await uploadImageClient(file, { category: assetType });
       if (res.success && res.url) {
         const nextSettings: SiteSettings = { ...siteSettings, [fieldKey]: res.url };
+        if (fieldKey === "logo" && (!siteSettings.logoDark || siteSettings.logoDark === "/images/logo-white.svg" || siteSettings.logoDark === siteSettings.logo)) {
+          nextSettings.logoDark = res.url;
+        }
         setSiteSettings(nextSettings);
 
         // TỰ ĐỘNG LƯU VÀO HỆ THỐNG STORE NGAY LẬP TỨC
@@ -1760,7 +1763,14 @@ export default function AdminMediaPage() {
                   <input
                     type="text"
                     value={siteSettings.logo}
-                    onChange={(e) => setSiteSettings({ ...siteSettings, logo: e.target.value })}
+                    onChange={(e) => {
+                      const newLogo = e.target.value;
+                      setSiteSettings((prev) => ({
+                        ...prev,
+                        logo: newLogo,
+                        ...(prev.logoDark === "/images/logo-white.svg" || prev.logoDark === prev.logo ? { logoDark: newLogo } : {})
+                      }));
+                    }}
                     placeholder="/images/logo.svg hoặc link URL..."
                     className="w-full px-3.5 py-2 rounded-xl bg-beige/60 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-forest"
                   />
@@ -1796,7 +1806,7 @@ export default function AdminMediaPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSiteSettings({ ...siteSettings, logo: "/images/logo.svg" })}
+                  onClick={() => setSiteSettings((prev) => ({ ...prev, logo: "/images/logo.svg", logoDark: "/images/logo-white.svg" }))}
                   className="rounded-xl border border-black/10 px-3 py-2 text-xs font-semibold text-ink/70 hover:bg-beige"
                   title="Khôi phục mặc định"
                 >
@@ -2924,7 +2934,11 @@ export default function AdminMediaPage() {
               <div>
                 <div className="relative h-10 w-44 mb-3">
                   <AppImage
-                    src={siteSettings.logoDark || siteSettings.logo || "/images/logo-white.svg"}
+                    src={
+                      (siteSettings.logoDark && siteSettings.logoDark !== "/images/logo-white.svg" && siteSettings.logoDark !== siteSettings.logo)
+                        ? siteSettings.logoDark
+                        : (siteSettings.logo || "/images/logo-white.svg")
+                    }
                     alt="Logo Chân trang"
                     fill
                     className="object-contain object-left"

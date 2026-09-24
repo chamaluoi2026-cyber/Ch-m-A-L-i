@@ -6,7 +6,15 @@ import { getSiteSettings } from "@/lib/server-store";
 
 export function Footer() {
   const settings = getSiteSettings();
-  const activeLogo = settings.logoDark || settings.logo || siteConfig.logoDark || siteConfig.logo;
+  const hasCustomDarkLogo = Boolean(
+    settings.logoDark &&
+    settings.logoDark !== "/images/logo-white.svg" &&
+    settings.logoDark !== siteConfig.logoDark &&
+    settings.logoDark !== settings.logo
+  );
+  const activeLogo = hasCustomDarkLogo
+    ? settings.logoDark
+    : (settings.logo || siteConfig.logoDark || siteConfig.logo);
   const address = settings.contactAddress || "Huyện A Lưới, Thừa Thiên Huế";
   const phone = settings.contactPhone || "0905 000 118";
   const email = settings.contactEmail || "hotro@chamaluoi.vn";
