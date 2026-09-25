@@ -40,14 +40,17 @@ export function generateLocalProductContent(
   const category = input.category || "Đặc sản A Lưới";
   const userKw = input.keywords ? input.keywords.trim() : "";
 
-  // Nhận diện nhóm sản phẩm chuyên sâu A Lưới
-  let isBanana = lower.includes("chuối") || lower.includes("bột chuối") || lower.includes("bột mỳ chuối") || lower.includes("bột mì chuối") || lower.includes("chuối xanh") || lower.includes("tinh bột chuối");
-  let isZeng = lower.includes("zèng") || lower.includes("dèng") || lower.includes("thổ cẩm") || lower.includes("khăn") || lower.includes("túi thổ cẩm");
+  // Helper kiểm tra từ nguyên vẹn tránh nhận diện nhầm chuỗi con
+  const hasWord = (w: string) => new RegExp(`(^|\\s|[.,_-])${w}($|\\s|[.,_-])`, "i").test(lower);
+
+  // Nhận diện nhóm sản phẩm chuyên sâu A Lưới chính xác 100%
+  let isBanana = lower.includes("chuối") || lower.includes("bột chuối") || lower.includes("bột mỳ chuối") || lower.includes("bột mì chuối") || lower.includes("chuối xanh") || lower.includes("tinh bột");
+  let isZeng = lower.includes("zèng") || lower.includes("dèng") || lower.includes("thổ cẩm") || lower.includes("khăn zèng") || lower.includes("túi thổ cẩm");
   let isHoney = lower.includes("mật ong") || lower.includes("ong rừng") || lower.includes("ong khoái") || lower.includes("ong ruồi");
   let isTea = lower.includes("trà") || lower.includes("chè") || lower.includes("thảo mộc") || lower.includes("vằng") || lower.includes("cà gai leo") || lower.includes("sâm cau");
-  let isBeef = lower.includes("bò") || lower.includes("thịt bò") || lower.includes("gác bếp") || lower.includes("thịt khô") || lower.includes("heo khô");
-  let isWine = lower.includes("rượu") || lower.includes("cần") || lower.includes("men lá") || lower.includes("tà vạt") || lower.includes("đoác");
-  let isBamboo = lower.includes("tre") || lower.includes("mây") || lower.includes("đan") || lower.includes("giỏ") || lower.includes("gùi");
+  let isBeef = lower.includes("thịt bò") || lower.includes("bò khô") || lower.includes("bò gác bếp") || lower.includes("bò vàng") || (hasWord("bò") && !lower.includes("bột") && !lower.includes("bơ"));
+  let isWine = lower.includes("rượu") || lower.includes("tà vạt") || lower.includes("đoác") || (lower.includes("cần") && lower.includes("men lá"));
+  let isBamboo = lower.includes("mây tre") || lower.includes("tre đan") || lower.includes("mây đan") || lower.includes("đan lát") || lower.includes("gùi");
   let isRice = lower.includes("gạo") || lower.includes("ra du") || lower.includes("ra-dư") || lower.includes("nếp than") || lower.includes("nếp nương");
 
   let generatedName = rawName;
