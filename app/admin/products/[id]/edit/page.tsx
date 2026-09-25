@@ -33,7 +33,8 @@ import {
   X,
   Building2,
   Percent,
-  Search
+  Search,
+  Upload
 } from "lucide-react";
 import { AppImage } from "@/components/ui/app-image";
 import type { ProductRecord, ProductStatus } from "@/data/products";
@@ -45,6 +46,7 @@ import {
 import { generateProductAiAction } from "@/app/actions/ai-writer";
 import type { AiWritingTone } from "@/lib/ai/product-content-generator";
 import { getUploadedImagesAction, type UploadedImageItem } from "@/app/actions/upload";
+import { uploadImageClient } from "@/lib/upload-client";
 
 const CUSTOMER_URL = "https://chamaluoi.vercel.app";
 
@@ -146,10 +148,93 @@ function ProductEditContent() {
   const [aiTone, setAiTone] = useState<AiWritingTone>("shopee");
   const [aiKeywords, setAiKeywords] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
+  // Direct image uploads from device
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
+  const galleryFileInputRef = useRef<HTMLInputElement>(null);
+  const modalFileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+  const [isUploadingModal, setIsUploadingModal] = useState(false);
 
   function showToast(type: "success" | "error", msg: string) {
     setToast({ type, msg });
     setTimeout(() => setToast(null), 4000);
+  }
+
+  async function handleCoverFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingCover(true);
+    try {
+      const res = await uploadImageClient(file, { category: "products" });
+      if (res.success && res.url) {
+        upd({ image: res.url, coverImage: res.url });
+        showToast("success", "Đã tải lên và cập nhật ảnh đại diện sản phẩm thành công!");
+      } else {
+        showToast("error", res.error || "Không thể tải ảnh đại diện lên.");
+      }
+    } catch (err: any) {
+      showToast("error", err?.message || "Lỗi khi tải ảnh từ máy tính.");
+    } finally {
+      setIsUploadingCover(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleGalleryFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIsUploadingGallery(true);
+    try {
+      const uploadedUrls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const res = await uploadImageClient(file, { category: "products" });
+        if (res.success && res.url) {
+          uploadedUrls.push(res.url);
+        }
+      }
+      if (uploadedUrls.length > 0) {
+        upd({ gallery: [...(product.gallery || []), ...uploadedUrls] });
+        showToast("success", `Đã tải lên thành công ${uploadedUrls.length} ảnh vào thư viện sản phẩm!`);
+      } else {
+        showToast("error", "Không thể tải lên các ảnh đã chọn.");
+      }
+    } catch (err: any) {
+      showToast("error", err?.message || "Lỗi khi tải thư viện ảnh từ máy tính.");
+    } finally {
+      setIsUploadingGallery(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleModalFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingModal(true);
+    try {
+      const res = await uploadImageClient(file, { category: "products" });
+      if (res.success && res.url) {
+        if (mediaPickerTarget === "cover") {
+          upd({ image: res.url, coverImage: res.url });
+        } else {
+          upd({ gallery: [...(product.gallery || []), res.url] });
+        }
+        try {
+          const refreshed = await getUploadedImagesAction();
+          setUploadedImages(refreshed);
+        } catch {}
+        setMediaPickerOpen(false);
+        showToast("success", "Đã tải ảnh lên kho và chọn thành công!");
+      } else {
+        showToast("error", res.error || "Không thể tải ảnh lên.");
+      }
+    } catch (err: any) {
+      showToast("error", err?.message || "Lỗi khi tải ảnh.");
+    } finally {
+      setIsUploadingModal(false);
+      e.target.value = "";
+    }
   }
 
   async function handleGenerateAi() {
@@ -698,17 +783,29 @@ function ProductEditContent() {
 
             {/* Ảnh bìa (Cover Image - 1:1 chuẩn Shopee) */}
             <div>
-              <label className="text-xs font-bold text-ink block mb-1">
-                Ảnh đại diện sản phẩm (Tỷ lệ 1:1 hoặc 4:3) <span className="text-rose-500">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-ink">
+                  Ảnh đại diện sản phẩm (Tỷ lệ 1:1 hoặc 4:3) <span className="text-rose-500">*</span>
+                </label>
+                <span className="text-[11px] text-ink/50">Hỗ trợ tải trực tiếp từ máy tính hoặc chọn từ kho</span>
+              </div>
               <div className="flex items-center gap-4">
-                <div className="relative size-24 rounded-2xl overflow-hidden bg-forest/5 border border-black/10 shrink-0">
+                <div
+                  onClick={() => coverFileInputRef.current?.click()}
+                  className="relative size-24 rounded-2xl overflow-hidden bg-forest/5 border-2 border-dashed border-black/15 shrink-0 cursor-pointer group hover:border-forest transition"
+                  title="Nhấp vào đây để tải ảnh từ máy tính"
+                >
                   {product.image ? (
                     <AppImage src={product.image} alt="Cover" fill className="object-cover" />
                   ) : (
                     <ImageIcon size={24} className="text-ink/30 m-auto mt-7" />
                   )}
+                  <div className="absolute inset-0 bg-forest/80 opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center text-white text-[10px] font-bold p-1 text-center">
+                    <Upload size={14} className="mb-0.5" />
+                    Đổi ảnh từ máy
+                  </div>
                 </div>
+
                 <div className="flex-1 space-y-2">
                   <input
                     type="text"
@@ -716,16 +813,38 @@ function ProductEditContent() {
                     value={product.image}
                     onChange={(e) => upd({ image: e.target.value, coverImage: e.target.value })}
                     placeholder="/images/products/... hoặc https://..."
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-black/10 focus:border-forest focus:outline-none bg-beige/10 font-mono text-xs text-ink"
+                    className="w-full px-3.5 py-2 rounded-xl border border-black/10 focus:border-forest focus:outline-none bg-beige/10 font-mono text-xs text-ink"
                   />
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="file"
+                      ref={coverFileInputRef}
+                      onChange={handleCoverFileUpload}
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => coverFileInputRef.current?.click()}
+                      disabled={isUploadingCover}
+                      className="px-3.5 py-1.5 rounded-xl bg-forest text-white font-bold text-xs hover:bg-forest/90 transition shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      {isUploadingCover ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                      {isUploadingCover ? "Đang tải lên..." : "Tải ảnh từ máy"}
+                    </button>
                     <button
                       type="button"
                       onClick={() => openMediaPicker("cover")}
-                      className="px-3 py-1.5 rounded-lg border border-forest/30 bg-forest/5 text-forest font-bold text-xs hover:bg-forest/10 transition"
+                      className="px-3 py-1.5 rounded-xl border border-forest/30 bg-forest/5 text-forest font-bold text-xs hover:bg-forest/10 transition flex items-center gap-1.5"
                     >
+                      <ImageIcon size={13} />
                       Chọn từ Media
                     </button>
+                    {product.image && (
+                      <span className="text-[11px] text-ink/50 italic truncate max-w-xs">
+                        Đang chọn: {product.image.split("/").pop()}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -733,15 +852,38 @@ function ProductEditContent() {
 
             {/* Thư viện ảnh sản phẩm */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-ink">Thư viện ảnh chi tiết sản phẩm</label>
-                <button
-                  type="button"
-                  onClick={() => openMediaPicker("gallery")}
-                  className="text-xs font-bold text-forest hover:underline"
-                >
-                  + Thêm ảnh từ Media
-                </button>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <div>
+                  <label className="text-xs font-bold text-ink">Thư viện ảnh chi tiết sản phẩm</label>
+                  <p className="text-[11px] text-ink/50">Tải lên các góc chụp, bao bì, hướng dẫn dùng (Hỗ trợ chọn nhiều ảnh cùng lúc).</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    ref={galleryFileInputRef}
+                    onChange={handleGalleryFileUpload}
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    multiple
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => galleryFileInputRef.current?.click()}
+                    disabled={isUploadingGallery}
+                    className="px-3 py-1.5 rounded-xl bg-forest text-white font-bold text-xs hover:bg-forest/90 transition shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {isUploadingGallery ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                    {isUploadingGallery ? "Đang tải..." : "+ Tải ảnh từ máy"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openMediaPicker("gallery")}
+                    className="px-3 py-1.5 rounded-xl border border-forest/30 bg-forest/5 text-forest font-bold text-xs hover:bg-forest/10 transition flex items-center gap-1.5"
+                  >
+                    <ImageIcon size={13} />
+                    + Thêm từ Media
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
@@ -755,11 +897,23 @@ function ProductEditContent() {
                         upd({ gallery: nextG });
                       }}
                       className="absolute top-1 right-1 size-5 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow"
+                      title="Xóa ảnh này khỏi thư viện"
                     >
                       <X size={12} />
                     </button>
                   </div>
                 ))}
+                {/* Ô bấm tải ảnh trực tiếp trong danh sách */}
+                <button
+                  type="button"
+                  onClick={() => galleryFileInputRef.current?.click()}
+                  disabled={isUploadingGallery}
+                  className="aspect-square rounded-xl border-2 border-dashed border-forest/30 hover:border-forest bg-forest/5 hover:bg-forest/10 transition flex flex-col items-center justify-center text-forest text-xs font-bold gap-1 group"
+                  title="Nhấp để tải thêm ảnh từ máy tính"
+                >
+                  <Upload size={16} className="group-hover:scale-110 transition" />
+                  <span className="text-[10px]">Thêm từ máy</span>
+                </button>
               </div>
             </div>
 
@@ -1055,13 +1209,31 @@ function ProductEditContent() {
               <h3 className="font-extrabold text-ink text-sm">
                 {mediaPickerTarget === "cover" ? "Chọn ảnh đại diện" : "Chọn ảnh bổ sung vào thư viện"}
               </h3>
-              <button
-                type="button"
-                onClick={() => setMediaPickerOpen(false)}
-                className="p-1 rounded-xl text-ink/40 hover:text-ink"
-              >
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  ref={modalFileInputRef}
+                  onChange={handleModalFileUpload}
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => modalFileInputRef.current?.click()}
+                  disabled={isUploadingModal}
+                  className="px-3 py-1.5 rounded-xl bg-forest text-white font-bold text-xs hover:bg-forest/90 transition shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {isUploadingModal ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                  {isUploadingModal ? "Đang tải lên..." : "Tải ảnh từ máy"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMediaPickerOpen(false)}
+                  className="p-1 rounded-xl text-ink/40 hover:text-ink"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             <div className="overflow-y-auto flex-1 grid grid-cols-3 sm:grid-cols-4 gap-2.5 p-1">

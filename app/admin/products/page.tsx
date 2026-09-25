@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useRef, useTransition } from "react";
 import Link from "next/link";
 import {
   Package,
@@ -41,6 +41,7 @@ import {
 } from "@/app/actions/products";
 import { generateProductAiAction } from "@/app/actions/ai-writer";
 import { getUploadedImagesAction, type UploadedImageItem } from "@/app/actions/upload";
+import { uploadImageClient } from "@/lib/upload-client";
 
 const CUSTOMER_URL = "https://chamaluoi.vercel.app";
 
@@ -127,10 +128,68 @@ export default function AdminProductsPage() {
   const [uploadedImages, setUploadedImages] = useState<UploadedImageItem[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
+  // Upload images from device
+  const quickCoverFileInputRef = useRef<HTMLInputElement>(null);
+  const quickGalleryFileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingQuickCover, setIsUploadingQuickCover] = useState(false);
+  const [isUploadingQuickGallery, setIsUploadingQuickGallery] = useState(false);
 
   function showToast(type: "success" | "error", msg: string) {
     setToast({ type, msg });
     setTimeout(() => setToast(null), 4000);
+  }
+
+  async function handleQuickCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !editingProduct) return;
+    setIsUploadingQuickCover(true);
+    try {
+      const res = await uploadImageClient(file, { category: "products" });
+      if (res.success && res.url) {
+        setEditingProduct({
+          ...editingProduct,
+          image: res.url,
+          coverImage: res.url
+        });
+        showToast("success", "Đã tải lên và gắn ảnh đại diện thành công!");
+      } else {
+        showToast("error", res.error || "Không thể tải ảnh lên.");
+      }
+    } catch (err: any) {
+      showToast("error", err?.message || "Lỗi khi tải ảnh.");
+    } finally {
+      setIsUploadingQuickCover(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleQuickGalleryUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIsUploadingQuickGallery(true);
+    try {
+      const uploadedUrls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const res = await uploadImageClient(file, { category: "products" });
+        if (res.success && res.url) {
+          uploadedUrls.push(res.url);
+        }
+      }
+      if (uploadedUrls.length > 0) {
+        const currentLines = galleryInput ? galleryInput.split("\n").map((l) => l.trim()).filter(Boolean) : [];
+        const merged = [...currentLines, ...uploadedUrls].join("\n");
+        setGalleryInput(merged);
+        showToast("success", `Đã tải lên ${uploadedUrls.length} ảnh vào danh sách!`);
+      } else {
+        showToast("error", "Không thể tải lên ảnh đã chọn.");
+      }
+    } catch (err: any) {
+      showToast("error", err?.message || "Lỗi khi tải thư viện ảnh.");
+    } finally {
+      setIsUploadingQuickGallery(false);
+      e.target.value = "";
+    }
   }
 
   async function handleQuickAiWrite() {
@@ -930,22 +989,48 @@ export default function AdminProductsPage() {
                   <label className="text-[11px] font-bold text-ink uppercase tracking-wider">
                     Ảnh đại diện sản phẩm <span className="text-rose-500">*</span>
                   </label>
-                  <button
-                    type="button"
-                    onClick={openMediaPicker}
-                    className="text-xs font-bold text-forest hover:underline flex items-center gap-1"
-                  >
-                    <ImageIcon size={13} /> Chọn từ kho ảnh Media
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      ref={quickCoverFileInputRef}
+                      onChange={handleQuickCoverUpload}
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => quickCoverFileInputRef.current?.click()}
+                      disabled={isUploadingQuickCover}
+                      className="text-xs font-bold text-forest hover:underline flex items-center gap-1"
+                    >
+                      {isUploadingQuickCover ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                      {isUploadingQuickCover ? "Đang tải..." : "Tải ảnh từ máy"}
+                    </button>
+                    <span className="text-ink/30">•</span>
+                    <button
+                      type="button"
+                      onClick={openMediaPicker}
+                      className="text-xs font-bold text-forest hover:underline flex items-center gap-1"
+                    >
+                      <ImageIcon size={13} /> Kho Media
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="relative size-16 rounded-2xl overflow-hidden bg-forest/5 border border-black/10 shrink-0">
+                  <div
+                    onClick={() => quickCoverFileInputRef.current?.click()}
+                    className="relative size-16 rounded-2xl overflow-hidden bg-forest/5 border-2 border-dashed border-black/15 shrink-0 cursor-pointer group hover:border-forest transition"
+                    title="Nhấp để tải ảnh từ máy tính"
+                  >
                     {editingProduct.image ? (
                       <AppImage src={editingProduct.image} alt="Preview" fill className="object-cover" />
                     ) : (
                       <ImageIcon size={20} className="text-ink/30 m-auto mt-4" />
                     )}
+                    <div className="absolute inset-0 bg-forest/80 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white">
+                      <Upload size={14} />
+                    </div>
                   </div>
                   <input
                     type="text"
@@ -964,14 +1049,33 @@ export default function AdminProductsPage() {
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-bold text-ink uppercase tracking-wider block mb-1">
-                    Thư viện ảnh phụ (Mỗi URL 1 dòng)
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-bold text-ink uppercase tracking-wider">
+                      Thư viện ảnh phụ (Mỗi URL 1 dòng)
+                    </label>
+                    <input
+                      type="file"
+                      ref={quickGalleryFileInputRef}
+                      onChange={handleQuickGalleryUpload}
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      multiple
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => quickGalleryFileInputRef.current?.click()}
+                      disabled={isUploadingQuickGallery}
+                      className="text-xs font-bold text-forest hover:underline flex items-center gap-1"
+                    >
+                      {isUploadingQuickGallery ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                      {isUploadingQuickGallery ? "Đang tải ảnh..." : "+ Tải thêm ảnh từ máy"}
+                    </button>
+                  </div>
                   <textarea
                     rows={2}
                     value={galleryInput}
                     onChange={(e) => setGalleryInput(e.target.value)}
-                    placeholder="Dán các link ảnh phụ tại đây, mỗi link 1 dòng..."
+                    placeholder="Dán các link ảnh phụ tại đây hoặc bấm '+ Tải thêm ảnh từ máy' ở trên..."
                     className="w-full px-3 py-2 rounded-xl border border-black/10 focus:border-forest focus:outline-none bg-beige/10 font-mono text-xs"
                   />
                 </div>
