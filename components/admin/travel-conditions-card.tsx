@@ -115,7 +115,7 @@ export function TravelConditionsCard({ initialData }: TravelConditionsCardProps)
                 </span>
               </div>
               <p className="text-xs text-ink/60 mt-0.5">
-                Đồng bộ trực tiếp lên Trang chủ Khách hàng & Cố vấn Lịch trình AI
+                📡 Tự động từ vệ tinh 24/7 • Admin chỉ cần ghi đè khi có sự cố đặc biệt (sạt lở, sửa đường, nước lũ)
               </p>
             </div>
           </div>
@@ -130,7 +130,7 @@ export function TravelConditionsCard({ initialData }: TravelConditionsCardProps)
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-forest text-white text-xs font-bold shadow-sm hover:bg-forest/90 transition active:scale-95"
             >
               <Edit3 size={13} />
-              <span>Cập nhật nhanh (30s)</span>
+              <span>Ghi đè thủ công</span>
             </button>
           </div>
         </div>
