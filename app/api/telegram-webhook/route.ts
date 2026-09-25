@@ -50,7 +50,7 @@ async function saveChatsToCloud(chats: ChatSession[]): Promise<boolean> {
 
 async function sendTelegramReply(token: string, chatId: number | string, replyToMsgId: number, text: string) {
   try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -60,6 +60,18 @@ async function sendTelegramReply(token: string, chatId: number | string, replyTo
         parse_mode: "HTML"
       })
     });
+    if (!res.ok) {
+      const plain = text.replace(/<[^>]+>/g, "");
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          reply_to_message_id: replyToMsgId,
+          text: plain
+        })
+      });
+    }
   } catch (err) {
     console.error("[TELEGRAM_CONFIRM_ERR]", err);
   }

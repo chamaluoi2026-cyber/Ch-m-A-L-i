@@ -9,7 +9,7 @@ import {
   createVoucherCode
 } from "@/lib/leads";
 
-import { sendTelegramNotification } from "@/lib/notification/telegram";
+import { sendTelegramNotification, escapeHtml } from "@/lib/notification/telegram";
 
 export const dynamic = "force-dynamic";
 
@@ -172,17 +172,27 @@ export async function POST(req: NextRequest) {
 
     // Bắn thông báo Telegram về điện thoại ban điều hành
     try {
-      const tgMsg = `🎁 <b>YÊU CẦU TƯ VẤN & NHẬN VOUCHER - CHẠM A LƯỚI</b>\n` +
-        `🆔 <b>Mã Lead:</b> <code>${newLead.leadId}</code>\n` +
-        `🎟️ <b>Mã Voucher:</b> <code>${voucher.voucherCode}</code>\n` +
-        `👤 <b>Khách:</b> ${newLead.customerName}\n` +
-        `📞 <b>Điện thoại:</b> ${newLead.phone}\n` +
-        `📍 <b>Điểm đến:</b> ${newLead.placeName}\n` +
-        `📅 <b>Ngày dự kiến:</b> ${newLead.expectedDate} (${newLead.guests} khách)\n` +
-        `💬 <b>Nhu cầu:</b> ${newLead.need}\n` +
+      const safeLeadId = escapeHtml(newLead.leadId);
+      const safeVoucher = escapeHtml(voucher.voucherCode);
+      const safeName = escapeHtml(newLead.customerName);
+      const safePhone = escapeHtml(newLead.phone);
+      const safePlace = escapeHtml(newLead.placeName || "điểm đến A Lưới");
+      const safeDate = escapeHtml(newLead.expectedDate || "Chưa xác định");
+      const safeNeed = escapeHtml(newLead.need || "Tư vấn trải nghiệm");
+
+      const tgMsg = `🎁 <b>YÊU CẦU TƯ VẤN &amp; NHẬN VOUCHER - CHẠM A LƯỚI</b>\n` +
+        `🆔 <b>Mã Lead:</b> <code>${safeLeadId}</code>\n` +
+        `🎟️ <b>Mã Voucher:</b> <code>${safeVoucher}</code>\n` +
+        `👤 <b>Khách:</b> ${safeName}\n` +
+        `📞 <b>Điện thoại:</b> <code>${safePhone}</code>\n` +
+        `📍 <b>Điểm đến:</b> ${safePlace}\n` +
+        `📅 <b>Ngày dự kiến:</b> ${safeDate} (${newLead.guests || 1} khách)\n` +
+        `💬 <b>Nhu cầu:</b> ${safeNeed}\n` +
         `👉 <a href="https://chamaluoiadmin.netlify.app/admin/leads">Xem CRM Leads trên Admin</a>`;
       await sendTelegramNotification(tgMsg);
-    } catch {}
+    } catch (tgErr) {
+      console.error("[TELEGRAM_LEAD_ERR]", tgErr);
+    }
 
     return NextResponse.json({
       success: true,

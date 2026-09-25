@@ -8,7 +8,7 @@ import {
   type PaymentStatus
 } from "@/lib/server-store";
 import { revalidatePath } from "next/cache";
-import { sendTelegramNotification } from "@/lib/notification/telegram";
+import { sendTelegramNotification, escapeHtml } from "@/lib/notification/telegram";
 
 export const dynamic = "force-dynamic";
 
@@ -194,18 +194,33 @@ export async function POST(req: NextRequest) {
 
     // Bắn thông báo tức thì về Telegram của Ban quản lý/Admin
     try {
-      const typeLabel = newBooking.type === "product" ? "ĐƠN ĐẶT ĐẶC SẢN MỚI" : "ĐƠN ĐẶT TOUR MỚI";
+      const isProduct = newBooking.type === "product";
+      const typeLabel = isProduct ? "ĐƠN ĐẶT ĐẶC SẢN MỚI" : "ĐƠN ĐẶT TOUR / HOMESTAY MỚI";
+      const safeId = escapeHtml(newBooking.id);
+      const safeName = escapeHtml(newBooking.customerName);
+      const safePhone = escapeHtml(newBooking.phone);
+      const safeEmail = newBooking.email ? escapeHtml(newBooking.email) : "";
+      const safeTitle = escapeHtml(newBooking.itemTitle);
+      const safeAddress = newBooking.deliveryAddress ? escapeHtml(newBooking.deliveryAddress) : "";
+      const safeNote = escapeHtml(newBooking.customerNote || "Không có");
+      const safeDate = newBooking.experienceDate || newBooking.bookingDate ? escapeHtml(newBooking.experienceDate || newBooking.bookingDate) : "";
+
       const tgMsg = `🔔 <b>${typeLabel} - CHẠM A LƯỚI</b>\n` +
-        `🆔 <b>Mã đơn:</b> <code>${newBooking.id}</code>\n` +
-        `👤 <b>Khách hàng:</b> ${newBooking.customerName}\n` +
-        `📞 <b>Điện thoại:</b> ${newBooking.phone}\n` +
-        `📦 <b>Sản phẩm/Tour:</b> ${newBooking.itemTitle}\n` +
-        `💰 <b>Tổng tiền:</b> ${newBooking.finalAmount.toLocaleString("vi-VN")} đ\n` +
-        `📅 <b>Ngày:</b> ${newBooking.experienceDate || newBooking.bookingDate}\n` +
-        `💬 <b>Ghi chú:</b> ${newBooking.customerNote || "Không có"}\n` +
+        `🆔 <b>Mã đơn:</b> <code>${safeId}</code>\n` +
+        `👤 <b>Khách hàng:</b> ${safeName}\n` +
+        `📞 <b>Điện thoại:</b> <code>${safePhone}</code>\n` +
+        (safeEmail ? `📧 <b>Email:</b> ${safeEmail}\n` : "") +
+        `📦 <b>${isProduct ? "Sản phẩm" : "Dịch vụ"}:</b> ${safeTitle}\n` +
+        (isProduct ? `🔢 <b>Số lượng:</b> ${newBooking.quantity || 1}\n` : `👥 <b>Số khách:</b> ${newBooking.numberOfPeople || 1} người\n`) +
+        (safeAddress ? `📍 <b>Địa chỉ nhận hàng:</b> ${safeAddress}\n` : "") +
+        `💰 <b>Tổng tiền:</b> <b>${newBooking.finalAmount.toLocaleString("vi-VN")} đ</b>\n` +
+        (safeDate ? `📅 <b>Ngày:</b> ${safeDate}\n` : "") +
+        `💬 <b>Ghi chú:</b> ${safeNote}\n` +
         `👉 <a href="https://chamaluoiadmin.netlify.app/admin/bookings">Xem trên Trang Quản Trị</a>`;
       await sendTelegramNotification(tgMsg);
-    } catch {}
+    } catch (tgErr) {
+      console.error("[TELEGRAM_BOOKING_ERR]", tgErr);
+    }
 
     // 2. Đồng bộ song song vào store cục bộ
     try {

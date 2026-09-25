@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { type ChatSession, type ChatMessage } from "@/lib/server-store";
 import { revalidatePath } from "next/cache";
-import { sendTelegramNotification } from "@/lib/notification/telegram";
+import { sendTelegramNotification, escapeHtml } from "@/lib/notification/telegram";
 import { generateIndigenousAIResponse } from "@/lib/ai/indigenous-chat-bot";
 
 export const dynamic = "force-dynamic";
@@ -207,14 +207,17 @@ export async function POST(req: NextRequest) {
 
         // Bắn thông báo Telegram Khẩn Cấp
         try {
+          const safeName = escapeHtml(session.guestName || "Khách quan tâm dịch vụ");
+          const safePhone = escapeHtml(aiAnalysis.detectedPhone);
+          const safeText = escapeHtml(newMsg.text);
           const urgentTgMsg = `🔥 <b>KHÁCH ĐÃ ĐỂ LẠI SĐT CẦN GỌI CHỐT NGAY!</b>\n\n` +
-            `👤 <b>Khách hàng:</b> ${session.guestName || "Khách quan tâm dịch vụ"}\n` +
-            `📞 <b>SĐT / Zalo:</b> <code>${aiAnalysis.detectedPhone}</code>\n` +
-            `💬 <b>Tin nhắn khách:</b> "${newMsg.text}"\n` +
+            `👤 <b>Khách hàng:</b> ${safeName}\n` +
+            `📞 <b>SĐT / Zalo:</b> <code>${safePhone}</code>\n` +
+            `💬 <b>Tin nhắn khách:</b> "${safeText}"\n` +
             `🏷️ <b>Nhu cầu:</b> Tư vấn Homestay / Tour A Lưới\n` +
             `⏰ <b>Thời gian:</b> ${new Date().toLocaleTimeString("vi-VN")} ${new Date().toLocaleDateString("vi-VN")}\n\n` +
-            `👉 <a href="tel:${aiAnalysis.detectedPhone}"><b>📞 BẤM ĐỂ GỌI ĐIỆN NGAY CHO KHÁCH</b></a>\n` +
-            `👉 <a href="https://zalo.me/${aiAnalysis.detectedPhone}"><b>💬 NHẮN ZALO CHO KHÁCH</b></a>\n` +
+            `👉 <a href="tel:${safePhone}"><b>📞 BẤM ĐỂ GỌI ĐIỆN NGAY CHO KHÁCH</b></a>\n` +
+            `👉 <a href="https://zalo.me/${safePhone}"><b>💬 NHẮN ZALO CHO KHÁCH</b></a>\n` +
             `👉 <a href="https://chamaluoiadmin.netlify.app/admin/chat"><b>💻 MỞ LIVE CHAT ADMIN</b></a>\n` +
             `──────────────────\n` +
             `👉 <i>Quẹt phải để <b>Trả lời (Reply)</b> tin nhắn này, câu trả lời sẽ gửi thẳng về web của khách!</i>\n` +
@@ -226,10 +229,13 @@ export async function POST(req: NextRequest) {
       } else {
         // Bắn thông báo Telegram thông thường
         try {
+          const safeName = escapeHtml(session.guestName || "Khách truy cập");
+          const safePhone = session.guestPhone ? escapeHtml(session.guestPhone) : "";
+          const safeText = escapeHtml(newMsg.text);
           const tgMsg = `💬 <b>TIN NHẮN TƯ VẤN MỚI - CHẠM A LƯỚI</b>\n` +
-            `👤 <b>Khách:</b> ${session.guestName || "Khách truy cập"}\n` +
-            (session.guestPhone ? `📞 <b>SĐT:</b> ${session.guestPhone}\n` : "") +
-            `💬 <b>Tin nhắn:</b> "${newMsg.text}"\n` +
+            `👤 <b>Khách:</b> ${safeName}\n` +
+            (safePhone ? `📞 <b>SĐT:</b> ${safePhone}\n` : "") +
+            `💬 <b>Tin nhắn:</b> "${safeText}"\n` +
             `🤖 <i>Trợ lý AI Bản Địa đã phản hồi sơ bộ.</i>\n` +
             `👉 <a href="https://chamaluoiadmin.netlify.app/admin/chat">Mở hộp chat admin</a>\n` +
             `──────────────────\n` +
