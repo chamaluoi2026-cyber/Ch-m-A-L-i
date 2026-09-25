@@ -3,6 +3,7 @@ import path from "path";
 import type { LeadRecord, Voucher, TransactionRecord, LeadPayload, LeadStatus, LeadTimelineEvent } from "@/lib/leads";
 import { createLeadCode, createVoucherCode, calculateCommission } from "@/lib/leads";
 import { places, type PlaceCategory, type Place } from "@/data/places";
+import type { TravelConditions } from "@/data/travel-conditions";
 
 export type BusinessRecord = {
   id: string;
@@ -170,8 +171,14 @@ export type SiteSettings = {
   // Cấu hình Trí tuệ nhân tạo (Google Gemini)
   geminiApiKey?: string;
 
+  // Bản tin điều kiện thực tế du lịch A Lưới hôm nay
+  travelConditions?: TravelConditions;
+
   updatedAt?: string;
 };
+
+export * from "@/data/travel-conditions";
+
 
 export type BlogContentBlock =
   | { id: string; type: "paragraph"; content: string; align?: "left" | "center" | "right" }
@@ -286,6 +293,11 @@ export type PlaceRecord = {
   seoKeywords?: string;
   ogImage?: string;
 
+  // Availability (Homestay & Điểm đến)
+  availabilityStatus?: "available" | "few_left" | "sold_out" | "on_request";
+  availabilityNote?: string;
+  availabilityUpdatedAt?: string;
+
   // Ratings & Metadata
   rating: number;
   reviewCount: number;
@@ -294,7 +306,7 @@ export type PlaceRecord = {
 };
 
 
-export type BookingType = "tour" | "homestay" | "product";
+export type BookingType = "tour" | "homestay" | "product" | "itinerary";
 export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
 export type PaymentMethod = "vietqr" | "bank_transfer" | "cash_on_delivery";
 export type PaymentStatus = "unpaid" | "paid" | "partially_paid" | "refunded" | "failed" | "PENDING" | "PROCESSING" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED" | "PARTIALLY_REFUNDED";

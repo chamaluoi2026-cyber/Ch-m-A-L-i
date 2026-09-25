@@ -18,7 +18,8 @@ import {
   Loader2,
   Filter,
   Eye,
-  Upload
+  Upload,
+  BedDouble
 } from "lucide-react";
 import { placeCategories, type Place, type PlaceCategory } from "@/data/places";
 import { fetchAllPlacesAction, savePlaceAction, deletePlaceAction } from "@/app/actions/places";
@@ -173,7 +174,10 @@ export default function AdminPlacesPage() {
       activities: Array.isArray(formData.activities) ? formData.activities : [],
       suitableFor: Array.isArray(formData.suitableFor) ? formData.suitableFor : [],
       safetyNotes: Array.isArray(formData.safetyNotes) ? formData.safetyNotes : [],
-      status: (formData.status as "active" | "temporarily_closed") || "active"
+      status: (formData.status as "active" | "temporarily_closed") || "active",
+      availabilityStatus: formData.availabilityStatus || "available",
+      availabilityNote: formData.availabilityNote || "",
+      availabilityUpdatedAt: new Date().toISOString()
     };
 
     startTransition(async () => {
@@ -345,6 +349,27 @@ export default function AdminPlacesPage() {
                         <span className="rounded-full bg-beige px-3 py-1 font-bold text-ink/80 text-[11px]">
                           {cat?.label || place.category}
                         </span>
+                        {place.category === "stay" && (
+                          <div className="mt-1.5">
+                            {place.availabilityStatus === "sold_out" ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-800 px-2 py-0.5 text-[10px] font-bold">
+                                🔴 Hết phòng
+                              </span>
+                            ) : place.availabilityStatus === "few_left" ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold">
+                                ⚡ Còn 1-2 phòng
+                              </span>
+                            ) : place.availabilityStatus === "on_request" ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-800 px-2 py-0.5 text-[10px] font-bold">
+                                📞 Liên hệ
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-[10px] font-bold">
+                                🟢 Còn phòng
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="p-4 font-semibold text-ink/80">{place.businessName}</td>
                       <td className="p-4 max-w-xs">
@@ -656,6 +681,56 @@ export default function AdminPlacesPage() {
                   />
                 </div>
               </div>
+
+              {formData.category === "stay" && (
+                <div className="rounded-2xl border-2 border-forest/20 bg-forest/5 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-forest uppercase tracking-wider flex items-center gap-1.5">
+                      <BedDouble className="size-4" /> Tình trạng phòng hôm nay (Availability)
+                    </label>
+                    <span className="text-[10px] text-ink/60 bg-white px-2 py-0.5 rounded-full border border-forest/10">
+                      Tự động cập nhật huy hiệu cho khách
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { value: "available", label: "🟢 Còn phòng", desc: "Đón khách bình thường" },
+                      { value: "few_left", label: "⚡ Còn 1-2 phòng", desc: "Tạo hiệu ứng gấp" },
+                      { value: "sold_out", label: "🔴 Hết phòng", desc: "Báo kín lịch" },
+                      { value: "on_request", label: "📞 Liên hệ trước", desc: "Cần gọi xác nhận" }
+                    ].map((opt) => {
+                      const isSelected = (formData.availabilityStatus || "available") === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, availabilityStatus: opt.value as any })}
+                          className={`p-2.5 rounded-xl text-left border text-xs transition ${
+                            isSelected
+                              ? "bg-white border-forest shadow-sm ring-2 ring-forest/20 font-bold text-forest"
+                              : "bg-white/60 border-black/5 hover:bg-white text-ink/70"
+                          }`}
+                        >
+                          <div className="font-bold">{opt.label}</div>
+                          <div className="text-[10px] text-ink/50 mt-0.5">{opt.desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-bold text-ink/80">Ghi chú phòng (tùy chọn)</label>
+                    <input
+                      type="text"
+                      value={formData.availabilityNote || ""}
+                      onChange={(e) => setFormData({ ...formData, availabilityNote: e.target.value })}
+                      placeholder="Ví dụ: Chỉ còn phòng đôi view suối, phòng tập thể đã kín..."
+                      className="w-full mt-1 px-3 py-2 rounded-xl text-xs border border-black/10 focus:border-forest focus:outline-none bg-white font-medium"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-black/5">
                 {editingPlace && (

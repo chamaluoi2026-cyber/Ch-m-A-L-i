@@ -43,7 +43,8 @@ import {
   MessageSquare,
   Camera,
   Video,
-  Film
+  Film,
+  BedDouble
 } from "lucide-react";
 import {
   getPlaceBySlugAction,
@@ -104,7 +105,8 @@ function createEmptyPlace(): PlaceRecord {
     commissionRate: 10, commissionType: "booking", auditStatus: "active",
     highlights: [], activities: [], services: [], safetyNotes: [],
     suitableFor: [], faq: [], seoTitle: "", seoDescription: "", seoKeywords: "",
-    ogImage: "", rating: 4.8, reviewCount: 0, createdAt: now, updatedAt: now
+    ogImage: "", rating: 4.8, reviewCount: 0, createdAt: now, updatedAt: now,
+    availabilityStatus: "available", availabilityNote: "", availabilityUpdatedAt: now
   };
 }
 
@@ -634,7 +636,8 @@ function PlaceEditPageContent() {
         status: targetStatus,
         id: place.id || place.slug,
         seoTitle: place.seoTitle || place.name,
-        seoDescription: place.seoDescription || place.summary
+        seoDescription: place.seoDescription || place.summary,
+        availabilityUpdatedAt: place.category === "stay" ? (place.availabilityUpdatedAt || new Date().toISOString()) : place.availabilityUpdatedAt
       };
       const res = await savePlaceAction(toSave);
       if (res.success && res.place) {
@@ -789,6 +792,56 @@ function PlaceEditPageContent() {
                   ))}
                 </div>
               </div>
+
+              {place.category === "stay" && (
+                <div className="rounded-2xl border-2 border-forest/20 bg-forest/5 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-forest uppercase tracking-wider flex items-center gap-1.5">
+                      <BedDouble size={15} /> Tình trạng phòng hôm nay (Homestay Availability)
+                    </label>
+                    <span className="text-[11px] text-gray-500 bg-white px-2.5 py-0.5 rounded-full border border-forest/10 font-medium">
+                      {place.availabilityUpdatedAt ? `Cập nhật: ${new Date(place.availabilityUpdatedAt).toLocaleDateString("vi-VN")}` : "Chưa cập nhật"}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { value: "available", label: "🟢 Còn phòng", desc: "Đón khách bình thường" },
+                      { value: "few_left", label: "⚡ Còn 1-2 phòng", desc: "Tạo cảm giác gấp (FOMO)" },
+                      { value: "sold_out", label: "🔴 Hết phòng", desc: "Báo kín lịch" },
+                      { value: "on_request", label: "📞 Liên hệ trước", desc: "Cần gọi chủ nhà xác nhận" }
+                    ].map((opt) => {
+                      const isSelected = (place.availabilityStatus || "available") === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => upd({ availabilityStatus: opt.value as any, availabilityUpdatedAt: new Date().toISOString() })}
+                          className={`p-3 rounded-xl text-left border text-xs transition ${
+                            isSelected
+                              ? "bg-white border-forest shadow-sm ring-2 ring-forest/20 font-bold text-forest"
+                              : "bg-white/60 border-gray-200 hover:bg-white text-gray-700"
+                          }`}
+                        >
+                          <div className="font-bold">{opt.label}</div>
+                          <div className="text-[11px] text-gray-400 mt-0.5">{opt.desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Ghi chú phòng (tùy chọn)</label>
+                    <input
+                      type="text"
+                      value={place.availabilityNote || ""}
+                      onChange={(e) => upd({ availabilityNote: e.target.value })}
+                      placeholder="Ví dụ: Chỉ còn phòng đôi view suối, phòng tập thể đã kín cuối tuần..."
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-forest transition"
+                    />
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5"><Clock size={13} className="inline mr-1" />Giờ mở cửa</label>

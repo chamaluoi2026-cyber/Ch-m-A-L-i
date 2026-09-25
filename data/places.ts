@@ -73,6 +73,9 @@ export type Place = {
   faq?: { question: string; answer: string }[];
   lat?: number;
   lng?: number;
+  availabilityStatus?: "available" | "few_left" | "sold_out" | "on_request";
+  availabilityNote?: string;
+  availabilityUpdatedAt?: string;
 };
 
 export const places: Place[] = [

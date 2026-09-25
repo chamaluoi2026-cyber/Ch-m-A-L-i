@@ -14,13 +14,15 @@ import {
   TrendingUp,
   Users
 } from "lucide-react";
-import { getAdminMetrics, getAllLeads, getAllTransactions, getAllBusinesses } from "@/lib/server-store";
+import { getAdminMetrics, getAllLeads, getAllTransactions, getAllBusinesses, getSiteSettingsAsync, defaultTravelConditions } from "@/lib/server-store";
 import { AiReportModal } from "@/components/admin/ai-report-modal";
+import { TravelConditionsCard } from "@/components/admin/travel-conditions-card";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
   const metrics = getAdminMetrics();
+  const settings = await getSiteSettingsAsync();
   const recentLeads = getAllLeads().slice(0, 5);
   const recentTransactions = getAllTransactions().slice(0, 5);
   const businesses = getAllBusinesses();
@@ -57,6 +59,9 @@ export default function AdminDashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Bản tin thực địa A Lưới hôm nay (Travel Conditions) */}
+      <TravelConditionsCard initialData={settings.travelConditions || defaultTravelConditions} />
 
       {/* Financial KPIs Banner */}
       <div className="grid gap-4 md:grid-cols-3">
