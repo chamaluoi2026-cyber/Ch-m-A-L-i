@@ -1132,7 +1132,7 @@ export default function AdminProductsPage() {
                   </button>
                 </div>
                 <textarea
-                  rows={3}
+                  rows={8}
                   value={editingProduct.description}
                   onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
                   placeholder="Mô tả nguồn gốc, hương vị, công dụng, cách sử dụng của đặc sản..."
@@ -1143,13 +1143,13 @@ export default function AdminProductsPage() {
               {/* Thông số kỹ thuật / Đặc điểm */}
               <div>
                 <label className="text-[11px] font-bold text-ink uppercase tracking-wider block mb-1">
-                  Đặc điểm nổi bật (Mỗi dòng 1 đặc điểm)
+                  Đặc điểm nổi bật & Quy cách (Mỗi dòng 1 đặc điểm)
                 </label>
                 <textarea
-                  rows={3}
+                  rows={7}
                   value={specsInput}
                   onChange={(e) => setSpecsInput(e.target.value)}
-                  placeholder="VD:&#10;Chai thủy tinh 500ml&#10;Mật ong khoái rừng già 100%&#10;Không đường nhân tạo"
+                  placeholder="VD:&#10;🌿 Xuất xứ: Vùng cao A Lưới&#10;🧪 100% nguyên chất không phụ gia&#10;🛡️ Sản phẩm OCOP bản địa"
                   className="w-full px-3 py-2 rounded-xl border border-black/10 focus:border-forest focus:outline-none bg-beige/10 text-xs"
                 />
               </div>

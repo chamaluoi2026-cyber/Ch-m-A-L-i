@@ -7,7 +7,7 @@ import {
   type GeneratedProductAiOutput
 } from "@/lib/ai/product-content-generator";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+import { getSiteSettingsAsync } from "@/lib/server-store";
 
 export async function generateProductAiAction(
   input: GenerateProductAiInput
@@ -21,10 +21,21 @@ export async function generateProductAiAction(
       return { success: false, error: "Vui lòng nhập tên sản phẩm để AI có thể phân tích." };
     }
 
-    // 1. Thử gọi Google Gemini AI nếu có API Key
-    if (GEMINI_API_KEY && GEMINI_API_KEY.length > 10) {
+    // 1. Lấy Gemini API Key từ Cloud Site Settings (Supabase) hoặc Env
+    let apiKey = process.env.GEMINI_API_KEY?.trim() || process.env.NEXT_PUBLIC_GEMINI_API_KEY?.trim() || "";
+    try {
+      const settings = await getSiteSettingsAsync().catch(() => null);
+      if (settings?.geminiApiKey && settings.geminiApiKey.trim().length > 10) {
+        apiKey = settings.geminiApiKey.trim();
+      }
+    } catch (e) {
+      console.warn("[AI_WRITER] Could not load cloud site settings, using env key:", e);
+    }
+
+    // 2. Thử gọi Google Gemini AI nếu có API Key
+    if (apiKey && apiKey.length > 10) {
       try {
-        const geminiResult = await generateProductContentWithGemini(input, GEMINI_API_KEY);
+        const geminiResult = await generateProductContentWithGemini(input, apiKey);
         if (geminiResult && geminiResult.description) {
           return { success: true, data: geminiResult };
         }
@@ -33,7 +44,7 @@ export async function generateProductAiAction(
       }
     }
 
-    // 2. Fallback sang Local Domain Engine A Lưới (hoạt động 100% offline, chuẩn văn hóa bản địa)
+    // 3. Fallback sang Local Domain Engine A Lưới (hoạt động 100% offline, chuẩn văn hóa bản địa chuyên sâu)
     const localResult = generateLocalProductContent(input);
     return { success: true, data: localResult };
   } catch (err: any) {

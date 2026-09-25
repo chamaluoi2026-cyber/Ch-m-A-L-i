@@ -965,12 +965,12 @@ function ProductEditContent() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-ink block mb-1">Mô tả sản phẩm</label>
+              <label className="text-xs font-bold text-ink block mb-1">Mô tả sản phẩm (Chi tiết & Chuyên sâu)</label>
               <textarea
-                rows={4}
+                rows={9}
                 value={product.description}
                 onChange={(e) => upd({ description: e.target.value })}
-                placeholder="Mô tả chi tiết nguyên liệu, hương vị đặc trưng, giá trị văn hóa và công dụng của đặc sản..."
+                placeholder="Mô tả chi tiết nguồn gốc, quy trình canh tác thủ công, hương vị đặc trưng, công dụng sức khỏe và giá trị OCOP bản địa..."
                 className="w-full px-3.5 py-2.5 rounded-xl border border-black/10 focus:border-forest focus:outline-none bg-beige/10 text-xs leading-relaxed text-ink"
               />
             </div>
@@ -980,10 +980,10 @@ function ProductEditContent() {
                 Đặc điểm nổi bật & Quy cách đóng gói (Mỗi dòng 1 gạch đầu dòng)
               </label>
               <textarea
-                rows={4}
+                rows={8}
                 value={specsInput}
                 onChange={(e) => setSpecsInput(e.target.value)}
-                placeholder="VD:&#10;Sợi cotton pha tự nhiên dệt tay&#10;Đính cườm thủ công tinh xảo&#10;Sản phẩm OCOP 4 sao tỉnh Thừa Thiên Huế"
+                placeholder="VD:&#10;🌿 Xuất xứ: Vùng cao A Lưới, Thừa Thiên Huế&#10;❄️ Công nghệ: Sấy lạnh tiệt trùng khép kín&#10;🧪 100% nguyên chất không phụ gia&#10;🛡️ Sản phẩm OCOP bản địa"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-black/10 focus:border-forest focus:outline-none bg-beige/10 text-xs leading-relaxed text-ink"
               />
             </div>
@@ -1364,7 +1364,7 @@ function ProductEditContent() {
               </div>
 
               <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/60 text-[11px] text-amber-900 leading-relaxed">
-                💡 <strong>AI sẽ tự động điền:</strong> Mô tả chi tiết, Danh sách thông số kỹ thuật, Khối lượng tiêu chuẩn, Hướng dẫn bảo quản, và Tiêu đề/Mô tả chuẩn SEO Google.
+                💡 <strong>AI Thế Hệ Mới:</strong> Tự động soạn bài mô tả dài chuyên sâu (3-5 đoạn văn chi tiết từ 350-500 từ), 7-10 đặc điểm nổi bật & quy cách (kèm biểu tượng emoji), khối lượng, hạn sử dụng, bảo quản và chuẩn SEO Google.
               </div>
             </div>
 
