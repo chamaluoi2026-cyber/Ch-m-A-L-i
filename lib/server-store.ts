@@ -107,6 +107,8 @@ export type SiteSettings = {
   contactEmail?: string;
   facebookUrl?: string;
   instagramUrl?: string;
+  tiktokUrl?: string;
+  youtubeUrl?: string;
   zaloUrl?: string;
   zaloPhone?: string;
   zaloCoordinatorName?: string;
@@ -1848,6 +1850,8 @@ export function getSiteSettings(): SiteSettings {
     contactEmail: "hotro@chamaluoi.vn",
     facebookUrl: "https://facebook.com/chamaluoi",
     instagramUrl: "https://instagram.com/chamaluoi",
+    tiktokUrl: "",
+    youtubeUrl: "",
     zaloUrl: "https://zalo.me/0825497468",
     zaloPhone: "0825497468",
     zaloCoordinatorName: "Võ Quang Huy – Điều phối viên Chạm A Lưới",

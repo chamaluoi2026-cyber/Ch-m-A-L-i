@@ -88,8 +88,18 @@ import {
   UploadCloud,
   UserPlus,
   Users2,
-  X
+  X,
+  Youtube
 } from "lucide-react";
+
+
+function TikTokIcon({ className = "size-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z" />
+    </svg>
+  );
+}
 
 // Types for Media Item Metadata
 interface MediaItemMetadata {
@@ -156,6 +166,8 @@ export default function AdminMediaPage() {
     contactEmail: "hotro@chamaluoi.vn",
     facebookUrl: "https://facebook.com/chamaluoi",
     instagramUrl: "https://instagram.com/chamaluoi",
+    tiktokUrl: "",
+    youtubeUrl: "",
     zaloUrl: "https://zalo.me/0825497468",
     footerDescription: "Nền tảng du lịch cộng đồng kết nối du khách với các homestay, làng nghề truyền thống, ẩm thực bản địa và những điểm đến sinh thái nguyên sơ tại A Lưới, Thừa Thiên Huế.",
     announcement: "Chào mừng quý khách đến với du lịch cộng đồng Chạm A Lưới!",
@@ -3004,6 +3016,28 @@ export default function AdminMediaPage() {
                       <Instagram className="size-3.5" />
                     </a>
                   )}
+                  {siteSettings.tiktokUrl && (
+                    <a
+                      href={siteSettings.tiktokUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition flex items-center gap-1 text-[11px]"
+                      title="TikTok"
+                    >
+                      <TikTokIcon className="size-3.5" />
+                    </a>
+                  )}
+                  {siteSettings.youtubeUrl && (
+                    <a
+                      href={siteSettings.youtubeUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-red-400 transition flex items-center gap-1 text-[11px]"
+                      title="YouTube"
+                    >
+                      <Youtube className="size-3.5" />
+                    </a>
+                  )}
                   {siteSettings.zaloUrl && (
                     <a
                       href={siteSettings.zaloUrl}
@@ -3103,7 +3137,7 @@ export default function AdminMediaPage() {
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-ink">Mạng Xã Hội & Kênh Kết Nối</h3>
-                  <p className="text-[11px] text-ink/60">Liên kết Fanpage Facebook, Instagram và Zalo</p>
+                  <p className="text-[11px] text-ink/60">Liên kết Fanpage Facebook, Instagram, TikTok, YouTube và Zalo</p>
                 </div>
               </div>
 
@@ -3133,6 +3167,38 @@ export default function AdminMediaPage() {
                   value={siteSettings.instagramUrl || ""}
                   onChange={(e) => setSiteSettings({ ...siteSettings, instagramUrl: e.target.value })}
                   placeholder="https://instagram.com/chamaluoi"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-beige/60 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-forest"
+                />
+              </div>
+
+              {/* TikTok */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-ink flex items-center gap-1.5">
+                  <span className="size-4 rounded bg-black text-white flex items-center justify-center p-0.5">
+                    <TikTokIcon className="size-3" />
+                  </span>
+                  Đường dẫn TikTok:
+                </label>
+                <input
+                  type="url"
+                  value={siteSettings.tiktokUrl || ""}
+                  onChange={(e) => setSiteSettings({ ...siteSettings, tiktokUrl: e.target.value })}
+                  placeholder="https://tiktok.com/@chamaluoi"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-beige/60 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-forest"
+                />
+              </div>
+
+              {/* YouTube */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-ink flex items-center gap-1.5">
+                  <Youtube className="size-3.5 text-red-600" />
+                  Đường dẫn YouTube:
+                </label>
+                <input
+                  type="url"
+                  value={siteSettings.youtubeUrl || ""}
+                  onChange={(e) => setSiteSettings({ ...siteSettings, youtubeUrl: e.target.value })}
+                  placeholder="https://youtube.com/@chamaluoi"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-beige/60 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-forest"
                 />
               </div>

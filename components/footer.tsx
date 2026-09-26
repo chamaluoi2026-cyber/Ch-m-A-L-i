@@ -1,8 +1,17 @@
 import Link from "next/link";
-import { Building2, Facebook, Instagram, Mail, MapPin, Phone, ShieldCheck } from "lucide-react";
+import { Building2, Facebook, Instagram, Mail, MapPin, Phone, ShieldCheck, Youtube } from "lucide-react";
 import { AppImage } from "@/components/ui/app-image";
 import { navItems, siteConfig } from "@/data/site";
 import { getSiteSettings } from "@/lib/server-store";
+
+
+function TikTokIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z" />
+    </svg>
+  );
+}
 
 export function Footer() {
   const settings = getSiteSettings();
@@ -20,6 +29,8 @@ export function Footer() {
   const email = settings.contactEmail || "hotro@chamaluoi.vn";
   const facebookUrl = settings.facebookUrl || "https://facebook.com/chamaluoi";
   const instagramUrl = settings.instagramUrl || "https://instagram.com/chamaluoi";
+  const tiktokUrl = settings.tiktokUrl;
+  const youtubeUrl = settings.youtubeUrl;
   const zaloUrl = settings.zaloUrl || "";
   const description = settings.footerDescription || "Nền tảng du lịch cộng đồng trung gian kết nối du khách với các homestay, nhà hàng, hợp tác xã và các điểm du lịch sinh thái tại A Lưới, Huế.";
 
@@ -104,6 +115,16 @@ export function Footer() {
             {instagramUrl && (
               <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition" aria-label="Instagram">
                 <Instagram className="size-4" aria-hidden="true" />
+              </a>
+            )}
+            {tiktokUrl && (
+              <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition" aria-label="TikTok">
+                <TikTokIcon className="size-4" />
+              </a>
+            )}
+            {youtubeUrl && (
+              <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" className="hover:text-red-400 transition" aria-label="YouTube">
+                <Youtube className="size-4" />
               </a>
             )}
             {zaloUrl && (
