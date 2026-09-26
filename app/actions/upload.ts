@@ -663,6 +663,27 @@ export async function updateSiteSettingsAction(settings: Partial<SiteSettings>):
   try {
     await requireRole(["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"]);
     const updated = updateSiteSettings(settings);
+
+    // Đồng bộ tức thì lên Supabase Cloud system_store
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hcunfovtwbzfatudejfs.supabase.co';
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjdW5mb3Z0d2J6ZmF0dWRlamZzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTM5NTM5OSwiZXhwIjoyMTA0OTcxMzk5fQ.7QwyRHqGXa6UwgbUNAhlWdmGZqpuS8Cxall2v8j7lMU';
+    if (url && key) {
+      await fetch(`${url}/rest/v1/system_store`, {
+        method: "POST",
+        headers: {
+          "apikey": key,
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json",
+          "Prefer": "resolution=merge-duplicates"
+        },
+        body: JSON.stringify({
+          id: "site_settings",
+          data: updated,
+          updated_at: new Date().toISOString()
+        })
+      }).catch((e) => console.error("[UPLOAD_SETTINGS_SYNC_ERR]", e));
+    }
+
     revalidatePath("/admin/media");
     revalidatePath("/", "layout");
     return { success: true, settings: updated };

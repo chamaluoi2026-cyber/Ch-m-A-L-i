@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { Building2, Home } from "lucide-react";
 import { ReactNode } from "react";
-import { getNotifications, getSiteSettings } from "@/lib/server-store";
+import { getNotifications, getSiteSettingsAsync } from "@/lib/server-store";
 import { getAdminSidebarBadgeCounts } from "@/lib/admin-badges";
 import { AppImage } from "@/components/ui/app-image";
 import { AdminSidebarNav } from "@/components/admin/admin-sidebar-nav";
 import { MobileAdminNav } from "@/components/admin/mobile-admin-nav";
 import { AdminAudioNotifier } from "@/components/admin/admin-audio-notifier";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata = {
   title: "Quản trị hệ thống | Chạm A Lưới",
@@ -15,7 +18,7 @@ export const metadata = {
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const notifications = getNotifications().filter((n) => !n.isRead);
-  const siteSettings = getSiteSettings();
+  const siteSettings = await getSiteSettingsAsync();
   const initialBadges = await getAdminSidebarBadgeCounts();
 
   return (
