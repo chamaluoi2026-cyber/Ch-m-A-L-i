@@ -19,6 +19,7 @@ import {
   MessageSquare,
   Package,
   ShieldAlert,
+  ShieldCheck,
   ShoppingBag,
   Star,
   Ticket,
@@ -126,6 +127,11 @@ export const navItems: NavItem[] = [
     badgeColor: "bg-rose-600 text-white font-bold"
   },
   { href: "/admin/users", label: "Quản lý Người dùng", icon: Users },
+  {
+    href: "/admin/trust-safety",
+    label: "Trust & Safety (An Toàn)",
+    icon: ShieldCheck
+  },
   { href: "/admin/audit-logs", label: "Nhật ký Kiểm toán (Audit)", icon: ShieldAlert }
 ];
 

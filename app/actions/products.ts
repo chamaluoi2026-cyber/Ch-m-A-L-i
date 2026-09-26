@@ -54,7 +54,7 @@ export async function saveProductAction(product: ProductRecord): Promise<{
       businessName: product.businessName || "Chạm A Lưới",
       businessId: product.businessId || ("biz-" + product.slug),
       phone: product.phone || "0905 000 118",
-      zaloUrl: product.zaloUrl || "https://zalo.me/0905000118",
+      zaloUrl: product.zaloUrl || "https://zalo.me/0825497468",
       isOcop: !!product.isOcop,
       ocopStars: product.ocopStars || 3,
       weight: product.weight || "",

@@ -87,7 +87,7 @@ function emptyProduct(): ProductRecord {
     status: "active",
     businessName: "HTX Bản địa A Lưới",
     phone: "0905 000 118",
-    zaloUrl: "https://zalo.me/0905000118",
+    zaloUrl: "https://zalo.me/0825497468",
     isOcop: true,
     ocopStars: 3,
     createdAt: new Date().toISOString(),

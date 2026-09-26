@@ -22,6 +22,7 @@ import { places } from "@/data/places";
 import { siteConfig, products, blogPosts } from "@/data/site";
 import { normalizeImageUrl, detectImageSource } from "@/lib/image-helper";
 import { AppImage } from "@/components/ui/app-image";
+import { ZaloSettingsCard } from "@/components/admin/zalo-settings-card";
 import {
   AlertCircle,
   AlertTriangle,
@@ -155,7 +156,7 @@ export default function AdminMediaPage() {
     contactEmail: "hotro@chamaluoi.vn",
     facebookUrl: "https://facebook.com/chamaluoi",
     instagramUrl: "https://instagram.com/chamaluoi",
-    zaloUrl: "https://zalo.me/0905000118",
+    zaloUrl: "https://zalo.me/0825497468",
     footerDescription: "Nền tảng du lịch cộng đồng kết nối du khách với các homestay, làng nghề truyền thống, ẩm thực bản địa và những điểm đến sinh thái nguyên sơ tại A Lưới, Thừa Thiên Huế.",
     announcement: "Chào mừng quý khách đến với du lịch cộng đồng Chạm A Lưới!",
     galleryEyebrow: "Khung ảnh A Lưới",
@@ -3146,7 +3147,7 @@ export default function AdminMediaPage() {
                   type="url"
                   value={siteSettings.zaloUrl || ""}
                   onChange={(e) => setSiteSettings({ ...siteSettings, zaloUrl: e.target.value })}
-                  placeholder="https://zalo.me/0905000118"
+                  placeholder="https://zalo.me/0825497468"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-beige/60 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-forest"
                 />
               </div>
@@ -3164,6 +3165,9 @@ export default function AdminMediaPage() {
               </div>
             </div>
           </div>
+
+          {/* Box 2.5: Cấu hình Zalo Điều phối viên & Live Test */}
+          <ZaloSettingsCard initialSettings={siteSettings} />
 
           {/* Box 3: Đoạn giới thiệu Chân trang & Thông báo đầu trang */}
           <div className="rounded-3xl bg-white p-6 shadow-card border border-black/5 space-y-5">
@@ -3220,7 +3224,7 @@ export default function AdminMediaPage() {
                         contactEmail: "hotro@chamaluoi.vn",
                         facebookUrl: "https://facebook.com/chamaluoi",
                         instagramUrl: "https://instagram.com/chamaluoi",
-                        zaloUrl: "https://zalo.me/0905000118",
+                        zaloUrl: "https://zalo.me/0825497468",
                         footerDescription: "Nền tảng du lịch cộng đồng kết nối du khách với các homestay, làng nghề truyền thống, ẩm thực bản địa và những điểm đến sinh thái nguyên sơ tại A Lưới, Thừa Thiên Huế."
                       });
                     }}

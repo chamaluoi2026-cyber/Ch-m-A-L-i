@@ -115,7 +115,7 @@ export default function BusinessProfilePage() {
             <Input
               value={zaloUrl}
               onChange={(e) => setZaloUrl(e.target.value)}
-              placeholder="https://zalo.me/0905000118"
+              placeholder="https://zalo.me/0825497468"
               required
             />
           </label>

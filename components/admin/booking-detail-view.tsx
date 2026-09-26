@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { BookingRecord, BookingStatus, PaymentStatus } from "@/lib/server-store";
 import {
   AlertCircle,
+  AlertTriangle,
   ArrowLeft,
   Calendar,
   Car,
@@ -1163,6 +1164,34 @@ Sau khi chuyển khoản thành công, Anh/Chị gửi lại ảnh chụp giao d
               <ShieldCheck className="size-4 text-forest" /> Quản trị Vòng đời & Thanh toán
             </h2>
 
+            {/* Cancellation Request Alert Box */}
+            {booking && (booking.cancellationReason || booking.status === "cancellation_requested") && (
+              <div className="rounded-2xl bg-rose-50 border-2 border-rose-300 p-4 space-y-2 text-xs text-rose-950">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold uppercase text-rose-900 flex items-center gap-1.5">
+                    <AlertTriangle className="size-4 text-rose-700 shrink-0" />
+                    Khách yêu cầu hủy tour & hoàn tiền
+                  </span>
+                  {booking.cancellationRequestedAt && (
+                    <span className="font-mono text-[10px] text-rose-700">
+                      {new Date(booking.cancellationRequestedAt).toLocaleString("vi-VN")}
+                    </span>
+                  )}
+                </div>
+                <p><strong>Lý do khách chọn:</strong> {booking.cancellationReason}</p>
+                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-rose-200">
+                  <div>
+                    <span className="text-ink/60 text-[11px]">Phí phạt theo biểu phí:</span>
+                    <p className="font-bold text-ink">{booking.cancellationFee ? Number(booking.cancellationFee).toLocaleString("vi-VN") + " đ" : "0 đ"}</p>
+                  </div>
+                  <div>
+                    <span className="text-ink/60 text-[11px]">Ước tính hoàn cọc:</span>
+                    <p className="font-black text-rose-700">{booking.refundEstimatedAmount ? Number(booking.refundEstimatedAmount).toLocaleString("vi-VN") + " đ" : "Theo đối soát"}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Lifecycle */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-ink block">Trạng thái Booking (Booking Status):</label>
@@ -1174,6 +1203,11 @@ Sau khi chuyển khoản thành công, Anh/Chị gửi lại ảnh chụp giao d
                 <option value="pending">CHỜ XÁC NHẬN</option>
                 <option value="confirmed">ĐÃ XÁC NHẬN</option>
                 <option value="completed">ĐÃ HOÀN THÀNH</option>
+                <option value="cancellation_requested">YÊU CẦU HỦY (Cần Admin duyệt)</option>
+                <option value="cancellation_approved">ĐÃ DUYỆT HỦY (Chờ hoàn cọc)</option>
+                <option value="refund_processing">ĐANG HOÀN TIỀN (Ngân hàng)</option>
+                <option value="refunded">ĐÃ HOÀN TIỀN THÀNH CÔNG</option>
+                <option value="cancellation_rejected">TỪ CHỐI YÊU CẦU HỦY</option>
                 <option value="cancelled">ĐÃ HỦY</option>
               </select>
 

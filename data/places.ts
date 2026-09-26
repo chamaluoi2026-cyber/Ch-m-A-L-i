@@ -96,7 +96,7 @@ export const places: Place[] = [
     reviewCount: 245,
     openingHours: "07:00 - 17:30 hằng ngày",
     voucherOffer: "Giảm 10% gói hướng dẫn viên & mâm cơm bản địa",
-    zaloUrl: "https://zalo.me/0905000118",
+    zaloUrl: "https://zalo.me/0825497468",
     phone: "0905 000 118",
     image: "/images/aluoi/ho-sinh-thai-a-luoi.jpg",
     gallery: [
@@ -224,7 +224,7 @@ export const places: Place[] = [
     reviewCount: 312,
     openingHours: "Mở cửa đón khách 24/7 (vui lòng đặt trước)",
     voucherOffer: "Giảm 10% gói trải nghiệm trọn gói văn hóa + ăn ở",
-    zaloUrl: "https://zalo.me/0905000118",
+    zaloUrl: "https://zalo.me/0825497468",
     phone: "0905 000 118",
     image: "/images/aluoi/nha-san-truyen-thong.jpg",
     gallery: [
@@ -256,7 +256,7 @@ export const places: Place[] = [
     reviewCount: 142,
     openingHours: "18:30 - 21:30 hằng đêm (theo yêu cầu đoàn)",
     voucherOffer: "Tặng 1 bình rượu cần lớn cho đoàn từ 10 khách",
-    zaloUrl: "https://zalo.me/0905000118",
+    zaloUrl: "https://zalo.me/0825497468",
     phone: "0905 000 118",
     image: "/images/aluoi/cong-chieng-giao-luu.jpg",
     gallery: [
@@ -288,7 +288,7 @@ export const places: Place[] = [
     reviewCount: 220,
     openingHours: "Nhận phòng 14:00 - Trả phòng 12:00",
     voucherOffer: "Giảm 10% tiền phòng khi đặt qua Chạm A Lưới",
-    zaloUrl: "https://zalo.me/0905000118",
+    zaloUrl: "https://zalo.me/0825497468",
     phone: "0905 000 118",
     image: "/images/aluoi/homestay-bungalow.jpg",
     gallery: [

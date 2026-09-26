@@ -94,7 +94,7 @@ function createEmptyProduct(): ProductRecord {
     businessName: "HTX Nông nghiệp & Dược liệu A Lưới",
     businessId: "biz-aluoi",
     phone: "0905 000 118",
-    zaloUrl: "https://zalo.me/0905000118",
+    zaloUrl: "https://zalo.me/0825497468",
     isOcop: true,
     ocopStars: 3,
     weight: "500g",

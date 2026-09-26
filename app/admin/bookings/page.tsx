@@ -120,6 +120,7 @@ export default function AdminBookingsPage() {
     const confirmedCount = bookings.filter((b) => (b.bookingStatus === "confirmed" || b.status === "confirmed")).length;
     const completedCount = bookings.filter((b) => (b.bookingStatus === "completed" || b.status === "completed")).length;
     const cancelledCount = bookings.filter((b) => (b.bookingStatus === "cancelled" || b.status === "cancelled")).length;
+    const cancellationRequestedCount = bookings.filter((b) => (b.bookingStatus === "cancellation_requested" || b.status === "cancellation_requested")).length;
     const totalGMV = bookings
       .filter((b) => b.status !== "cancelled" && b.bookingStatus !== "cancelled")
       .reduce((sum, b) => sum + (Number(b.finalAmount) || 0), 0);
@@ -134,6 +135,7 @@ export default function AdminBookingsPage() {
       confirmedCount,
       completedCount,
       cancelledCount,
+      cancellationRequestedCount,
       totalGMV,
       totalCommission
     };
@@ -163,11 +165,16 @@ export default function AdminBookingsPage() {
   }, [bookings, activeTab, filterBookingStatus, filterPaymentStatus, searchTerm]);
 
   // Status mapping
-  const bookingStatusConfig: Record<BookingStatus, { label: string; badge: string }> = {
+  const bookingStatusConfig: Record<string, { label: string; badge: string }> = {
     pending: { label: "Chờ xác nhận", badge: "bg-amber-100 text-amber-800" },
     confirmed: { label: "Đã xác nhận", badge: "bg-blue-100 text-blue-800" },
     completed: { label: "Đã hoàn thành", badge: "bg-emerald-100 text-emerald-800" },
-    cancelled: { label: "Đã hủy", badge: "bg-red-100 text-red-800" }
+    cancelled: { label: "Đã hủy", badge: "bg-red-100 text-red-800" },
+    cancellation_requested: { label: "Yêu cầu hủy (Cần duyệt)", badge: "bg-rose-100 text-rose-900 border border-rose-300 font-bold animate-pulse" },
+    cancellation_approved: { label: "Đã duyệt hủy", badge: "bg-sky-100 text-sky-800 font-bold" },
+    refund_processing: { label: "Đang hoàn tiền", badge: "bg-indigo-100 text-indigo-800 font-bold" },
+    refunded: { label: "Đã hoàn tiền", badge: "bg-emerald-100 text-emerald-800 font-bold" },
+    cancellation_rejected: { label: "Từ chối hủy", badge: "bg-zinc-100 text-zinc-800 font-bold" }
   };
 
   const paymentStatusConfig: Record<string, { label: string; badge: string }> = {
@@ -268,6 +275,9 @@ export default function AdminBookingsPage() {
               <option value="all">Tất cả trạng thái</option>
               <option value="pending">Chờ xác nhận</option>
               <option value="confirmed">Đã xác nhận</option>
+              <option value="cancellation_requested">Yêu cầu hủy đơn ({metrics.cancellationRequestedCount})</option>
+              <option value="cancellation_approved">Đã duyệt hủy</option>
+              <option value="refunded">Đã hoàn tiền</option>
               <option value="completed">Đã hoàn thành</option>
               <option value="cancelled">Đã hủy</option>
             </select>

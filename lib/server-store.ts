@@ -108,6 +108,9 @@ export type SiteSettings = {
   facebookUrl?: string;
   instagramUrl?: string;
   zaloUrl?: string;
+  zaloPhone?: string;
+  zaloCoordinatorName?: string;
+  zaloActive?: boolean;
   footerDescription?: string;
   announcement?: string;
 
@@ -307,7 +310,16 @@ export type PlaceRecord = {
 
 
 export type BookingType = "tour" | "homestay" | "product" | "itinerary";
-export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
+export type BookingStatus =
+  | "pending"
+  | "confirmed"
+  | "completed"
+  | "cancelled"
+  | "cancellation_requested"
+  | "cancellation_approved"
+  | "refund_processing"
+  | "refunded"
+  | "cancellation_rejected";
 export type PaymentMethod = "vietqr" | "bank_transfer" | "cash_on_delivery";
 export type PaymentStatus = "unpaid" | "paid" | "partially_paid" | "refunded" | "failed" | "PENDING" | "PROCESSING" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED" | "PARTIALLY_REFUNDED";
 
@@ -384,6 +396,16 @@ export type BookingRecord = {
   timeline?: BookingTimelineEvent[];
   itineraryDetails?: any; // Chi tiết lịch trình AI/tour riêng (ngày, điểm dừng, homestay)
   metadata?: Record<string, any>;
+
+  // Quy trình Hủy & Hoàn tiền (Cancellation & Refund)
+  cancellationReason?: string;
+  cancellationReasonDetail?: string;
+  cancellationRequestedAt?: string;
+  cancellationProcessedAt?: string;
+  cancellationAdminNote?: string;
+  cancellationFee?: number;
+  refundEstimatedAmount?: number;
+  refundStatus?: "none" | "pending" | "approved" | "processing" | "refunded" | "rejected";
 
   createdAt: string;
   updatedAt: string;
@@ -663,7 +685,7 @@ const initialBusinesses: BusinessRecord[] = [
     ownerName: "Hồ Văn Lập",
     phone: "0905 000 118",
     email: "dulichanor@gmail.com",
-    zaloUrl: "https://zalo.me/0905000118",
+    zaloUrl: "https://zalo.me/0825497468",
     address: "Thôn A Nôr, xã Hồng Kim, A Lưới, Thừa Thiên Huế",
     commissionRate: 10,
     status: "active",
@@ -675,7 +697,7 @@ const initialBusinesses: BusinessRecord[] = [
     ownerName: "Nguyễn Thị Hoa",
     phone: "0905 000 118",
     email: "homestayvensuoi@gmail.com",
-    zaloUrl: "https://zalo.me/0905000118",
+    zaloUrl: "https://zalo.me/0825497468",
     address: "Thôn A Nôr, xã Hồng Kim, A Lưới, Thừa Thiên Huế",
     commissionRate: 10,
     status: "active",
@@ -756,8 +778,8 @@ const initialBusinesses: BusinessRecord[] = [
 ];
 
 const initialUsers: SystemUser[] = [
-  { id: "usr-admin-1", name: "Quản trị viên Chạm A Lưới", email: "admin@chamaluoi.vn", phone: "0905000118", role: "admin", createdAt: "2024-01-01" },
-  { id: "usr-biz-1", name: "Hồ Văn Lập (HTX A Nôr)", email: "dulichanor@gmail.com", phone: "0905000118", role: "business", businessId: "biz-a-nor", createdAt: "2024-01-15" },
+  { id: "usr-admin-1", name: "Quản trị viên Chạm A Lưới", email: "admin@chamaluoi.vn", phone: "0825497468", role: "admin", createdAt: "2024-01-01" },
+  { id: "usr-biz-1", name: "Hồ Văn Lập (HTX A Nôr)", email: "dulichanor@gmail.com", phone: "0825497468", role: "business", businessId: "biz-a-nor", createdAt: "2024-01-15" },
   { id: "usr-biz-2", name: "Quỳnh A Dút (Quán Pa Cô)", email: "amthucpaco@gmail.com", phone: "0912345678", role: "business", businessId: "biz-quan-paco", createdAt: "2024-02-15" },
   { id: "usr-cust-1", name: "Nguyễn Hoàng Nam", email: "nam.nguyen@gmail.com", phone: "0918112233", role: "customer", createdAt: "2024-05-10" },
   { id: "usr-cust-2", name: "Trần Mai Anh", email: "maianh.tran@gmail.com", phone: "0987654321", role: "customer", createdAt: "2024-05-12" }
@@ -1822,11 +1844,14 @@ export function getSiteSettings(): SiteSettings {
     heroImage: "/images/home-hero-local.jpg",
     aboutHeroImage: "https://images.unsplash.com/photo-1482192505345-5655af888cc4?auto=format&fit=crop&w=1600&q=82",
     contactAddress: "Huyện A Lưới, Thừa Thiên Huế",
-    contactPhone: "0905 000 118",
+    contactPhone: "0825 497 468",
     contactEmail: "hotro@chamaluoi.vn",
     facebookUrl: "https://facebook.com/chamaluoi",
     instagramUrl: "https://instagram.com/chamaluoi",
-    zaloUrl: "https://zalo.me/0905000118",
+    zaloUrl: "https://zalo.me/0825497468",
+    zaloPhone: "0825497468",
+    zaloCoordinatorName: "Võ Quang Huy – Điều phối viên Chạm A Lưới",
+    zaloActive: true,
     telegramEnabled: true,
     telegramBotToken: "8821903735:AAHaucbQqL-_HlKAW5occiEKSaWKzxEyNxc",
     telegramChatId: "7051477688",
@@ -2666,6 +2691,47 @@ export function updateBookingStatus(
   // Đồng bộ Commission theo vòng đời Booking (COMPLETED -> CALCULATED, CANCELLED -> CANCELLED)
   syncBookingCommission(id, effectiveActor);
   return b;
+}
+
+export function updateBookingRecord(updatedBooking: BookingRecord): BookingRecord | null {
+  const store = loadStore();
+  if (!store.bookings) return null;
+  const idx = store.bookings.findIndex((b) => b.id === updatedBooking.id);
+  if (idx === -1) {
+    store.bookings.unshift(updatedBooking);
+  } else {
+    store.bookings[idx] = updatedBooking;
+  }
+  saveStore(store);
+  return updatedBooking;
+}
+
+export function saveBookingTimelineEvent(
+  bookingId: string,
+  event: {
+    stage: string;
+    title: string;
+    description: string;
+    actor?: { id: string; name: string; role: string };
+    metadata?: Record<string, any>;
+  }
+): boolean {
+  const store = loadStore();
+  if (!store.bookings) return false;
+  const b = store.bookings.find((item) => item.id === bookingId);
+  if (!b) return false;
+  if (!b.timeline) b.timeline = [];
+  b.timeline.push({
+    id: `btl-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    stage: event.stage as any,
+    title: event.title,
+    description: event.description,
+    actor: event.actor || { id: "system", name: "Hệ thống", role: "system" },
+    timestamp: new Date().toISOString(),
+    metadata: event.metadata
+  });
+  saveStore(store);
+  return true;
 }
 
 export function updateBookingPayment(
